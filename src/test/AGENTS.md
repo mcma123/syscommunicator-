@@ -9,6 +9,7 @@
 - `setup.ts` provides jest-dom matchers and the matchMedia mock.
 - `app-routing.test.tsx` checks that `/` matches a page rather than only the root route.
 - `school-repository.test.ts` checks shared-core mock behavior including native-safe cloning, nested fixture isolation, snapshot identity, subscriptions, and unsubscribe.
+- `parent-mobile.test.ts` checks parent filtering, state-derived counters, draft privacy, and consent validation using pure native feature helpers.
 - Root `vitest.config.ts` owns jsdom, setup registration, aliases, and test discovery across `src/`.
 
 ## Local Contracts
@@ -23,7 +24,7 @@
 ## Verification
 
 - Run `npm test` from the repository root; use `npm run test:watch` during local iteration.
-- Current coverage is home-route matching and shared mock repository behavior, not module interaction or native device coverage.
+- Current coverage includes routing, shared repositories, and parent selection/action semantics. It is not native device coverage.
 
 ## Child DOX Index
 

@@ -1,5 +1,1 @@
-import { ModulePlaceholder } from "@/features/school/module-placeholder";
-
-export default function ModuleRoute() {
-  return <ModulePlaceholder moduleId="contact" />;
-}
+export { ContactScreen as default } from "@/features/school/parent-screens";

@@ -3,6 +3,8 @@
     "name": "WGJS Connect",
     "slug": "wynberg-girls-junior-connect",
     "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "updates": { "url": "https://u.expo.dev/6cd3c02c-5a24-4596-84b0-7048bf2c7ea8" },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "wgjsconnect",

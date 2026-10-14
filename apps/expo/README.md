@@ -29,10 +29,20 @@ installed SDK version; use an SDK-compatible Expo Go or a development build.
 - `@school-connect/core` shares school names, domain types, mock fixtures,
   repository contracts, and filtering with the root web app.
 
-The home screen works with mock notices and demo roles. All other modules are
-clearly labelled placeholders for future native screen development. Use React
-Native primitives; the TanStack DOM/Radix components cannot be copied directly
-into native screens. Each app instance has independent temporary mock state.
+The parent frontend uses a light banking-inspired design with red/gold branding,
+rounded cards, and Home/Updates/Calendar/Children/More bottom tabs. Parent modules
+include search and acknowledgement, event and learner details, simulated payment
+checkout/receipts, validated consent, resource previews, enquiry threads, and
+profile preferences. The fictional parent Jamie Williams starts signed in.
+Staff routes remain placeholders and are excluded from parent navigation.
+
+`parent-screens.tsx` owns presentation; `ui.tsx` owns shared parent UI;
+`parent-model.ts` owns pure filtering/validation; `store.tsx` mounts one repository
+and preserves selected child, consent response, and payment simulation across
+navigation. Demo controls under Profile can choose success, pending, or failure
+and reset the excursion payment. Reload resets all data. No real payments,
+messages, push notifications, authentication, persistence, or PDF service is
+connected. Use React Native primitives; DOM/Radix components are web-only.
 
 ## Branding and account project
 
@@ -67,3 +77,20 @@ From the root, run `npm run typecheck:expo`, `npm run check:expo`, and `npm run
 export:expo`. Lint this app with `npm run lint --workspace @school-connect/expo`.
 Exports verify bundling for all three platforms; they do not replace testing on
 an Android/iOS device.
+
+## Publishing previews
+
+The app is configured for EAS Update with appVersion runtime compatibility and
+development/preview/production build channels. Run `npm run expo:update` from
+the root to publish native JavaScript/assets to the preview branch using the
+preview environment. Matching native builds need the same runtime version;
+updates do not create an APK/IPA. Increment expo.version before changing native
+dependencies or configuration after a build exists.
+
+To publish the Expo browser frontend, run `npm run export:expo` and then
+`npm run expo:deploy`. The helper uses the WGJS preview domain on EAS Hosting.
+Production deployment and store submissions are separate actions. Both helpers
+load the ignored root token only for account commands.
+
+See the root README for PowerShell dev-server commands, Expo Go versus development
+clients, QR testing, Metro shortcuts, and simultaneous web/mobile testing.

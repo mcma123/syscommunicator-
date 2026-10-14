@@ -2,7 +2,7 @@
 
 ## Purpose
 
-- Own the WGJS Android, iOS, and Expo web scaffold using Expo SDK 57 and Expo Router.
+- Own the WGJS parent frontend for Android, iOS, and Expo web using Expo SDK 57 and Expo Router.
 
 ## Ownership
 
@@ -17,13 +17,16 @@
 - Expo uses its SDK-compatible React/React Native versions. Keep React/React DOM aligned across clients to avoid duplicate React in a bundle.
 - Root `.env` supplies EXPO_TOKEN only to EAS account commands. Never read it into app configuration, `extra`, public variables, or bundles.
 - EAS CLI is invoked on demand at version 24.13.0 through the root helper, not installed as an app dependency. The account project is `@mcmarsh/wynberg-girls-junior-connect`; its public ID lives in app.json and is inherited by app.config.ts.
-- The app uses mock state; `EXPO_PUBLIC_CONVEX_URL` alone does not connect a backend. No production sign-in, payments, or module interactions are implemented here.
+- The app uses mock state; `EXPO_PUBLIC_CONVEX_URL` alone does not connect a backend. Parent interactions use local state. No production sign-in, payments, push notifications, PDF rendering, or school message delivery is connected.
 - EAS profiles prepare later builds; setup does not submit store listings or trigger builds.
+- EAS Update uses the preview branch and matching build channels; runtime compatibility follows appVersion. Increment expo.version before publishing native dependency/configuration changes after a build exists.
+- `expo:update` publishes native preview updates; `expo:deploy` publishes the exported Expo web frontend to EAS Hosting. Neither submits an app store listing or creates a native build.
 
 ## Work Guidance
 
 - Run commands from the root or explicitly target `@school-connect/expo`.
 - Use root `expo:whoami`, `expo:init`, and `expo:info` commands for account operations.
+- Root `dev:mobile:go` explicitly targets Expo Go; `dev:mobile:client` targets an installed development build. Default Expo Metro uses port 8081, also used by Expo web.
 
 ## Verification
 

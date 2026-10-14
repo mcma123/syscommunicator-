@@ -15,10 +15,28 @@ const commands = {
   whoami: ["whoami"],
   init: ["init", "--force", "--non-interactive"],
   info: ["project:info"],
+  update: [
+    "update",
+    "--branch",
+    "preview",
+    "--message",
+    "WGJS parent frontend preview",
+    "--environment",
+    "preview",
+    "--non-interactive",
+  ],
+  deploy: [
+    "deploy",
+    "--dev-domain",
+    "wgjs-connect",
+    "--environment",
+    "preview",
+    "--non-interactive",
+  ],
 };
 const args = commands[process.argv[2]];
 if (!args) {
-  console.error("Usage: node scripts/expo-account.mjs whoami|init|info");
+  console.error("Usage: node scripts/expo-account.mjs whoami|init|info|update|deploy");
   process.exit(1);
 }
 

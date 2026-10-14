@@ -14,6 +14,7 @@
 - Never print access tokens or pass them as CLI arguments. Token authentication uses the child process environment only.
 - The account helper uses the pinned on-demand `eas-cli@24.13.0`, not a dependency installed inside the Expo app.
 - Only account commands load the root `.env`; app development/export commands do not need the private token.
+- Publishing commands `expo:update` and `expo:deploy` also use the account helper and load the private token only into the CLI process. Fixed arguments target the preview environment, native preview branch, and WGJS Expo web preview domain.
 - EAS init temporarily hides `app.config.ts` while updating static app.json, then restores it in a finally block. Stop development servers before re-linking and recover any leftover config backup after an interrupted process.
 - Asset preparation preserves `public/logo.png` and fits the crest without cropping; outputs stay in Expo assets.
 

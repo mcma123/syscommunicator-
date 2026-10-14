@@ -37,13 +37,15 @@ export default function RootLayout() {
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
+          headerShown: false,
+          animation: "none",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.primary,
           headerTitleStyle: { fontFamily: fonts.semibold },
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        <Stack.Screen name="index" options={{ title: "WGJS Connect" }} />
+        <Stack.Screen name="(tabs)" options={{ title: "WGJS Connect" }} />
       </Stack>
     </SchoolProvider>
   );

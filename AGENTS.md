@@ -79,7 +79,7 @@ Default section order:
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 
 - Use DOX for this repository and keep the instruction hierarchy and indexes current.
-- Preserve the current Open Sans font and module design while applying Wynberg Girls Junior School website colours and the user-supplied crest. Naming: Wynberg Girls Junior Connect (store/app name), WGJS Connect (phone label), Wynberg Girls Junior School (inside the app), Honor Before Honours (tagline).
+- Preserve the current Open Sans font and TanStack module design; use a light, premium banking-inspired layout for the Expo parent frontend while applying Wynberg Girls Junior School website colours and the user-supplied crest. Naming: Wynberg Girls Junior Connect (store/app name), WGJS Connect (phone label), Wynberg Girls Junior School (inside the app), Honor Before Honours (tagline).
 
 <!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
@@ -103,7 +103,7 @@ When the user requests a durable behavior change, record it here or in the relev
 - School Connect is a monorepo: the supported TanStack Start web app stays at the root, Expo Android/iOS/web is in `apps/expo`, the Convex scaffold is in `packages/backend`, and provider-independent domain code is in `packages/school-core`.
 - Root owns build and workspace configuration, dependency manifests and lockfiles, `.lovable/` metadata, `.gitignore`, `README.md`, `FRONTEND.md`, and `roadmap.md`.
 - `FRONTEND.md` records delivered modules, research sources, and prototype limitations; keep it aligned with meaningful scope changes. `roadmap.md` owns planned work.
-- No production backend, authentication, persistence, real email, or payment processing is provisioned. Expo provides a branded native home and named module placeholders; the full module workflows remain in the existing TanStack frontend.
+- No production backend, authentication, persistence, real email, or payment processing is provisioned. Expo provides interactive parent screens with local mock data; staff routes remain placeholders. The existing TanStack frontend retains its broader role workflows.
 - Keep generated and local output out of the DOX tree: `node_modules/`, `.git/`, `.output/`, `.tanstack/`, `.wrangler/`, and `.firecrawl/`. Research downloads in `.firecrawl/` are ignored; durable findings belong in the owning documentation.
 
 ## Root Work Guidance
@@ -115,7 +115,7 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Root Verification
 
 - Run existing checks relevant to code changes from the repository root: `npm test`, `npm run build`, `node node_modules/typescript/bin/tsc --noEmit`, and `npm run lint`.
-- Existing tests cover home-route matching and shared mock repository isolation/subscription/native cloning; do not describe them as full module or native device coverage.
+- Existing tests cover home-route matching, shared mock repository isolation/subscription/native cloning, and pure parent mobile filtering/validation/counters/privacy; do not describe them as native device coverage.
 - For Expo/backend changes, run `typecheck:expo`, `typecheck:backend`, `check:expo`, and `export:expo` root commands as relevant. Keep private `.env` files ignored and access tokens out of app configuration and bundles.
 - For documentation changes, check referenced local paths, child indexes, inherited contracts, and `git diff --check`.
 

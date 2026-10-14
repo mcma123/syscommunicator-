@@ -3,7 +3,7 @@
 ## Delivery and limits
 The root workspace remains the Lovable TanStack Start web app. `packages/school-core` contains provider-independent domain types, school configuration, fixtures and a repository contract. `apps/expo` adds an Expo SDK 57 / Expo Router client for Android, iOS, and Expo web. `packages/backend` prepares Convex with an empty initial schema and no provisioned deployment.
 
-The Expo scaffold has a branded native home screen, demo role switching, shared mock notices, a module directory, and named placeholders for every existing school module. Full native workflows have not been ported. Each running client has its own in-memory repository; live cross-client state requires a future backend adapter.
+The Expo parent frontend uses a premium light card layout with red/gold branding and five bottom tabs: Home, Updates, Calendar, Children, More. It includes child-scoped dashboard counts, published update search/read/acknowledgement, month/agenda and event details, learner profiles with read-only school records, simulated checkout with pending/failure/retry/receipts, validated consent with a saved response, resource sample previews, local enquiry threads/replies, and profile preferences. Staff modules remain unlinked placeholders. Each running client has its own in-memory repository; live cross-client state requires a future backend adapter.
 
 No backend, Clerk, Convex, real email or payment processing has been provisioned. Demo state is in memory and resets on refresh. Demo roles are not security. School branding is Wynberg Girls Junior School; contact information still awaits confirmation. Campus photo is generated, not the actual school, and learner/operational records remain fictional demo data.
 
@@ -23,7 +23,7 @@ Official d6 materials informed the module structure and workflows; this is not a
 - `schoolConfig` in `packages/school-core/src/index.ts` owns the branding labels. Route metadata and school screens consume it.
 - `public/logo.png` is the supplied school crest, used directly in the app, favicon, and Apple touch icon. `public/manifest.webmanifest` provides web app naming and theme metadata; no native store listing is provisioned here.
 
-## Routes and components
+## TanStack routes and components
 - `/`: parent home / staff overview, child filters, notices, events and actions.
 - `/messages`: search/category filters, notice details, acknowledged state, compose/preview/draft/review/publish/schedule and delivery distinctions.
 - `/calendar`: month/agenda, event detail, create event, calendar download.

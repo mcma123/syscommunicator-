@@ -1,6 +1,6 @@
 # Wynberg Girls Junior Connect
 
-A school communication monorepo for Wynberg Girls Junior School, inspired by d6 module workflows. The existing TanStack web app stays at the root; `apps/expo` provides an Android, iOS, and Expo web scaffold; `packages/backend` prepares a future Convex database; `packages/school-core` shares domain contracts and mock data. The apps use the school's red and gold colours, supplied crest, and the tagline **Honor Before Honours**, while retaining Open Sans.
+A school communication monorepo for Wynberg Girls Junior School, inspired by d6 module workflows. The existing TanStack web app stays at the root; `apps/expo` provides an Android, iOS, and Expo web parent frontend; `packages/backend` prepares a future Convex database; `packages/school-core` shares domain contracts and mock data. The apps use the school's red and gold colours, supplied crest, and the tagline **Honor Before Honours**, while retaining Open Sans.
 
 The full app/store name is **Wynberg Girls Junior Connect**, the phone icon label is **WGJS Connect**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. Native store submissions and live backend integration remain future work.
 
@@ -34,7 +34,9 @@ Run `npm run build` for a TanStack production build and `npm test` for routing a
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Existing TanStack web app, port 8080 |
-| `npm run dev:mobile` | Expo development server for Android/iOS |
+| `npm run dev:mobile` | Expo Metro, default client detection, port 8081 |
+| `npm run dev:mobile:go` | Metro explicitly for SDK-compatible Expo Go |
+| `npm run dev:mobile:client` | Metro explicitly for an installed development build |
 | `npm run dev:expo-web` | Expo web development server, port 8081 |
 | `npm run dev:backend` | Convex setup/development; provisions only when explicitly run and authenticated |
 | `npm run typecheck:web` | Existing web TypeScript check |
@@ -43,8 +45,10 @@ Run `npm run build` for a TanStack production build and `npm test` for routing a
 | `npm run check:expo` | Expo diagnostics |
 | `npm run export:expo` | Android, iOS, and web bundle export |
 | `npm run expo:whoami` / `expo:init` / `expo:info` | Authenticate, link, and inspect the Expo account project |
+| `npm run expo:update` | Publish a native update to the preview branch |
+| `npm run expo:deploy` | Deploy the exported Expo web frontend to EAS Hosting preview |
 
-Expo currently includes native home and module placeholders. Follow [the Expo workspace guide](apps/expo/README.md) to develop those screens and [the backend guide](packages/backend/README.md) when ready to provision Convex.
+Expo includes a premium parent frontend: five bottom tabs, updates, learner profiles, payments, consent, resources, enquiries, and profile preferences. Interactions use local demo data; staff routes remain placeholders. Follow [the Expo workspace guide](apps/expo/README.md) to develop those screens and [the backend guide](packages/backend/README.md) when ready to provision Convex.
 
 ## Local account credentials
 
@@ -55,3 +59,42 @@ No cloud build, store submission, or live Convex deployment is performed by inst
 ## AI agent instructions
 
 This repository uses the [DOX framework](https://github.com/agent0ai/dox). Start with [AGENTS.md](AGENTS.md), follow its Child DOX Index to the contracts governing the files you will edit, and update affected contracts and indexes before finishing. DOX requires no package or runtime installation.
+
+## Testing the apps locally
+
+From PowerShell, open the repository root:
+
+```powershell
+cd C:\Users\HP22\Desktop\school-connect-hub
+```
+
+Run `npm run dev` for the existing TanStack web app at http://localhost:8080.
+Run `npm run dev:expo-web` for the mobile parent frontend in a browser at
+http://localhost:8081. These are two different clients in the same monorepo.
+
+For phone testing, run `npm run dev:mobile:go` and scan the terminal QR code
+with an Expo Go version that supports SDK 57. Keep the phone and computer on
+the same Wi-Fi. The included development-client package makes default Metro
+prefer a development build; use the explicit Go command when using Expo Go.
+If Expo Go cannot run SDK 57, use an SDK-compatible development build with
+`npm run dev:mobile:client`. Publishing an update does not create that build.
+
+Metro shortcuts: `w` opens Expo web, `a` opens an available Android emulator,
+`r` reloads, and `s` switches between Expo Go and development-client targets.
+The iOS simulator requires macOS. Use Ctrl+C to stop a server.
+
+Expo native and Expo web both default to port 8081. To test both, run one Metro
+server and press `w`, or run a separate web server on another port:
+
+```powershell
+npm run web --workspace @school-connect/expo -- --port 8082
+```
+
+For a phone connection that cannot reach the local network, try:
+
+```powershell
+npm run start --workspace @school-connect/expo -- --go --tunnel
+```
+
+The CLI may ask to install its tunnel helper. The local frontend uses mock data;
+no backend server is needed. Reloading resets demo state.
