@@ -94,3 +94,9 @@ load the ignored root token only for account commands.
 
 See the root README for PowerShell dev-server commands, Expo Go versus development
 clients, QR testing, Metro shortcuts, and simultaneous web/mobile testing.
+
+## Published previews
+
+- [Expo web parent frontend](https://wgjs-connect--7krjaw189g.expo.app) � hosted testing preview.
+- [Native preview update](https://expo.dev/accounts/mcmarsh/projects/wynberg-girls-junior-connect/updates/b4845344-2719-44a7-a53c-2bc8cc906cad) � Android/iOS, preview branch/channel, runtime 1.0.0, source commit 1eed9c3.
+- No native APK/IPA has been built for this project yet. Published EAS updates require a compatible installed development or preview build; use the local Expo Go server only with an SDK-compatible Expo Go installation.

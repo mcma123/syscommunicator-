@@ -74,7 +74,8 @@ http://localhost:8081. These are two different clients in the same monorepo.
 
 For phone testing, run `npm run dev:mobile:go` and scan the terminal QR code
 with an Expo Go version that supports SDK 57. Keep the phone and computer on
-the same Wi-Fi. The included development-client package makes default Metro
+the same Wi-Fi. On a physical iPhone, sign in to Expo CLI and Expo Go using
+the same account (`npx expo login` from apps/expo if needed). The included development-client package makes default Metro
 prefer a development build; use the explicit Go command when using Expo Go.
 If Expo Go cannot run SDK 57, use an SDK-compatible development build with
 `npm run dev:mobile:client`. Publishing an update does not create that build.
@@ -98,3 +99,9 @@ npm run start --workspace @school-connect/expo -- --go --tunnel
 
 The CLI may ask to install its tunnel helper. The local frontend uses mock data;
 no backend server is needed. Reloading resets demo state.
+
+## Published previews
+
+- [Expo web parent frontend](https://wgjs-connect--7krjaw189g.expo.app) � hosted testing preview.
+- [Native preview update](https://expo.dev/accounts/mcmarsh/projects/wynberg-girls-junior-connect/updates/b4845344-2719-44a7-a53c-2bc8cc906cad) � Android/iOS, preview branch/channel, runtime 1.0.0, source commit 1eed9c3.
+- No native APK/IPA has been built for this project yet. Published EAS updates require a compatible installed development or preview build; use the local Expo Go server only with an SDK-compatible Expo Go installation.
