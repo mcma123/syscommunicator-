@@ -11,7 +11,18 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck:expo": "npm run typecheck --workspace @school-connect/expo",
+    "expo:init": "node scripts/expo-account.mjs init",
+    "check:expo": "npm run doctor --workspace @school-connect/expo",
+    "export:expo": "npm run export --workspace @school-connect/expo",
+    "dev:expo-web": "npm run web --workspace @school-connect/expo",
+    "expo:whoami": "node scripts/expo-account.mjs whoami",
+    "typecheck:web": "tsc --noEmit",
+    "dev:mobile": "npm run start --workspace @school-connect/expo",
+    "expo:info": "node scripts/expo-account.mjs info",
+    "typecheck:backend": "npm run typecheck --workspace @school-connect/backend",
+    "dev:backend": "npm run dev --workspace @school-connect/backend"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -56,9 +67,9 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.575.0",
-    "react": "^19.2.0",
+    "react": "19.2.3",
     "react-day-picker": "^9.14.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "19.2.3",
     "react-hook-form": "^7.71.2",
     "react-resizable-panels": "^4.6.5",
     "recharts": "^2.15.4",
@@ -94,6 +105,7 @@
     "vitest": "^4.1.10"
   },
   "workspaces": [
+    "apps/*",
     "packages/*"
   ]
 }

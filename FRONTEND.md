@@ -1,9 +1,11 @@
-# School Connect frontend inventory
+# Wynberg Girls Junior Connect frontend inventory
 
 ## Delivery and limits
-The root workspace is the TanStack Start web app. `packages/school-core` contains browser-safe domain types, school configuration, fixtures and a repository contract. Desktop and mobile web render the same routes, data and actions. This is not a separate native iOS/Android app: native frameworks are not supported in this environment. A future native client can consume the shared core and use the same Convex backend, integrated outside Lovable.
+The root workspace remains the Lovable TanStack Start web app. `packages/school-core` contains provider-independent domain types, school configuration, fixtures and a repository contract. `apps/expo` adds an Expo SDK 57 / Expo Router client for Android, iOS, and Expo web. `packages/backend` prepares Convex with an empty initial schema and no provisioned deployment.
 
-No backend, Clerk, Convex, real email or payment processing has been provisioned. Demo state is in memory and resets on refresh. Demo roles are not security. Final school identity and contact information await confirmation. Campus photo is generated, not the actual school.
+The Expo scaffold has a branded native home screen, demo role switching, shared mock notices, a module directory, and named placeholders for every existing school module. Full native workflows have not been ported. Each running client has its own in-memory repository; live cross-client state requires a future backend adapter.
+
+No backend, Clerk, Convex, real email or payment processing has been provisioned. Demo state is in memory and resets on refresh. Demo roles are not security. School branding is Wynberg Girls Junior School; contact information still awaits confirmation. Campus photo is generated, not the actual school, and learner/operational records remain fictional demo data.
 
 ## Research
 - https://help.d6.co.za/portal/en/kb/articles/d6-communicator-mobile-app-user-manual
@@ -12,7 +14,14 @@ No backend, Clerk, Convex, real email or payment processing has been provisioned
 - https://d6.co.za/parent-starter-pack-for-d6-communicator/
 - https://help.d6.co.za/portal/en/kb/articles/what-are-the-staff-roles-and-permissions-in-d6-communicator
 
-Official materials establish the blue Communicator redesign, personalised news, calendar, resources, learner information, payments and publishing roles. No authoritative exact native-app font or colour specification was found. The prototype uses a d6-inspired royal blue and Open Sans approximation, not a claimed pixel-identical clone; it does not use d6 logos.
+Official d6 materials informed the module structure and workflows; this is not a claimed pixel-identical clone and does not use d6 logos. The user-approved Open Sans font and module design are retained with Wynberg Girls Junior School branding.
+
+## School branding
+
+- Website source: https://wynberggirlsjunior.co.za/. Its custom styles use red `#C6252B`, gold `#FAB513`, dark red `#861D23`, and charcoal `#3C3C3C`. The app uses these with supporting light surfaces and readable status colours.
+- Store/app name: **Wynberg Girls Junior Connect**; phone icon label: **WGJS Connect**; inside the app: **Wynberg Girls Junior School**; tagline: **Honor Before Honours**.
+- `schoolConfig` in `packages/school-core/src/index.ts` owns the branding labels. Route metadata and school screens consume it.
+- `public/logo.png` is the supplied school crest, used directly in the app, favicon, and Apple touch icon. `public/manifest.webmanifest` provides web app naming and theme metadata; no native store listing is provisioned here.
 
 ## Routes and components
 - `/`: parent home / staff overview, child filters, notices, events and actions.
@@ -31,7 +40,7 @@ Official materials establish the blue Communicator redesign, personalised news, 
 `SchoolShell` provides desktop/sidebar and mobile/bottom navigation. `SchoolPortal` composes module screens. Shared detail components provide notice, event, consent and payment dialogs. `SchoolProvider` owns the repository and role/child context.
 
 ## Replacing mocks
-Implement `SchoolRepository` in a future Convex adapter. Map subscription/snapshot/update operations to typed backend queries and mutations. Add Clerk role/session checks on the real backend; never trust the prototype role selector. Put real messages, document storage, PDF previews, payment verification/webhooks and server audit records behind backend contracts.
+Implement `SchoolRepository` in a future adapter against `packages/backend`. Map subscription/snapshot/update operations to typed Convex queries and mutations. Provision Convex separately using `npm run dev:backend`, and implement production authentication/role checks; never trust either prototype role selector. Put real messages, document storage, PDF previews, payment verification/webhooks and server audit records behind backend contracts.
 
 ## Deferred scope
 Real PDF rendering/import parsing, rich-text/gallery/video blocks, custom audience group editing, granular class permissions, persistent scheduling, CSV import, live branding configuration, full accounting, native shop, elections, AI and custom modules are not implemented. Settings controls marked preview do not change school branding. Sample audit rows and delivery counts are not provider telemetry. No production parity or exact d6 equivalence is claimed.

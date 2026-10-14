@@ -1,4 +1,6 @@
 node_modules
+.firecrawl/
+.expo/
 dist
 .output
 .vinxi

@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "WGJS Connect",
+    "slug": "wynberg-girls-junior-connect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "wgjsconnect",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/logo.png",
+      "name": "Wynberg Girls Junior Connect",
+      "shortName": "WGJS Connect",
+      "themeColor": "#c6252b",
+      "backgroundColor": "#faf8f7"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/logo.png",
+          "imageWidth": 160
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "owner": "mcmarsh",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6cd3c02c-5a24-4596-84b0-7048bf2c7ea8"
+      }
+    }
+  }
+}

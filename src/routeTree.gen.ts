@@ -10,33 +10,258 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AttendanceRouteImport } from './routes/attendance'
+import { Route as AuditRouteImport } from './routes/audit'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as ChildrenRouteImport } from './routes/children'
+import { Route as ConductRouteImport } from './routes/conduct'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FormsRouteImport } from './routes/forms'
+import { Route as GroupsRouteImport } from './routes/groups'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as MoreRouteImport } from './routes/more'
+import { Route as PaymentsRouteImport } from './routes/payments'
+import { Route as PeopleRouteImport } from './routes/people'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SigninRouteImport } from './routes/signin'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AttendanceRoute = AttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditRoute = AuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChildrenRoute = ChildrenRouteImport.update({
+  id: '/children',
+  path: '/children',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConductRoute = ConductRouteImport.update({
+  id: '/conduct',
+  path: '/conduct',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormsRoute = FormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsRoute = GroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoreRoute = MoreRouteImport.update({
+  id: '/more',
+  path: '/more',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentsRoute = PaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PeopleRoute = PeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SigninRoute = SigninRouteImport.update({
+  id: '/signin',
+  path: '/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/attendance': typeof AttendanceRoute
+  '/audit': typeof AuditRoute
+  '/calendar': typeof CalendarRoute
+  '/children': typeof ChildrenRoute
+  '/conduct': typeof ConductRoute
+  '/contact': typeof ContactRoute
+  '/forms': typeof FormsRoute
+  '/groups': typeof GroupsRoute
+  '/messages': typeof MessagesRoute
+  '/more': typeof MoreRoute
+  '/payments': typeof PaymentsRoute
+  '/people': typeof PeopleRoute
+  '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
+  '/resources': typeof ResourcesRoute
+  '/settings': typeof SettingsRoute
+  '/signin': typeof SigninRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/attendance': typeof AttendanceRoute
+  '/audit': typeof AuditRoute
+  '/calendar': typeof CalendarRoute
+  '/children': typeof ChildrenRoute
+  '/conduct': typeof ConductRoute
+  '/contact': typeof ContactRoute
+  '/forms': typeof FormsRoute
+  '/groups': typeof GroupsRoute
+  '/messages': typeof MessagesRoute
+  '/more': typeof MoreRoute
+  '/payments': typeof PaymentsRoute
+  '/people': typeof PeopleRoute
+  '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
+  '/resources': typeof ResourcesRoute
+  '/settings': typeof SettingsRoute
+  '/signin': typeof SigninRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/attendance': typeof AttendanceRoute
+  '/audit': typeof AuditRoute
+  '/calendar': typeof CalendarRoute
+  '/children': typeof ChildrenRoute
+  '/conduct': typeof ConductRoute
+  '/contact': typeof ContactRoute
+  '/forms': typeof FormsRoute
+  '/groups': typeof GroupsRoute
+  '/messages': typeof MessagesRoute
+  '/more': typeof MoreRoute
+  '/payments': typeof PaymentsRoute
+  '/people': typeof PeopleRoute
+  '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
+  '/resources': typeof ResourcesRoute
+  '/settings': typeof SettingsRoute
+  '/signin': typeof SigninRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/attendance'
+    | '/audit'
+    | '/calendar'
+    | '/children'
+    | '/conduct'
+    | '/contact'
+    | '/forms'
+    | '/groups'
+    | '/messages'
+    | '/more'
+    | '/payments'
+    | '/people'
+    | '/profile'
+    | '/reports'
+    | '/resources'
+    | '/settings'
+    | '/signin'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/attendance'
+    | '/audit'
+    | '/calendar'
+    | '/children'
+    | '/conduct'
+    | '/contact'
+    | '/forms'
+    | '/groups'
+    | '/messages'
+    | '/more'
+    | '/payments'
+    | '/people'
+    | '/profile'
+    | '/reports'
+    | '/resources'
+    | '/settings'
+    | '/signin'
+  id:
+    | '__root__'
+    | '/'
+    | '/attendance'
+    | '/audit'
+    | '/calendar'
+    | '/children'
+    | '/conduct'
+    | '/contact'
+    | '/forms'
+    | '/groups'
+    | '/messages'
+    | '/more'
+    | '/payments'
+    | '/people'
+    | '/profile'
+    | '/reports'
+    | '/resources'
+    | '/settings'
+    | '/signin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AttendanceRoute: typeof AttendanceRoute
+  AuditRoute: typeof AuditRoute
+  CalendarRoute: typeof CalendarRoute
+  ChildrenRoute: typeof ChildrenRoute
+  ConductRoute: typeof ConductRoute
+  ContactRoute: typeof ContactRoute
+  FormsRoute: typeof FormsRoute
+  GroupsRoute: typeof GroupsRoute
+  MessagesRoute: typeof MessagesRoute
+  MoreRoute: typeof MoreRoute
+  PaymentsRoute: typeof PaymentsRoute
+  PeopleRoute: typeof PeopleRoute
+  ProfileRoute: typeof ProfileRoute
+  ReportsRoute: typeof ReportsRoute
+  ResourcesRoute: typeof ResourcesRoute
+  SettingsRoute: typeof SettingsRoute
+  SigninRoute: typeof SigninRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +273,147 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/attendance': {
+      id: '/attendance'
+      path: '/attendance'
+      fullPath: '/attendance'
+      preLoaderRoute: typeof AttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audit': {
+      id: '/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/children': {
+      id: '/children'
+      path: '/children'
+      fullPath: '/children'
+      preLoaderRoute: typeof ChildrenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conduct': {
+      id: '/conduct'
+      path: '/conduct'
+      fullPath: '/conduct'
+      preLoaderRoute: typeof ConductRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forms': {
+      id: '/forms'
+      path: '/forms'
+      fullPath: '/forms'
+      preLoaderRoute: typeof FormsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups': {
+      id: '/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof GroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/more': {
+      id: '/more'
+      path: '/more'
+      fullPath: '/more'
+      preLoaderRoute: typeof MoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payments': {
+      id: '/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof PaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/people': {
+      id: '/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof PeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AttendanceRoute: AttendanceRoute,
+  AuditRoute: AuditRoute,
+  CalendarRoute: CalendarRoute,
+  ChildrenRoute: ChildrenRoute,
+  ConductRoute: ConductRoute,
+  ContactRoute: ContactRoute,
+  FormsRoute: FormsRoute,
+  GroupsRoute: GroupsRoute,
+  MessagesRoute: MessagesRoute,
+  MoreRoute: MoreRoute,
+  PaymentsRoute: PaymentsRoute,
+  PeopleRoute: PeopleRoute,
+  ProfileRoute: ProfileRoute,
+  ReportsRoute: ReportsRoute,
+  ResourcesRoute: ResourcesRoute,
+  SettingsRoute: SettingsRoute,
+  SigninRoute: SigninRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

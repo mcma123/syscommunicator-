@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SchoolProvider } from "../features/school/store";
 import { Toaster } from "sonner";
+import { schoolConfig } from "../../packages/school-core/src";
 
 function NotFoundComponent() {
   return (
@@ -80,14 +81,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "School Connect | Your school, connected" },
-      { name: "description", content: "Your school community, notices and learner information in one place." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "School Connect" },
-      { property: "og:description", content: "Stay connected to your school community." },
+      { title: `${schoolConfig.name} | ${schoolConfig.subtitle}` },
+      { name: "description", content: `${schoolConfig.appName}: ${schoolConfig.subtitle}. School notices, events and learner information in one place.` },
+      { name: "application-name", content: schoolConfig.appName },
+      { name: "apple-mobile-web-app-title", content: schoolConfig.shortName },
+      { name: "theme-color", content: "#c6252b" },
+      { property: "og:title", content: schoolConfig.appName },
+      { property: "og:description", content: schoolConfig.subtitle },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;650;700;750;800&display=swap" },
@@ -95,7 +97,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: schoolConfig.logoUrl, type: "image/png" },
+      { rel: "apple-touch-icon", href: schoolConfig.logoUrl },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
   shellComponent: RootShell,

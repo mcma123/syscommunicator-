@@ -6,7 +6,7 @@ export interface SchoolEvent { id: string; title: string; day: number; month: st
 export interface Enquiry { id: string; subject: string; department: string; status: 'Open' | 'Assigned' | 'Resolved'; messages: { author: string; body: string }[] }
 export interface SchoolState { notices: Notice[]; consent: boolean; payment: 'Due' | 'Pending verification' | 'Paid' | 'Failed'; enquiries: Enquiry[]; events: SchoolEvent[]; notifications: boolean; reportReleased: boolean; attendance: Record<string, boolean>; conduct: { title: string; type: string; child: string }[]; resources: { title: string; category: string; size: string }[]; invited: string[] }
 export interface SchoolRepository { getSnapshot(): SchoolState; update(fn: (state: SchoolState) => SchoolState): void; subscribe(listener: () => void): () => void }
-export const schoolConfig = { name: 'School Connect', subtitle: 'Your school. Connected.', timezone: 'Africa/Johannesburg', currency: 'ZAR', term: 'Term 4, 2026', clothingStoreUrl: 'https://www.schoolandlife.com/' };
+export const schoolConfig = { name: 'Wynberg Girls Junior School', appName: 'Wynberg Girls Junior Connect', shortName: 'WGJS Connect', subtitle: 'Honor Before Honours', logoUrl: '/logo.png', websiteUrl: 'https://wynberggirlsjunior.co.za/', timezone: 'Africa/Johannesburg', currency: 'ZAR', term: 'Term 4, 2026', clothingStoreUrl: 'https://www.schoolandlife.com/' };
 export const children: Child[] = [ { id: 'emma', name: 'Emma Williams', grade: 'Grade 4', className: '4B', initials: 'EW', teacher: 'Ms Sarah Jacobs' }, { id: 'noah', name: 'Noah Williams', grade: 'Grade 1', className: '1A', initials: 'NW', teacher: 'Mrs Naledi Mokoena' } ];
 export const initialState: SchoolState = {
  notices: [
@@ -22,7 +22,9 @@ export const initialState: SchoolState = {
  resources:[{title:'Term 4 school newsletter',category:'Newsletters',size:'1.2 MB'},{title:'2026 school calendar',category:'School documents',size:'248 KB'},{title:'Grade 4 excursion information',category:'Academic',size:'560 KB'},{title:'School code of conduct',category:'School documents',size:'420 KB'}], invited:[]
 };
 export function createMockRepository(): SchoolRepository {
- let state: SchoolState = structuredClone(initialState); const listeners = new Set<() => void>();
+ // Fixtures contain only JSON-compatible data. This also works on Hermes,
+ // where structuredClone is not available in every React Native version.
+ let state: SchoolState = JSON.parse(JSON.stringify(initialState)) as SchoolState; const listeners = new Set<() => void>();
  return {getSnapshot:()=>state,update:fn=>{state=fn(state);listeners.forEach(listener=>listener());},subscribe:listener=>{listeners.add(listener);return()=>listeners.delete(listener);}};
 }
 export function visibleNotices(state: SchoolState, role: Role, child: string): Notice[] { return state.notices.filter(n => role !== 'Parent' || (n.status === 'Published' && (n.audience === 'Whole school' || child === 'all' || n.audience === children.find(c=>c.id===child)?.grade))); }
