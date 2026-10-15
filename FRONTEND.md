@@ -9,6 +9,8 @@ No backend, Clerk, Convex, real email or payment processing has been provisioned
 
 The root web build directly configures Vite/TanStack/React/Tailwind/Nitro and produces a standalone Node server. Scaffolding-service dependencies, injected editor scripts, project metadata and browser telemetry hooks are removed. School-only Open Graph and Twitter metadata include the supplied crest; share-image URLs use the request origin, with an optional build-time `VITE_SITE_URL` override.
 
+Dokploy deployment uses a repository-root multi-stage Dockerfile with Node 24/npm 11 and the standalone Nitro server on port 3000. Build contexts exclude private environments and generated/local output; the runtime image contains only the complete `.output`. Expo and the future Convex backend are separate deployment concerns.
+
 ## Research
 - https://help.d6.co.za/portal/en/kb/articles/d6-communicator-mobile-app-user-manual
 - https://d6.co.za/goodbye-grey-connect-app-hello-blue-communicator-app/
@@ -19,6 +21,8 @@ The root web build directly configures Vite/TanStack/React/Tailwind/Nitro and pr
 Official d6 materials informed the module structure and workflows; this is not a claimed pixel-identical clone and does not use d6 logos. The user-approved Open Sans font and module design are retained with Wynberg Girls Junior School branding.
 
 ## School branding
+
+- Startup loading uses the supplied school crest in the web session screen and native font-loading fallback; the native splash also retains the crest.
 
 - Website source: https://wynberggirlsjunior.co.za/. Its custom styles use red `#C6252B`, gold `#FAB513`, dark red `#861D23`, and charcoal `#3C3C3C`. The app uses these with supporting light surfaces and readable status colours.
 - Store/app name: **Wynberg Girls Junior Connect**; phone icon label: **WGJS Connect**; inside the app: **Wynberg Girls Junior School**; tagline: **Honor Before Honours**.

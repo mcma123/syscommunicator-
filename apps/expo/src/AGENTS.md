@@ -14,6 +14,7 @@
 - Use React Native primitives, not DOM elements or the existing web-only Radix components.
 - The Expo web-only `app/+html.tsx` document is the exception: it supplies HTML metadata and ScrollViewStyleReset and is not a native screen.
 - `_layout.tsx` loads local Open Sans fonts and mounts one SchoolProvider above all routes.
+- Show the supplied crest above the loading indicator while native fonts load; retain the crest in the configured native splash screen.
 - Five parent tabs live in `app/(tabs)/`: Home, Updates, Calendar, Children, More; their public URLs remain unchanged. Other parent modules and dynamic details use the root stack with animation disabled. Known fixture detail IDs are pre-rendered using generateStaticParams for Expo static web export. Route files delegate presentation to the school feature.
 - `+not-found.tsx` handles unknown module URLs. Native and web links use Expo Router.
 - Use the `@/` source alias and `@school-connect/core` workspace import.

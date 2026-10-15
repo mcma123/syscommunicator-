@@ -1,5 +1,6 @@
 import { Link, Navigate, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { schoolConfig } from "../../../packages/school-core/src";
 import { canAccessDemoModule } from "./demo-auth";
 import { useSchool } from "./store";
 
@@ -9,7 +10,20 @@ export function DemoSessionGate({ children }: { children: ReactNode }) {
   if (!sessionReady)
     return (
       <div className="demo-session-loading" role="status">
-        Opening WGJS Connect…
+        <div className="school-loading-crest">
+          <img
+            src={schoolConfig.logoUrl}
+            alt={`${schoolConfig.name} crest`}
+            width={112}
+            height={112}
+            fetchPriority="high"
+          />
+        </div>
+        <div className="school-loading-brand">
+          <strong>{schoolConfig.name}</strong>
+          <p>{schoolConfig.subtitle}</p>
+        </div>
+        <span className="school-loading-message">Opening {schoolConfig.shortName}…</span>
       </div>
     );
   if (pathname === "/signin") return account ? <Navigate to="/" replace /> : children;

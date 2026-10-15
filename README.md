@@ -33,6 +33,34 @@ The production Node server serves `.output/server/index.mjs` and static assets f
 
 Share-image URLs are absolute and use the current request origin automatically. Optionally set the public build-time variable `VITE_SITE_URL` to the canonical deployed web app origin (for example, `https://connect.your-school-domain.co.za`) before building to override it. It is separate from the school website and Expo frontend domains. Share metadata uses the school name, tagline, description and supplied crest. A fresh deployment is required to change previously hosted content; social services may retain cached previews.
 
+## Dokploy web hosting
+
+Use the root [Dockerfile](Dockerfile) to build the TanStack web app. The generated Nixpacks plan using Node 18/npm 9 and Caddy is incompatible with this app's Node runtime and server-rendered routes.
+
+In the Dokploy application, select:
+
+| Setting | Value |
+| --- | --- |
+| Repository branch | `main` |
+| Build type | **Dockerfile** |
+| Build path / Docker context | repository root (`.` or `/`, as labelled in Dokploy) |
+| Dockerfile path | `Dockerfile` |
+| Domain container port | `3000` |
+| HTTPS | Enable on the assigned domain |
+
+Remove any Caddy/static-site start command override, then deploy. The Dockerfile installs from the monorepo root using Node 24/npm 11, builds the web app and starts `node .output/server/index.mjs` as an unprivileged user. It does not start Expo, Convex or a separate database. Do not set `NODE_ENV=production` during dependency installation: the web build needs devDependencies.
+
+`HOST=0.0.0.0`, `PORT=3000` and runtime `NODE_ENV=production` are set in the image. No Expo token or backend credentials are required for this demo. Private `.env` files are excluded from Docker's build context. Optional public build argument `VITE_SITE_URL` can pin the canonical web origin; otherwise share metadata uses the incoming request origin.
+
+For local container testing with Docker installed:
+
+```sh
+docker build -t wgjs-web .
+docker run --rm -p 3000:3000 wgjs-web
+```
+
+Open `/signin` and `/logo.png` to verify the application and crest.
+
 ## Workspace commands
 
 | Command | Purpose |

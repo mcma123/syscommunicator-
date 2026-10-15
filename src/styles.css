@@ -4,6 +4,12 @@
 
 /* Public demo sign-in; scoped separately from the existing module layout. */
 .demo-session-loading { min-height: 100svh; display: flex; flex-direction: column; gap: 18px; align-items: center; justify-content: center; color: #861d23; background: #faf8f7; }
+.school-loading-crest { display: grid; place-items: center; width: 152px; height: 152px; border-radius: 32px; background: #fff; border: 1px solid #e8dede; box-shadow: 0 12px 36px #861d230a; }
+.school-loading-crest img { display: block; object-fit: contain; }
+.school-loading-brand { text-align: center; padding: 0 24px; max-width: 380px; }
+.school-loading-brand strong { display: block; font-size: 19px; font-weight: 700; line-height: 1.5; }
+.school-loading-brand p { margin-top: 6px; font-size: 12px; color: #6e6262; }
+.school-loading-message { margin-top: 8px; font-size: 12px; color: #6e6262; }
 .demo-login { min-height: 100svh; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); background: #fffdfb; color: #342d2d; }
 .demo-login-story { position: relative; overflow: hidden; background: #741c25; color: white; min-height: 100svh; }
 .demo-login-campus { position: absolute; height: 100%; width: 100%; object-fit: cover; object-position: 45% center; opacity: .32; }

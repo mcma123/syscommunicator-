@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { ActivityIndicator, Image, Platform, View } from "react-native";
 import {
   useFonts,
   OpenSans_400Regular,
@@ -29,6 +29,12 @@ export default function RootLayout() {
           justifyContent: "center",
         }}
       >
+        <Image
+          source={require("../../assets/logo.png")}
+          accessibilityLabel="Wynberg Girls Junior School crest"
+          style={{ width: 112, height: 112, marginBottom: 24 }}
+          resizeMode="contain"
+        />
         <ActivityIndicator color={colors.primary} accessibilityLabel="Loading school app" />
       </View>
     );

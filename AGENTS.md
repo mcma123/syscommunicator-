@@ -100,6 +100,7 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Root Work Guidance
 
 - `vite.config.ts` directly configures Vite, TanStack Start, React, Tailwind, native TypeScript path resolution, and build-only Nitro. Production output is a standalone Node server; `npm start` serves the build. Preserve the custom SSR entry and CSRF middleware.
+- Dokploy hosts the root web app using the root `Dockerfile` with repository-root build context. Build with Node 24/npm 11 and run Nitro on `0.0.0.0:3000`; do not deploy this server-rendered client through static-site Caddy detection. `.dockerignore` excludes private environments, local dependencies and generated output. Copy only the complete `.output` into the runtime image; no Expo or database process runs there.
 - Local setup is documented in `README.md`; use npm 11 with the single root `package-lock.json` for all workspaces. Do not add competing package-manager lockfiles; EAS uses the root lockfile to select npm.
 - DOX is Markdown only. Do not add a DOX package, dependency, or runtime.
 

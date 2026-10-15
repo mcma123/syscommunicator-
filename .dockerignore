@@ -1,0 +1,16 @@
+.git
+**/node_modules
+**/.env
+**/.env.*
+**/.dev.vars
+**/.expo
+**/dist
+**/.output
+.tanstack
+.wrangler
+.firecrawl
+.nitro
+.vinxi
+.vscode
+.idea
+*.log

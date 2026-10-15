@@ -27,6 +27,7 @@
 - School identity is Wynberg Girls Junior School; the app name is Wynberg Girls Junior Connect, the phone label is WGJS Connect, and the tagline is Honor Before Honours. Use `schoolConfig` for these labels and the supplied `/logo.png` crest.
 - Preserve the current Open Sans font and module design. Use the school's website red/gold palette through the global CSS tokens; do not restore the previous blue branding.
 - Campus imagery and learner/operational data remain generated or fictional demo content, not actual school records.
+- The startup/session loading screen must show the supplied school crest, school name, tagline, and an accessible loading status. Keep the crest uncropped and visible in server-rendered HTML while the session restores.
 
 ## Work Guidance
 
