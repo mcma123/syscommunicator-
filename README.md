@@ -34,8 +34,9 @@ Run `npm run build` for a TanStack production build and `npm test` for routing a
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Existing TanStack web app, port 8080 |
-| `npm run dev:mobile` | Expo Metro for Expo Go, port 8081 |
-| `npm run dev:mobile:go` | Metro explicitly for SDK-compatible Expo Go |
+| `npm run dev:mobile` | Expo Go tunnel with a direct scannable QR, port 8082 |
+| `npm run dev:mobile:go` / `dev:mobile:tunnel` | Same Expo Go tunnel workflow |
+| `npm run dev:mobile:lan` | Optional local-network Expo Go server, port 8081 |
 | `npm run dev:mobile:client` | Metro explicitly for an installed development build |
 | `npm run dev:expo-web` | Expo web development server, port 8081 |
 | `npm run dev:backend` | Convex setup/development; provisions only when explicitly run and authenticated |
@@ -49,6 +50,20 @@ Run `npm run build` for a TanStack production build and `npm test` for routing a
 | `npm run expo:deploy` | Deploy the exported Expo web frontend to EAS Hosting preview |
 
 Expo includes a premium parent frontend: five bottom tabs, updates, learner profiles, payments, consent, resources, enquiries, and profile preferences. Interactions use local demo data; staff routes remain placeholders. Follow [the Expo workspace guide](apps/expo/README.md) to develop those screens and [the backend guide](packages/backend/README.md) when ready to provision Convex.
+
+## Web demo login
+
+Run `npm run dev` and open http://localhost:8080/signin. Select a profile, click **Use these details**, then **Sign in to WGJS Connect**.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Parent | `parent@wgjs.example` | `ParentDemo!26` |
+| Teacher | `teacher@wgjs.example` | `TeacherDemo!26` |
+| Principal | `principal@wgjs.example` | `PrincipalDemo!26` |
+| Finance | `finance@wgjs.example` | `FinanceDemo!26` |
+| Administrator | `admin@wgjs.example` | `AdminDemo!26` |
+
+These fictional accounts apply to the root TanStack web app. Sign out using the header button or Profile to switch accounts. The account ID is stored in sessionStorage for this browser tab; passwords are never stored there. Account identity survives refresh, but mock school changes reset on reload. Staff accounts use the existing staff module previews; granular staff permissions are not implemented. Parents cannot open staff-only module previews through the demo UI. This is frontend demonstration access, not production authentication or server-side authorization. Expo remains the separate parent frontend.
 
 ## Local account credentials
 
@@ -72,9 +87,10 @@ Run `npm run dev` for the existing TanStack web app at http://localhost:8080.
 Run `npm run dev:expo-web` for the mobile parent frontend in a browser at
 http://localhost:8081. These are two different clients in the same monorepo.
 
-For phone testing, run `npm run dev:mobile:go` and scan the terminal QR code
-with an Expo Go version that supports SDK 57. Keep the phone and computer on
-the same Wi-Fi. On a physical iPhone, sign in to Expo CLI and Expo Go using
+For phone testing, run `npm run dev:mobile` and scan the QR in that terminal
+using Expo Go's scanner with an Expo Go version that supports SDK 57. The QR
+opens the direct exp:// internet tunnel, so manual URL entry is unnecessary.
+Keep the computer and Metro running. On a physical iPhone, sign in to Expo CLI and Expo Go using
 the same account (`npx expo login` from apps/expo if needed). The normal mobile
 and Expo web commands explicitly target Expo Go, even with the development-client
 package installed.
@@ -85,21 +101,36 @@ Metro shortcuts: `w` opens Expo web, `a` opens an available Android emulator,
 `r` reloads, and `s` switches between Expo Go and development-client targets.
 The iOS simulator requires macOS. Use Ctrl+C to stop a server.
 
-Expo native and Expo web both default to port 8081. To test both, run one Metro
-server and press `w`, or run a separate web server on another port:
+Expo mobile uses the tunnel on 8082; Expo web uses 8081. You can run both in
+separate terminals, or press `w` in the mobile terminal to open Expo web there.
+For the separate browser preview, use:
 
 ```powershell
-npm run web --workspace @school-connect/expo -- --port 8082
+npm run dev:expo-web
 ```
 
 For a phone connection that cannot reach the local network, try:
 
 ```powershell
-npm run start --workspace @school-connect/expo -- --go --tunnel
+npm run dev:mobile:tunnel
 ```
 
-The CLI may ask to install its tunnel helper. The local frontend uses mock data;
-no backend server is needed. Reloading resets demo state.
+The tunnel helper is installed with the Expo workspace. The normal mobile command
+already uses this workflow; `dev:mobile:tunnel` is an alias. This command uses port
+8082 so the browser preview on 8081 can keep running. Keep the terminal open and
+scan its new QR code, or enter its exp:// tunnel URL in Expo Go. Do not enter
+localhost or the production website URL in Expo Go. Tunnel addresses can change
+between sessions and old QR codes stop working when Metro stops.
+
+On LAN, the phone and computer must share a network that allows device-to-device
+connections. Windows Public networks, guest Wi-Fi isolation, VPNs, or the wrong
+virtual network adapter can prevent access even when the desktop preview works.
+The tunnel bypasses LAN access without disabling the firewall. If you prefer LAN
+on a network that allows it, use `npm run dev:mobile:lan` and keep both devices
+on that same network. Scan the QR from the mobile terminal when using a tunnel;
+the separate browser-only terminal can still show a local-network QR.
+
+The local frontend uses mock data; no backend server is needed. Reloading resets demo state.
 
 ## Production release
 

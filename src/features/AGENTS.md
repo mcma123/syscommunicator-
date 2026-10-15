@@ -24,4 +24,4 @@
 
 ## Child DOX Index
 
-- [school/AGENTS.md](school/AGENTS.md): school screens, responsive navigation, dialogs, and shared demo state.
+- [school/AGENTS.md](school/AGENTS.md): school screens, responsive navigation, dialogs, web demo login/session handling, and shared demo state.

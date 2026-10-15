@@ -1,6 +1,87 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+
+/* Public demo sign-in; scoped separately from the existing module layout. */
+.demo-session-loading { min-height: 100svh; display: flex; flex-direction: column; gap: 18px; align-items: center; justify-content: center; color: #861d23; background: #faf8f7; }
+.demo-login { min-height: 100svh; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); background: #fffdfb; color: #342d2d; }
+.demo-login-story { position: relative; overflow: hidden; background: #741c25; color: white; min-height: 100svh; }
+.demo-login-campus { position: absolute; height: 100%; width: 100%; object-fit: cover; object-position: 45% center; opacity: .32; }
+.demo-login-story::after { content: ""; position: absolute; inset: 0; background: linear-gradient(165deg, #530d1880, #67101dad 55%, #661423); }
+.demo-login-story-inner { position: relative; z-index: 1; min-height: 100svh; display: flex; flex-direction: column; padding: 45px clamp(30px,4.5vw,76px) 30px; }
+.demo-login-brand { display: flex; gap: 15px; align-items: center; text-decoration: none; color: white; font-size: 15px; font-weight: 700; max-width: 350px; }
+.demo-login-brand small { display: block; color: #edd8d7; font-size: 11px; font-weight: 400; margin-top: 5px; }
+.demo-login-crest { background: #fff; border-radius: 16px; width: 62px; height: 68px; padding: 8px; flex: 0 0 auto; }
+.demo-login-crest img { width: 100%; height: 100%; object-fit: contain; }
+.demo-login-story-copy { margin: auto 0; padding: 70px 0; max-width: 510px; }
+.demo-login-eyebrow { display: flex; align-items: center; gap: 10px; letter-spacing: 2px; font-size: 10px; font-weight: 700; color: #f7dfad; }
+.demo-login-eyebrow > span { width: 23px; height: 2px; background: #fab513; }
+.demo-login-story h1 { font-size: clamp(35px,3.6vw,59px); font-weight: 650; line-height: 1.2; letter-spacing: -2px; margin: 26px 0; }
+.demo-login-story h1 em { color: #ffd073; font-style: normal; }
+.demo-login-story-copy > p { font-size: 14px; line-height: 1.9; color: #efdedf; max-width: 360px; }
+.demo-login-community { display: flex; gap: 13px; align-items: center; margin-top: 42px; }
+.demo-login-community > span { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #ffffff33; border-radius: 14px; background: #ffffff0d; color: #ffd073; }
+.demo-login-community strong { font-size: 12px; font-weight: 600; }
+.demo-login-community small { display: block; font-size: 11px; margin-top: 5px; color: #e6cacc; }
+.demo-login-story-footer { border-top: 1px solid #ffffff24; padding-top: 22px; display: flex; justify-content: space-between; gap: 12px; color: #ebcdd0; font-size: 10px; }
+.demo-login-story-footer > span:last-child { display: flex; align-items: center; gap: 9px; }
+.demo-login-panel { display: flex; align-items: center; justify-content: center; padding: 46px clamp(24px,4vw,70px) 25px; }
+.demo-login-form-wrap { width: 100%; max-width: 428px; }
+.demo-login-demo-badge { display: inline-flex; gap: 7px; align-items: center; padding: 7px 10px; border: 1px solid #e8ded8; border-radius: 7px; font-size: 9px; font-weight: 700; color: #7f6255; letter-spacing: 1.3px; background: #fbf7f1; }
+.demo-login-demo-badge > span { width: 5px; height: 5px; border-radius: 50%; background: #b18735; }
+.demo-login h2 { font-size: 34px; line-height: 1.2; letter-spacing: -1.2px; font-weight: 700; margin: 22px 0 12px; }
+.demo-login h2 > span { color: #c6252b; }
+.demo-login-intro { font-size: 13px; line-height: 1.85; color: #817676; }
+.demo-login-roles { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 7px; margin: 26px 0; }
+.demo-login-roles > button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; height: 70px; border: 1px solid #e8e1df; border-radius: 11px; background: #fff; color: #807575; font-size: 10px; cursor: pointer; transition: background .15s,border-color .15s; }
+.demo-login-roles > button:hover { background: #faf4f3; }
+.demo-login-roles > button[aria-pressed=true] { color: #a61f28; background: #fcf0ef; border-color: #c6252b; font-weight: 700; }
+.demo-login-role-check { position: absolute; right: 5px; top: 5px; }
+.demo-login-form > label { display: block; font-size: 11px; font-weight: 650; margin: 17px 0 8px; }
+.demo-login-input { display: flex; align-items: center; gap: 11px; padding: 0 14px; border: 1px solid #e4ddda; border-radius: 10px; height: 49px; color: #a39690; background: white; }
+.demo-login-input:focus-within { border-color: #b92830; box-shadow: 0 0 0 3px #c6252b0d; }
+.demo-login-input input { min-width: 0; flex: 1; background: transparent; color: #342d2d; outline: none; border: 0; font-family: inherit; font-size: 12px; height: 100%; }
+.demo-login-input input::placeholder { color: #a79c97; }
+.demo-login-input button { background: transparent; border: 0; color: #94857e; padding: 6px; cursor: pointer; }
+.demo-login-submit { display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; border: 0; border-radius: 10px; background: #bb252e; color: white; padding: 16px 10px; font-size: 12px; font-weight: 650; margin-top: 23px; box-shadow: 0 7px 16px #b6232a18; cursor: pointer; transition: background .15s; }
+.demo-login-submit:hover { background: #971d26; }
+.demo-login button:focus-visible, .demo-login a:focus-visible { outline: 3px solid #b88a2e; outline-offset: 3px; }
+.demo-login-credentials { border: 1px solid #eaded0; background: #fcf8f2; border-radius: 12px; margin-top: 26px; padding: 17px 18px 12px; }
+.demo-login-credentials-heading { display: flex; gap: 11px; align-items: flex-start; }
+.demo-login-credentials-icon { color: #a37924; padding-top: 2px; }
+.demo-login-credentials-heading strong { font-size: 11px; font-weight: 650; }
+.demo-login-credentials-heading p { font-size: 10px; color: #8d7d69; margin: 4px 0 0; line-height: 1.6; }
+.demo-login-credentials dl { margin: 14px 0 10px; font-size: 11px; }
+.demo-login-credentials dl > div { display: grid; grid-template-columns: 68px minmax(0,1fr); gap: 9px; margin-top: 6px; }
+.demo-login-credentials dt { color: #8c7b6c; }
+.demo-login-credentials dd { color: #59483e; font-weight: 600; overflow-wrap: anywhere; }
+.demo-login-credentials > button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 11px 0 2px; border: 0; border-top: 1px solid #eaded0; background: none; color: #9c4a2b; font-size: 11px; font-weight: 650; cursor: pointer; }
+.demo-login-disclaimer { display: flex; align-items: flex-start; justify-content: center; gap: 6px; color: #8f8580; font-size: 9px; line-height: 1.6; margin: 18px 0 0; }
+.demo-login-disclaimer svg { flex-shrink: 0; }
+.demo-login-error { font-size: 11px; line-height: 1.7; color: #a51e29; background: #fceeee; border-radius: 8px; padding: 10px 12px; margin-top: 14px; }
+.demo-login-footer { text-align: center; color: #988c86; font-size: 9px; margin-top: 35px; }
+.demo-login-footer > span { display: block; margin-top: 5px; color: #ae9b89; font-size: 9px; }
+.demo-login-mobile-brand { display: none; }
+.demo-account-role { background: #f9eeed; border: 1px solid #eed6d5; padding: 6px 9px; border-radius: 20px; color: #a3252d; font-size: 10px; white-space: nowrap; }
+@media (max-width: 900px) {
+  .demo-login { grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); }
+  .demo-login-story-inner { padding-left: 28px; padding-right: 28px; }
+  .demo-login-brand { font-size: 12px; }
+  .demo-login-story h1 { font-size: 37px; }
+  .demo-login-story-footer { flex-direction: column; }
+  .demo-login-panel { padding-left: 26px; padding-right: 26px; }
+}
+@media (max-width: 680px) {
+  .demo-login { display: block; }
+  .demo-login-story { display: none; }
+  .demo-login-panel { min-height: 100svh; padding: 28px 23px; align-items: flex-start; }
+  .demo-login-mobile-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; color: #861d23; font-size: 14px; }
+  .demo-login-mobile-brand img { width: 35px; height: 38px; object-fit: contain; }
+  .demo-login h2 { font-size: 32px; }
+  .demo-login-roles { gap: 5px; }
+  .demo-login-roles > button { font-size: 9px; }
+  .demo-account-role { display: none; }
+}
 @custom-variant dark (&:is(.dark *));
 @theme inline {
  --font-sans: 'Open Sans', Arial, sans-serif;

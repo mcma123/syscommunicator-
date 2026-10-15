@@ -8,7 +8,8 @@ a separate lockfile in this workspace.
 
 ## Develop
 
-- `npm run dev:mobile` from the root starts Metro explicitly for Expo Go.
+- `npm run dev:mobile` from the root starts the Expo Go tunnel on 8082 and prints a direct exp:// QR. `dev:mobile:go` and `dev:mobile:tunnel` are aliases. Scan the QR from this mobile terminal using Expo Go's scanner.
+- `npm run dev:mobile:lan` explicitly selects a local-network connection on 8081.
 - `npm run dev:expo-web` starts Expo web on port 8081.
 - `npm run android --workspace @school-connect/expo` opens an available Android
   emulator. Android Studio/device setup is separate from this repository.
@@ -65,7 +66,16 @@ by this scaffold.
 
 ## Native compatibility
 
-Native compatibility: declare Reanimated 4.5.1 and Worklets 0.10.1 directly for
+If Expo Go says "Failed to download remote update", first verify that Metro is
+running and the phone can reach its manifest/bundle URL. This download-stage
+error does not identify a JavaScript exception. From the root, run
+`npm run dev:mobile:tunnel` to use an internet tunnel on port 8082. The local
+@expo/ngrok development dependency supplies the tunnel helper. Keep Metro open
+and scan the new terminal QR code or enter its exp:// tunnel URL in Expo Go.
+The browser production URL is not an Expo Go launch URL. Desktop-only localhost
+URLs cannot be reached as the computer from a phone. Tunnel URLs are temporary.
+
+Declare Reanimated 4.5.1 and Worklets 0.10.1 directly for
 SDK 57. Optional peer resolution previously selected incompatible 4.2.2/0.7.4
 packages. Check installed versions with npm ls as well as Expo diagnostics.
 Use the latest SDK 57 Expo Go on the phone; the early animation crash was fixed

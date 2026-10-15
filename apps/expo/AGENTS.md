@@ -27,7 +27,8 @@
 
 - Run commands from the root or explicitly target `@school-connect/expo`.
 - Use root `expo:whoami`, `expo:init`, and `expo:info` commands for account operations.
-- Root `dev:mobile` and `dev:mobile:go`, and workspace web/android/ios commands, explicitly target Expo Go. `dev:mobile:client` targets an installed development build. Default Expo Metro uses port 8081, also used by Expo web.
+- Root `dev:mobile`, `dev:mobile:go`, and `dev:mobile:tunnel` use scripts/expo-go.mjs: Expo Go tunnel on port 8082 with a direct exp:// QR and no runtime chooser. Pass --clear after -- when cache clearing is needed. `dev:mobile:lan` explicitly selects LAN on 8081; `dev:mobile:client` targets an installed development build. Expo web uses 8081.
+- The Expo workspace declares @expo/ngrok as a development dependency so setup does not require a global install. Tunnel URLs are temporary; keep Metro running and scan the QR from the mobile terminal. The separate web terminal can still show a LAN QR.
 
 ## Verification
 

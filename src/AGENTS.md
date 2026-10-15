@@ -26,7 +26,7 @@
 ## Verification
 
 - From the root, run `npm run build` for runtime/style changes and `node node_modules/typescript/bin/tsc --noEmit` for type changes.
-- `npm test` checks home-route matching and shared mock repository behavior; it does not verify responsive layouts or all modules.
+- `npm test` checks web demo sessions/credentials, home-route matching and shared mock repository behavior; it does not verify responsive layouts or all modules.
 
 ## Child DOX Index
 
@@ -34,5 +34,5 @@
 - [features/AGENTS.md](features/AGENTS.md): frontend feature boundaries.
 - [components/AGENTS.md](components/AGENTS.md): shared presentation components.
 - [lib/AGENTS.md](lib/AGENTS.md): utilities, SSR error capture, and Lovable reporting.
-- [test/AGENTS.md](test/AGENTS.md): test setup, routing/repository checks, and pure Expo parent model checks.
+- [test/AGENTS.md](test/AGENTS.md): test setup, demo login/session checks, routing/repository checks, and pure Expo parent model checks.
 - [assets/AGENTS.md](assets/AGENTS.md): bundled visual assets and their provenance.

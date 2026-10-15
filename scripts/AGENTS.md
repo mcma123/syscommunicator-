@@ -2,11 +2,12 @@
 
 ## Purpose
 
-- Own local workspace setup and Expo account command helpers.
+- Own local workspace setup, phone development launchers, and Expo account command helpers.
 
 ## Ownership
 
 - `expo-account.mjs` loads the ignored root environment for EAS commands.
+- `expo-go.mjs` starts phone testing through a direct Expo Go tunnel on port 8082. It inherits the terminal for QR rendering, disables Expo's runtime chooser with EXPO_NO_REDIRECT_PAGE, forwards extra CLI arguments, and never loads the private account environment file.
 - `prepare-expo-assets.ps1` creates padded native icon canvases from the original crest on Windows.
 
 ## Local Contracts
@@ -26,6 +27,7 @@
 
 - `npm run expo:whoami` validates token authentication; `npm run expo:info` validates the linked project.
 - Check that `.env` is ignored and exported public configuration contains no token.
+- Verify `dev:mobile` displays a terminal QR whose decoded payload is the direct exp:// tunnel URL, and that the public Android manifest/bundle can be downloaded.
 
 ## Child DOX Index
 

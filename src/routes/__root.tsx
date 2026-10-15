@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SchoolProvider } from "../features/school/store";
+import { DemoSessionGate } from "../features/school/demo-session-gate";
 import { Toaster } from "sonner";
 import { schoolConfig } from "../../packages/school-core/src";
 
@@ -82,7 +83,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: `${schoolConfig.name} | ${schoolConfig.subtitle}` },
-      { name: "description", content: `${schoolConfig.appName}: ${schoolConfig.subtitle}. School notices, events and learner information in one place.` },
+      {
+        name: "description",
+        content: `${schoolConfig.appName}: ${schoolConfig.subtitle}. School notices, events and learner information in one place.`,
+      },
       { name: "application-name", content: schoolConfig.appName },
       { name: "apple-mobile-web-app-title", content: schoolConfig.shortName },
       { name: "theme-color", content: "#c6252b" },
@@ -92,7 +96,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;650;700;750;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;650;700;750;800&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -128,7 +135,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <SchoolProvider><Outlet /><Toaster position="top-right" richColors /></SchoolProvider>
+      <SchoolProvider>
+        <DemoSessionGate>
+          <Outlet />
+        </DemoSessionGate>
+        <Toaster position="top-right" richColors />
+      </SchoolProvider>
     </QueryClientProvider>
   );
 }

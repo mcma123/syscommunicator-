@@ -115,7 +115,7 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Root Verification
 
 - Run existing checks relevant to code changes from the repository root: `npm test`, `npm run build`, `node node_modules/typescript/bin/tsc --noEmit`, and `npm run lint`.
-- Existing tests cover home-route matching, shared mock repository isolation/subscription/native cloning, and pure parent mobile filtering/validation/counters/privacy; do not describe them as native device coverage.
+- Existing tests cover web demo credentials/session lifecycle/parent module visibility, home-route matching, shared mock repository isolation/subscription/native cloning, and pure parent mobile filtering/validation/counters/privacy; do not describe them as native device coverage.
 - For Expo/backend changes, run `typecheck:expo`, `typecheck:backend`, `check:expo`, and `export:expo` root commands as relevant. Keep private `.env` files ignored and access tokens out of app configuration and bundles.
 - For documentation changes, check referenced local paths, child indexes, inherited contracts, and `git diff --check`.
 
@@ -129,4 +129,4 @@ When the user requests a durable behavior change, record it here or in the relev
 - [packages/AGENTS.md](packages/AGENTS.md): reusable workspace packages and the school core.
 - [public/AGENTS.md](public/AGENTS.md): static files served directly by the web app.
 - [apps/AGENTS.md](apps/AGENTS.md): additional client workspaces, including Expo for Android/iOS/web.
-- [scripts/AGENTS.md](scripts/AGENTS.md): Expo account helpers and native asset preparation.
+- [scripts/AGENTS.md](scripts/AGENTS.md): Expo account helpers, phone/QR development launcher, and native asset preparation.

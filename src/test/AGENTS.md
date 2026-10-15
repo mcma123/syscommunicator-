@@ -6,6 +6,7 @@
 
 ## Ownership
 
+- `demo-auth.test.tsx` checks five demo accounts, invalid credentials, parent/staff module visibility, optional tab session storage, sign-out, and repository continuity across account switches.
 - `setup.ts` provides jest-dom matchers and the matchMedia mock.
 - `app-routing.test.tsx` checks that `/` matches a page rather than only the root route.
 - `school-repository.test.ts` checks shared-core mock behavior including native-safe cloning, nested fixture isolation, snapshot identity, subscriptions, and unsubscribe.

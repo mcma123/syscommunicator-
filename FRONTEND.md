@@ -33,14 +33,15 @@ Official d6 materials informed the module structure and workflows; this is not a
 - `/forms`: excursion consent and staff response overview.
 - `/contact`: departmental enquiries, threads, reply, assign and resolve.
 - `/more`: mobile module directory and external clothing-store link.
-- `/profile`, `/signin`: profile, notifications, offline/error/retry demos and invitation mock.
+- `/signin`: branded public demo login with distinct Parent, Teacher, Principal, Finance and Administrator credentials, validation and credential autofill. All other module routes require a demo session.
+- `/profile`: current demo identity, notifications, offline/error/retry demos and sign-out.
 - `/groups`, `/attendance`, `/conduct`, `/reports`: staff learner operations.
 - `/people`, `/settings`, `/audit`: demo invitations, feature flags, settings preview and sample audit list.
 
-`SchoolShell` provides desktop/sidebar and mobile/bottom navigation. `SchoolPortal` composes module screens. Shared detail components provide notice, event, consent and payment dialogs. `SchoolProvider` owns the repository and role/child context.
+`SchoolShell` provides desktop/sidebar and mobile/bottom navigation. `SchoolPortal` composes module screens. Shared detail components provide notice, event, consent and payment dialogs. `SchoolProvider` owns the repository, demo session and role/child context. The header shows the signed-in identity and sign-out control; role changes require signing in with another demo account. The account ID survives refresh in sessionStorage, while repository data remains in memory. Parent sessions cannot open staff-only module previews; staff roles retain the existing shared staff workspace without granular staff permissions.
 
 ## Replacing mocks
-Implement `SchoolRepository` in a future adapter against `packages/backend`. Map subscription/snapshot/update operations to typed Convex queries and mutations. Provision Convex separately using `npm run dev:backend`, and implement production authentication/role checks; never trust either prototype role selector. Put real messages, document storage, PDF previews, payment verification/webhooks and server audit records behind backend contracts.
+Implement `SchoolRepository` in a future adapter against `packages/backend`. Map subscription/snapshot/update operations to typed Convex queries and mutations. Provision Convex separately using `npm run dev:backend`, and implement production authentication/role checks; never trust frontend demo credentials or session state. Put real messages, document storage, PDF previews, payment verification/webhooks and server audit records behind backend contracts.
 
 ## Deferred scope
 Real PDF rendering/import parsing, rich-text/gallery/video blocks, custom audience group editing, granular class permissions, persistent scheduling, CSV import, live branding configuration, full accounting, native shop, elections, AI and custom modules are not implemented. Settings controls marked preview do not change school branding. Sample audit rows and delivery counts are not provider telemetry. No production parity or exact d6 equivalence is claimed.
