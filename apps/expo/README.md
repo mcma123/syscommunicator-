@@ -8,7 +8,7 @@ a separate lockfile in this workspace.
 
 ## Develop
 
-- `npm run dev:mobile` from the root starts Metro for native development.
+- `npm run dev:mobile` from the root starts Metro explicitly for Expo Go.
 - `npm run dev:expo-web` starts Expo web on port 8081.
 - `npm run android --workspace @school-connect/expo` opens an available Android
   emulator. Android Studio/device setup is separate from this repository.
@@ -62,6 +62,22 @@ Linked project: [@mcmarsh/wynberg-girls-junior-connect](https://expo.dev/account
 Before the first native build, configure the intended iOS bundle identifier and
 Android package name; no store identifiers or store submissions are configured
 by this scaffold.
+
+## Native compatibility
+
+Native compatibility: declare Reanimated 4.5.1 and Worklets 0.10.1 directly for
+SDK 57. Optional peer resolution previously selected incompatible 4.2.2/0.7.4
+packages. Check installed versions with npm ls as well as Expo diagnostics.
+Use the latest SDK 57 Expo Go on the phone; the early animation crash was fixed
+in Android 57.0.3 / iOS 57.0.6 ([upstream issue](https://github.com/expo/expo/issues/48390)).
+After dependency changes, stop Metro and restart from the root:
+
+```powershell
+npm run start --workspace @school-connect/expo -- --go --clear
+```
+
+App/runtime version 1.0.1 separates the corrected native dependency set from the
+previously published 1.0.0 preview. Rescan the new terminal QR code for local testing.
 
 ## Future backend
 

@@ -34,7 +34,7 @@ Run `npm run build` for a TanStack production build and `npm test` for routing a
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Existing TanStack web app, port 8080 |
-| `npm run dev:mobile` | Expo Metro, default client detection, port 8081 |
+| `npm run dev:mobile` | Expo Metro for Expo Go, port 8081 |
 | `npm run dev:mobile:go` | Metro explicitly for SDK-compatible Expo Go |
 | `npm run dev:mobile:client` | Metro explicitly for an installed development build |
 | `npm run dev:expo-web` | Expo web development server, port 8081 |
@@ -75,8 +75,9 @@ http://localhost:8081. These are two different clients in the same monorepo.
 For phone testing, run `npm run dev:mobile:go` and scan the terminal QR code
 with an Expo Go version that supports SDK 57. Keep the phone and computer on
 the same Wi-Fi. On a physical iPhone, sign in to Expo CLI and Expo Go using
-the same account (`npx expo login` from apps/expo if needed). The included development-client package makes default Metro
-prefer a development build; use the explicit Go command when using Expo Go.
+the same account (`npx expo login` from apps/expo if needed). The normal mobile
+and Expo web commands explicitly target Expo Go, even with the development-client
+package installed.
 If Expo Go cannot run SDK 57, use an SDK-compatible development build with
 `npm run dev:mobile:client`. Publishing an update does not create that build.
 

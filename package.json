@@ -19,7 +19,7 @@
     "dev:expo-web": "npm run web --workspace @school-connect/expo",
     "expo:whoami": "node scripts/expo-account.mjs whoami",
     "typecheck:web": "tsc --noEmit",
-    "dev:mobile": "npm run start --workspace @school-connect/expo",
+    "dev:mobile": "npm run start --workspace @school-connect/expo -- --go",
     "dev:mobile:go": "npm run start --workspace @school-connect/expo -- --go",
     "dev:mobile:client": "npm run start --workspace @school-connect/expo -- --dev-client",
     "expo:info": "node scripts/expo-account.mjs info",
