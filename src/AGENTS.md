@@ -33,6 +33,6 @@
 - [routes/AGENTS.md](routes/AGENTS.md): root layout, leaf routes, and route conventions.
 - [features/AGENTS.md](features/AGENTS.md): frontend feature boundaries.
 - [components/AGENTS.md](components/AGENTS.md): shared presentation components.
-- [lib/AGENTS.md](lib/AGENTS.md): utilities, SSR error capture, and Lovable reporting.
+- [lib/AGENTS.md](lib/AGENTS.md): utilities, school share metadata, and local SSR error capture.
 - [test/AGENTS.md](test/AGENTS.md): test setup, demo login/session checks, routing/repository checks, and pure Expo parent model checks.
 - [assets/AGENTS.md](assets/AGENTS.md): bundled visual assets and their provenance.

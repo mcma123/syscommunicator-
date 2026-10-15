@@ -16,6 +16,7 @@
 - Leaf routes bind `createFileRoute` paths to the matching `SchoolPortal` module. Named modules must retain direct links.
 - Keep error/not-found boundaries and the root head metadata compatible with the application shell.
 - Use `schoolConfig` for school names in page metadata. Root head links `/logo.png` as the PNG favicon and Apple touch icon, and `/manifest.webmanifest` for the full app name and phone label.
+- Inherit school share tags from `../lib/school-metadata.ts`; root and sign-in previews use the app name and supplied crest without scaffold-provider branding.
 - File route conventions are detailed in [README.md](README.md); do not introduce Next.js or Remix layout conventions.
 
 ## Work Guidance

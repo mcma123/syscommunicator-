@@ -1,7 +1,7 @@
 # WGJS Expo client
 
 Expo SDK 57 with Expo Router provides one Android, iOS, and web client in this
-monorepo. The existing Lovable/TanStack app remains at the repository root.
+monorepo. The existing standalone TanStack app remains at the repository root.
 
 Install all dependencies from the root with `npx --yes npm@11 ci`. Do not create
 a separate lockfile in this workspace.

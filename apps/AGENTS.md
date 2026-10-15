@@ -2,7 +2,7 @@
 
 ## Purpose
 
-- Own additional clients while the Lovable TanStack web app stays at the repository root.
+- Own additional clients while the standalone TanStack web app stays at the repository root.
 
 ## Ownership
 

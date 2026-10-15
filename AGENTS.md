@@ -79,18 +79,9 @@ Default section order:
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 
 - Use DOX for this repository and keep the instruction hierarchy and indexes current.
+- Keep the project independent of the original scaffold provider: no editor integration, telemetry, branding, project metadata, or Git synchronization. Shared links must use school names, descriptions, and the supplied crest.
 - Preserve the current Open Sans font and TanStack module design; use a light, premium banking-inspired layout for the Expo parent frontend while applying Wynberg Girls Junior School website colours and the user-supplied crest. Naming: Wynberg Girls Junior Connect (store/app name), WGJS Connect (phone label), Wynberg Girls Junior School (inside the app), Honor Before Honours (tagline).
 
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
 
 ## School Connect architecture
 - Keep the supported TanStack Start web application at the monorepo root and provider-independent domain types and mock repositories in `packages/school-core`; this allows future clients to reuse the same domain contracts without changing the preview bootstrap.
@@ -101,14 +92,14 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Project Scope and Root Ownership
 
 - School Connect is a monorepo: the supported TanStack Start web app stays at the root, Expo Android/iOS/web is in `apps/expo`, the Convex scaffold is in `packages/backend`, and provider-independent domain code is in `packages/school-core`.
-- Root owns build and workspace configuration, dependency manifests and lockfiles, `.lovable/` metadata, `.gitignore`, `README.md`, `FRONTEND.md`, and `roadmap.md`.
+- Root owns build and workspace configuration, dependency manifests and lockfiles, `.gitignore`, `README.md`, `FRONTEND.md`, and `roadmap.md`.
 - `FRONTEND.md` records delivered modules, research sources, and prototype limitations; keep it aligned with meaningful scope changes. `roadmap.md` owns planned work.
 - No production backend, authentication, persistence, real email, or payment processing is provisioned. Expo provides interactive parent screens with local mock data; staff routes remain placeholders. The existing TanStack frontend retains its broader role workflows.
 - Keep generated and local output out of the DOX tree: `node_modules/`, `.git/`, `.output/`, `.tanstack/`, `.wrangler/`, and `.firecrawl/`. Research downloads in `.firecrawl/` are ignored; durable findings belong in the owning documentation.
 
 ## Root Work Guidance
 
-- `vite.config.ts` uses `@lovable.dev/vite-tanstack-config`, which already supplies Start, React, Tailwind, path aliases, and Nitro plugins. Do not add duplicate plugins.
+- `vite.config.ts` directly configures Vite, TanStack Start, React, Tailwind, native TypeScript path resolution, and build-only Nitro. Production output is a standalone Node server; `npm start` serves the build. Preserve the custom SSR entry and CSRF middleware.
 - Local setup is documented in `README.md`; use npm 11 with the single root `package-lock.json` for all workspaces. Do not add competing package-manager lockfiles; EAS uses the root lockfile to select npm.
 - DOX is Markdown only. Do not add a DOX package, dependency, or runtime.
 

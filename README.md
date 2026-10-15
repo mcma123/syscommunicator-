@@ -4,16 +4,6 @@ A school communication monorepo for Wynberg Girls Junior School, inspired by d6 
 
 The full app/store name is **Wynberg Girls Junior Connect**, the phone icon label is **WGJS Connect**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. Native store submissions and live backend integration remain future work.
 
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/4a2a4cc7-ba26-44d1-9b9c-a551ec746957).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
 ## Development
 
 Use Node.js 24 LTS and npm 11. Install all workspaces from the root. Both clients run on mock data without database credentials; each client owns its own temporary state and changes reset on reload.
@@ -29,11 +19,26 @@ The npm 11 command uses `package-lock.json` without replacing your globally inst
 
 Run `npm run build` for a TanStack production build and `npm test` for routing and shared repository checks. The development server prints its local URL after startup.
 
+## Standalone web deployment
+
+The web app uses standard Vite, TanStack Start and Nitro plugins. It runs independently of the original scaffolding service, with no editor scripts or error-reporting hooks.
+
+```sh
+npx --yes npm@11 ci
+npm run build
+npm start
+```
+
+The production Node server serves `.output/server/index.mjs` and static assets from `.output/public`. Default production port is 3000; set `PORT` and `HOST` as needed for your hosting service. Development remains on port 8080. Deploy the entire `.output` directory, not just its public assets: social previews and routes are server rendered.
+
+Share-image URLs are absolute and use the current request origin automatically. Optionally set the public build-time variable `VITE_SITE_URL` to the canonical deployed web app origin (for example, `https://connect.your-school-domain.co.za`) before building to override it. It is separate from the school website and Expo frontend domains. Share metadata uses the school name, tagline, description and supplied crest. A fresh deployment is required to change previously hosted content; social services may retain cached previews.
+
 ## Workspace commands
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Existing TanStack web app, port 8080 |
+| `npm run dev` | TanStack web app, port 8080 |
+| `npm start` | Standalone production Node server after building, port 3000 |
 | `npm run dev:mobile` | Expo Go tunnel with a direct scannable QR, port 8082 |
 | `npm run dev:mobile:go` / `dev:mobile:tunnel` | Same Expo Go tunnel workflow |
 | `npm run dev:mobile:lan` | Optional local-network Expo Go server, port 8081 |

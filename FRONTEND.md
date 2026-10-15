@@ -1,11 +1,13 @@
 # Wynberg Girls Junior Connect frontend inventory
 
 ## Delivery and limits
-The root workspace remains the Lovable TanStack Start web app. `packages/school-core` contains provider-independent domain types, school configuration, fixtures and a repository contract. `apps/expo` adds an Expo SDK 57 / Expo Router client for Android, iOS, and Expo web. `packages/backend` prepares Convex with an empty initial schema and no provisioned deployment.
+The root workspace remains the standalone TanStack Start web app. `packages/school-core` contains provider-independent domain types, school configuration, fixtures and a repository contract. `apps/expo` adds an Expo SDK 57 / Expo Router client for Android, iOS, and Expo web. `packages/backend` prepares Convex with an empty initial schema and no provisioned deployment.
 
 The Expo parent frontend uses a premium light card layout with red/gold branding and five bottom tabs: Home, Updates, Calendar, Children, More. It includes child-scoped dashboard counts, published update search/read/acknowledgement, month/agenda and event details, learner profiles with read-only school records, simulated checkout with pending/failure/retry/receipts, validated consent with a saved response, resource sample previews, local enquiry threads/replies, and profile preferences. Staff modules remain unlinked placeholders. Each running client has its own in-memory repository; live cross-client state requires a future backend adapter.
 
 No backend, Clerk, Convex, real email or payment processing has been provisioned. Demo state is in memory and resets on refresh. Demo roles are not security. School branding is Wynberg Girls Junior School; contact information still awaits confirmation. Campus photo is generated, not the actual school, and learner/operational records remain fictional demo data.
+
+The root web build directly configures Vite/TanStack/React/Tailwind/Nitro and produces a standalone Node server. Scaffolding-service dependencies, injected editor scripts, project metadata and browser telemetry hooks are removed. School-only Open Graph and Twitter metadata include the supplied crest; share-image URLs use the request origin, with an optional build-time `VITE_SITE_URL` override.
 
 ## Research
 - https://help.d6.co.za/portal/en/kb/articles/d6-communicator-mobile-app-user-manual
