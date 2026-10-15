@@ -111,6 +111,15 @@ load the ignored root token only for account commands.
 See the root README for PowerShell dev-server commands, Expo Go versus development
 clients, QR testing, Metro shortcuts, and simultaneous web/mobile testing.
 
+## Production release
+
+- Web: https://wgjs-connect.expo.app
+- Deployment snapshot: https://wgjs-connect--w5c5p4fsu6.expo.app
+- Native production update: https://expo.dev/accounts/mcmarsh/projects/wynberg-girls-junior-connect/updates/8b64bb04-f548-4f7f-856c-3dc080190f7b
+- Runtime 1.0.1, production branch/channel/environment, application source commit 069d656.
+- Release bundles were exported with the EAS production environment, then published using EAS Update on the production channel and EAS Hosting with --prod. The root publishing helpers still target previews.
+- The hosted frontend retains mock data. Install a compatible native 1.0.1 build to receive the native production update; runtime 1.0.0 builds retain their own compatible updates.
+
 ## Published previews
 
 - [Expo web parent frontend](https://wgjs-connect--7krjaw189g.expo.app) � hosted testing preview.

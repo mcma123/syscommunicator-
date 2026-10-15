@@ -101,6 +101,13 @@ npm run start --workspace @school-connect/expo -- --go --tunnel
 The CLI may ask to install its tunnel helper. The local frontend uses mock data;
 no backend server is needed. Reloading resets demo state.
 
+## Production release
+
+- [Production Expo web frontend](https://wgjs-connect.expo.app).
+- [Android/iOS production update](https://expo.dev/accounts/mcmarsh/projects/wynberg-girls-junior-connect/updates/8b64bb04-f548-4f7f-856c-3dc080190f7b), runtime 1.0.1, production branch/channel/environment, application source commit 069d656.
+- [Deployment snapshot](https://wgjs-connect--w5c5p4fsu6.expo.app).
+- The hosted frontend uses mock data. Native updates require a compatible installed runtime 1.0.1 build; publishing does not create an APK/IPA or submit store listings.
+
 ## Published previews
 
 - [Expo web parent frontend](https://wgjs-connect--7krjaw189g.expo.app) � hosted testing preview.
