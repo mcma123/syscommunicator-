@@ -18,6 +18,7 @@ import { SchoolProvider } from "../features/school/store";
 import { DemoSessionGate } from "../features/school/demo-session-gate";
 import { Toaster } from "sonner";
 import { schoolConfig } from "../../packages/school-core/src";
+import { themeInitScript, useTheme } from "../lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -116,9 +117,11 @@ export const Route = createRootRouteWithContext<{
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // The inline theme script adds the `dark` class before hydration.
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
         {children}
@@ -130,6 +133,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient, convexClient } = Route.useRouteContext();
+  const { theme } = useTheme();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -139,7 +143,7 @@ function RootComponent() {
           <DemoSessionGate>
             <Outlet />
           </DemoSessionGate>
-          <Toaster position="top-right" richColors />
+          <Toaster position="top-right" richColors theme={theme} />
         </SchoolProvider>
       </SchoolAuthProvider>
     </QueryClientProvider>

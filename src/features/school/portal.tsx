@@ -1,6 +1,6 @@
 import { NotificationPanel } from "./notification-panel";
 import { WorkflowPanel } from "./workflow-panel";
-import { schoolConfig, money } from "@school-connect/core";
+import { schoolConfig } from "@school-connect/core";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { SchoolModule } from "@school-connect/core/permissions";
@@ -25,8 +25,19 @@ import type { Id } from "@school-connect/backend/dataModel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SchoolShell, navigation, staffNavigation } from "./shell";
-import { Heading, ChildPicker, Empty, RecordCard } from "./components";
-import { useRecords, useDetail, useDashboard, useReceipt, useSchool } from "./store";
+import { Heading, ChildPicker, Empty, RecordCard, Placeholder } from "./components";
+import {
+  CalendarAgenda,
+  CalendarMonth,
+  LearnerGrid,
+  MonthNavigator,
+  NoticeList,
+  PaymentsSummary,
+  PaymentsTable,
+} from "./module-views";
+import { useRecords, useDetail, useReceipt, useSchool } from "./store";
+import { HomeDashboard } from "./home";
+import { CalendarDays, Search } from "lucide-react";
 import { AccountManagement, PeopleInvitations } from "./account-management";
 import { RosterImport } from "./roster-import";
 const titles: Record<SchoolModule, string> = {
@@ -47,6 +58,29 @@ const titles: Record<SchoolModule, string> = {
   people: "People & invitations",
   settings: "School settings",
   audit: "Audit log",
+};
+
+const parentTitles: Partial<Record<SchoolModule, string>> = {
+  messages: "Your school updates",
+  children: "My children",
+  payments: "School payments",
+};
+const staffTitles: Partial<Record<SchoolModule, string>> = {
+  messages: "School messages",
+  children: "Your learners",
+  payments: "Charges & payments",
+};
+const parentDescriptions: Partial<Record<SchoolModule, string>> = {
+  messages: "The latest news, important notices and little moments.",
+  calendar: "Make room for the moments that matter.",
+  children: "Every milestone, all in one place.",
+  payments: "School fees and activities, without the paperwork.",
+};
+const staffDescriptions: Partial<Record<SchoolModule, string>> = {
+  messages: "Review and share messages with your school community.",
+  calendar: "Plan and share the moments that matter.",
+  children: "Profiles, reports and attendance for the learners you support.",
+  payments: "Track charges, payment status and history.",
 };
 
 function Failure({ retry }: { retry: () => void }) {
@@ -75,52 +109,25 @@ function exportEvent(record: ModuleRecord) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function Dashboard() {
-  const result = useDashboard();
-  return result.status === "error" ? (
-    <Failure retry={result.retry} />
-  ) : result.status !== "ready" ? (
-    <p role="status">Updating your school summary...</p>
-  ) : (
-    <div className="module-grid mb-6">
-      {[
-        ["Unread updates", result.data?.unread],
-        ["Pending actions", result.data?.pendingActions],
-        ["Upcoming events", result.data?.upcomingEvents],
-        [
-          "Amount due",
-          result.data?.amountDueCents === null
-            ? null
-            : money((result.data?.amountDueCents ?? 0) / 100),
-        ],
-      ]
-        .filter(([, v]) => v !== null)
-        .map(([label, value]) => (
-          <div className="record-card" key={label}>
-            <p>{label}</p>
-            <strong className="text-2xl">{value}</strong>
-          </div>
-        ))}
-    </div>
-  );
-}
 function DetailPanel({
   module,
   id,
   options,
   learnerId,
+  initialTab,
 }: {
   module: ReadModule;
   id: string;
   options: ReadOptions;
   learnerId?: string | undefined;
+  initialTab?: string | undefined;
 }) {
   const result = useDetail(module, id, options, learnerId);
   const receipt = useReceipt();
   const { offline } = useSchool();
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
-  const [section, setSection] = useState(0);
+  const [chosen, setSection] = useState<number>();
   const r = result.data?.record;
   async function save(acknowledge: boolean) {
     if (!r || offline) return;
@@ -152,6 +159,12 @@ function DetailPanel({
       </>
     );
   const related = result.data?.related ?? [];
+  const section =
+    chosen ??
+    Math.max(
+      0,
+      related.findIndex((tab) => tab.title === initialTab),
+    );
   const current = related[section];
   return (
     <>
@@ -243,14 +256,15 @@ export function RecordBrowser({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [outstanding, setOutstanding] = useState(false);
-  const [mode, setMode] = useState("agenda");
+  const [mode, setMode] = useState<"agenda" | "month">("agenda");
   const [month, setMonth] = useState(() => schoolDate(Date.now()).slice(0, 7));
   const [day, setDay] = useState("");
-  const [selected, setSelected] = useState<string>();
+  const [selected, setSelected] = useState<{ id: string; tab?: string | undefined }>();
   const [manage, setManage] = useState(false);
   const { account } = useSchool();
   const staff = account?.roles.some((r) => ["Teacher", "Principal", "Administrator"].includes(r));
-  const range = module === "calendar" && mode === "month" ? monthRange(month) : {};
+  const monthView = module === "calendar" && mode === "month";
+  const range = monthView ? monthRange(month) : {};
   const result = useRecords(
     module,
     {
@@ -263,23 +277,71 @@ export function RecordBrowser({
     },
     learnerId,
   );
-  const categories =
-    module === "messages" ? NOTICE_CATEGORIES : module === "resources" ? RESOURCE_CATEGORIES : [];
-  const rows = result.data.records.filter(
-    (r) => !day || module !== "calendar" || mode !== "month" || eventDays(r, month).includes(day),
-  );
+  const open = (id: string, tab?: string) => setSelected({ id, tab });
+  const records = result.data.records;
+  const dayRows = monthView && day ? records.filter((r) => eventDays(r, month).includes(day)) : [];
+  const styled =
+    !compact && ["messages", "calendar", "children", "payments", "paymentHistory"].includes(module);
+  const categories = module === "resources" ? RESOURCE_CATEGORIES : [];
+  const list = () => {
+    if (!styled)
+      return records.map((r) => <RecordCard key={r.id} record={r} onOpen={() => open(r.id)} />);
+    if (module === "messages") return <NoticeList records={records} onOpen={open} />;
+    if (module === "children") return <LearnerGrid records={records} onOpen={open} />;
+    if (module === "payments" || module === "paymentHistory")
+      return (
+        <PaymentsTable records={records} history={module === "paymentHistory"} onOpen={open} />
+      );
+    if (monthView)
+      return (
+        <>
+          <CalendarMonth month={month} records={records} day={day} onDay={setDay} onOpen={open} />
+          {day && (
+            <section className="plain-section">
+              <h2>
+                {new Intl.DateTimeFormat("en-ZA", {
+                  timeZone: "UTC",
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                }).format(Date.parse(`${day}T12:00:00Z`))}
+              </h2>
+              {dayRows.length ? (
+                <CalendarAgenda records={dayRows} onOpen={open} />
+              ) : (
+                <Empty title="A quiet day" text="No school events on this day." />
+              )}
+            </section>
+          )}
+        </>
+      );
+    return <CalendarAgenda records={records} onOpen={open} />;
+  };
   return (
     <>
       {!compact && !["home", "settings"].includes(module) && (
-        <div className="toolbar flex-wrap">
-          <input
-            aria-label="Search records"
-            className="field"
-            placeholder="Search records..."
-            maxLength={200}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="toolbar">
+          <div className="search-field">
+            <Search size={15} aria-hidden />
+            <input
+              aria-label="Search records"
+              className="field"
+              placeholder={
+                module === "messages"
+                  ? "Search updates..."
+                  : module === "calendar"
+                    ? "Search events..."
+                    : module === "children"
+                      ? "Search learners..."
+                      : module === "payments" || module === "paymentHistory"
+                        ? "Search charges..."
+                        : "Search records..."
+              }
+              maxLength={200}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           {categories.length > 0 && (
             <select
               aria-label="Category"
@@ -294,121 +356,103 @@ export function RecordBrowser({
             </select>
           )}
           {module === "forms" && (
-            <label>
+            <label className="toggle-chip">
               <input
                 type="checkbox"
                 checked={outstanding}
                 onChange={(e) => setOutstanding(e.target.checked)}
-              />{" "}
+              />
               Outstanding only
             </label>
           )}
+          {staff && ["messages", "calendar", "resources"].includes(module) && (
+            <label className="toggle-chip">
+              <input
+                type="checkbox"
+                checked={manage}
+                onChange={(e) => setManage(e.target.checked)}
+              />
+              Show drafts & staff records
+            </label>
+          )}
+          {module === "calendar" && (
+            <div className="segmented" role="group" aria-label="Calendar view">
+              {(["agenda", "month"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={mode === m}
+                  onClick={() => {
+                    setMode(m);
+                    setDay("");
+                  }}
+                >
+                  {m === "agenda" ? "Agenda" : "Month"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
-      {staff && ["messages", "calendar", "resources"].includes(module) && (
-        <label className="block my-3">
-          <input type="checkbox" checked={manage} onChange={(e) => setManage(e.target.checked)} />{" "}
-          Show staff workflow records
-        </label>
-      )}
-      {module === "calendar" && (
-        <>
-          <div className="flex gap-2 mb-4">
+      {module === "messages" && !compact && (
+        <div className="feed-tabs" role="tablist" aria-label="Update categories">
+          {["", ...NOTICE_CATEGORIES].map((c) => (
             <Button
-              variant={mode === "agenda" ? "default" : "outline"}
-              onClick={() => {
-                setMode("agenda");
-                setDay("");
-              }}
+              key={c || "all"}
+              role="tab"
+              aria-selected={category === c}
+              size="sm"
+              variant={category === c ? "secondary" : "ghost"}
+              onClick={() => setCategory(c)}
             >
-              Agenda
+              {c || "All updates"}
             </Button>
-            <Button
-              variant={mode === "month" ? "default" : "outline"}
-              onClick={() => setMode("month")}
-            >
-              Month
-            </Button>
-          </div>
-          {mode === "month" && (
-            <>
-              <div className="flex items-center gap-3 mb-3">
-                <Button
-                  variant="outline"
-                  aria-label="Previous month"
-                  onClick={() => {
-                    setMonth(moveMonth(month, -1));
-                    setDay("");
-                  }}
-                >
-                  Previous
-                </Button>
-                <strong>{month}</strong>
-                <Button
-                  variant="outline"
-                  aria-label="Next month"
-                  onClick={() => {
-                    setMonth(moveMonth(month, 1));
-                    setDay("");
-                  }}
-                >
-                  Next
-                </Button>
-                <Button variant="ghost" onClick={() => setDay("")}>
-                  All days
-                </Button>
-              </div>
-              <div className="grid grid-cols-7 gap-1 mb-4">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                  <span className="text-center text-xs" key={d}>
-                    {d}
-                  </span>
-                ))}
-                {monthCells(month).map((date, i) =>
-                  date ? (
-                    <Button
-                      key={date}
-                      aria-label={date}
-                      aria-pressed={day === date}
-                      variant={day === date ? "default" : "outline"}
-                      onClick={() => setDay(date)}
-                    >
-                      {Number(date.slice(-2))}
-                      {result.data.records.some((r) => eventDays(r, month).includes(date))
-                        ? " *"
-                        : ""}
-                    </Button>
-                  ) : (
-                    <span key={`blank-${i}`} />
-                  ),
-                )}
-              </div>
-            </>
-          )}
-        </>
+          ))}
+        </div>
       )}
-      {result.status === "loading" && <p role="status">Loading your school information...</p>}
-      {result.status === "ready" && !rows.length && (
+      {monthView && (
+        <MonthNavigator
+          month={month}
+          onMove={(step) => {
+            setMonth(moveMonth(month, step));
+            setDay("");
+          }}
+          onToday={() => {
+            setMonth(schoolDate(Date.now()).slice(0, 7));
+            setDay(schoolDate(Date.now()));
+          }}
+        />
+      )}
+      {result.status === "loading" && !records.length && (
+        <Placeholder rows={styled && module === "children" ? 2 : 3} height={styled ? 120 : 76} />
+      )}
+      {result.status === "ready" && !records.length && !monthView && (
         <Empty
+          title={
+            module === "messages"
+              ? "No updates yet"
+              : module === "calendar"
+                ? "Nothing on the calendar"
+                : module === "payments"
+                  ? "No charges to show"
+                  : undefined
+          }
           text={
             result.canLoadMore
               ? "No matches on these pages. Load more to continue searching."
-              : "No records match your account and selection."
+              : search || category
+                ? "Nothing matches your search. Try another word or category."
+                : "No records match your account and selection."
           }
         />
       )}
-      {rows.map((r) => (
-        <RecordCard key={r.id} record={r} onOpen={() => setSelected(r.id)} />
-      ))}
+      {(records.length > 0 || (monthView && result.status === "ready")) && list()}
       {(result.canLoadMore || result.loadingMore) && (
-        <Button
-          className="my-4"
-          variant="outline"
-          disabled={result.loadingMore}
-          onClick={result.loadMore}
-        >
-          {result.loadingMore ? "Loading..." : "Load more"}
-        </Button>
+        <div className="load-more">
+          <Button variant="outline" disabled={result.loadingMore} onClick={result.loadMore}>
+            {result.loadingMore ? "Loading..." : "Load more"}
+          </Button>
+        </div>
       )}
       <Dialog
         open={!!selected}
@@ -418,8 +462,14 @@ export function RecordBrowser({
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           {selected && (
-            <Boundary key={selected}>
-              <DetailPanel module={module} id={selected} options={options} learnerId={learnerId} />
+            <Boundary key={selected.id}>
+              <DetailPanel
+                module={module}
+                id={selected.id}
+                options={options}
+                learnerId={learnerId}
+                initialTab={selected.tab}
+              />
             </Boundary>
           )}
         </DialogContent>
@@ -431,17 +481,34 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
   const { account, accessRoles } = useSchool();
   const [source, setSource] = useState<ReadModule>(module);
   const [importing, setImporting] = useState(false);
+  const [opened, setOpened] = useState<{ module: ReadModule; id: string }>();
+  const staff = (account?.roles.length ?? 0) > 0;
   const directory = [...navigation, ...staffNavigation].filter(
     (n) => canAccessModule(accessRoles, n.id, account?.disabledModules) && n.id !== "home",
   );
   return (
     <SchoolShell module={module}>
       <Heading
-        title={titles[module]}
+        title={(staff ? staffTitles[module] : parentTitles[module]) ?? titles[module]}
         description={
           module === "home"
             ? `Welcome, ${account?.name ?? ""}. Your school information updates automatically.`
-            : "Information shared securely with your school account."
+            : ((staff ? staffDescriptions[module] : parentDescriptions[module]) ??
+              "Information shared securely with your school account.")
+        }
+        action={
+          module === "home" ? (
+            <span className="date-label">
+              <CalendarDays size={14} />
+              {new Intl.DateTimeFormat("en-ZA", {
+                timeZone: "Africa/Johannesburg",
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              }).format(Date.now())}
+            </span>
+          ) : undefined
         }
       />
       {!!account?.learners.length && <ChildPicker />}
@@ -465,6 +532,25 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
             Uniform store
           </a>
         </div>
+      ) : module === "home" ? (
+        <>
+          <WorkflowPanel module="home" />
+          <HomeDashboard onOpen={(m, id) => setOpened({ module: m, id })} />
+          <Dialog
+            open={!!opened}
+            onOpenChange={(v) => {
+              if (!v) setOpened(undefined);
+            }}
+          >
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              {opened && (
+                <Boundary key={`${opened.module}:${opened.id}`}>
+                  <DetailPanel module={opened.module} id={opened.id} options={{}} />
+                </Boundary>
+              )}
+            </DialogContent>
+          </Dialog>
+        </>
       ) : module === "profile" ? (
         <>
           <div className="record-card">
@@ -482,13 +568,13 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
       ) : (
         <>
           <WorkflowPanel module={module} />
-          {module === "home" && (
+          {module === "payments" && (
             <Boundary>
-              <Dashboard />
+              <PaymentsSummary />
             </Boundary>
           )}
           {(module === "groups" || module === "payments" || module === "people") && (
-            <div className="flex gap-2 mb-4">
+            <div className="source-tabs" role="tablist">
               {(module === "groups"
                 ? (["groups", "classes"] as const)
                 : module === "people"
@@ -497,7 +583,10 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
               ).map((m) => (
                 <Button
                   key={m}
-                  variant={source === m && !importing ? "default" : "outline"}
+                  role="tab"
+                  aria-selected={source === m && !importing}
+                  size="sm"
+                  variant={source === m && !importing ? "secondary" : "ghost"}
                   onClick={() => {
                     setSource(m);
                     setImporting(false);
@@ -518,7 +607,10 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
               ))}
               {module === "people" && account?.roles.includes("Administrator") && (
                 <Button
-                  variant={importing ? "default" : "outline"}
+                  role="tab"
+                  aria-selected={importing}
+                  size="sm"
+                  variant={importing ? "secondary" : "ghost"}
                   onClick={() => setImporting(true)}
                 >
                   Import roster

@@ -24,10 +24,13 @@ import {
   Shirt,
   LogOut,
   Award,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { schoolConfig } from "../../../packages/school-core/src";
 import { useSchool } from "./store";
+import { useTheme } from "@/lib/theme";
 import { canAccessModule } from "@school-connect/core/permissions";
 export const navigation = [
   { id: "home", name: "Home", path: "/", icon: Home },
@@ -52,6 +55,8 @@ export function SchoolShell({ module, children }: { module: string; children: Re
   const [mobile, setMobile] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [query, setQuery] = useState("");
+  const { theme, toggleTheme } = useTheme();
+  const dark = theme === "dark";
   const title =
     module === "home"
       ? role === "Parent"
@@ -65,6 +70,7 @@ export function SchoolShell({ module, children }: { module: string; children: Re
           { id: "more", name: "More" },
           { id: "signin", name: "Welcome" },
         ].find((n) => n.id === module)?.name || module;
+  const heading = role !== "Parent" && module === "children" ? "Learners" : title;
   return (
     <div className={collapsed ? "collapsed" : ""}>
       <aside className={`app-sidebar ${mobile ? "mobile-open" : ""}`}>
@@ -165,7 +171,7 @@ export function SchoolShell({ module, children }: { module: string; children: Re
               <Menu />
             </Button>
             <img className="mobile-school-logo" src={schoolConfig.logoUrl} alt="" />
-            <span className="topbar-title">{title}</span>
+            <span className="topbar-title">{heading}</span>
           </div>
           <div className="topbar-tools">
             {canAccessModule(accessRoles, "messages", account?.disabledModules) && (
@@ -186,6 +192,20 @@ export function SchoolShell({ module, children }: { module: string; children: Re
               </form>
             )}
             <span className="demo-account-role">{role}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="theme-toggle"
+              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+              aria-pressed={dark}
+              title={dark ? "Light mode" : "Dark mode"}
+              onClick={(e) => {
+                const box = e.currentTarget.getBoundingClientRect();
+                toggleTheme({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
+              }}
+            >
+              {dark ? <Sun size={18} /> : <Moon size={18} />}
+            </Button>
             <Button
               variant="ghost"
               size="icon"

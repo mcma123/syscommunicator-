@@ -11,7 +11,7 @@
 
 ## Local Contracts
 
-- `__root.tsx` is the sole root layout. Preserve `Outlet`, `HeadContent`, `Scripts`, QueryClientProvider, SchoolAuthProvider using the router-owned Convex client, SchoolProvider, and the toaster.
+- `__root.tsx` is the sole root layout. Preserve `Outlet`, `HeadContent`, `Scripts`, QueryClientProvider, SchoolAuthProvider using the router-owned Convex client, SchoolProvider, and the toaster (themed via `useTheme`). The `<html>` element keeps `suppressHydrationWarning` and the head runs `themeInitScript` after `HeadContent` so saved dark mode applies before paint.
 - `/signin` renders public SchoolLogin for passwords, email verification/recovery and invitation acceptance. DemoSessionGate retains its existing filename but now gates live Convex identity and session status; preserve module leaf URLs.
 - Leaf routes bind `createFileRoute` paths to the matching `SchoolPortal` module. Named modules must retain direct links.
 - Keep error/not-found boundaries and the root head metadata compatible with the application shell.

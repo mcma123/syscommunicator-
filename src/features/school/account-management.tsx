@@ -9,8 +9,11 @@ export function AccountAccess() {
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [showInvitation, setShowInvitation] = useState(false);
   useEffect(() => {
-    setToken(new URLSearchParams(window.location.search).get("invitation") ?? "");
+    const invitation = new URLSearchParams(window.location.search).get("invitation") ?? "";
+    setToken(invitation);
+    if (invitation) setShowInvitation(true);
   }, []);
   if (!account)
     return sessionReady ? (
@@ -42,47 +45,64 @@ export function AccountAccess() {
         <p role="status">{message}</p>
       </section>
     );
+  const hasAccess = account.roles.length > 0 || account.learners.length > 0;
+  // Accounts that already have school access go straight to the portal; the invitation
+  // form is only shown up front when it is needed (no access yet, or an invitation link).
+  const invitationOpen = !hasAccess || showInvitation;
   return (
     <section className="demo-login-form">
       <p>
         Signed in as {account.name} ({account.email}).
       </p>
-      {account.roles.length > 0 || account.learners.length > 0 ? (
-        <Link to="/">Open school portal</Link>
+      {hasAccess ? (
+        <Link to="/" className="demo-login-submit">
+          Open school portal
+        </Link>
       ) : (
         <p>Your account needs a school invitation. Ask the school administrator for access.</p>
       )}
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setBusy(true);
-          try {
-            await acceptInvitation(token.trim());
-            setToken("");
-            window.history.replaceState({}, "", "/signin");
-            setMessage("Invitation accepted. Your school access has been updated.");
-          } catch {
-            setMessage(
-              "Could not accept this invitation. Check its code, email address and expiry.",
-            );
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <label htmlFor="invitation-code">Invitation code</label>
-        <input
-          className="field"
-          id="invitation-code"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          required
-          autoComplete="off"
-        />
-        <button className="demo-login-submit" disabled={busy} type="submit">
-          Accept invitation
+      {hasAccess && !invitationOpen && (
+        <button type="button" onClick={() => setShowInvitation(true)}>
+          Have an invitation code?
         </button>
-      </form>
+      )}
+      {invitationOpen && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            try {
+              await acceptInvitation(token.trim());
+              setToken("");
+              window.history.replaceState({}, "", "/signin");
+              setMessage("Invitation accepted. Your school access has been updated.");
+            } catch {
+              setMessage(
+                "Could not accept this invitation. Check its code, email address and expiry.",
+              );
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <label htmlFor="invitation-code">Invitation code</label>
+          <input
+            className="field"
+            id="invitation-code"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            required
+            autoComplete="off"
+          />
+          <button
+            className={hasAccess ? undefined : "demo-login-submit"}
+            disabled={busy}
+            type="submit"
+          >
+            Accept invitation
+          </button>
+        </form>
+      )}
       <p role="status">{message}</p>
       <button
         onClick={() => void signOut().catch(() => setMessage("Please reload and try again."))}

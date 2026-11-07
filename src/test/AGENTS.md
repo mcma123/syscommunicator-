@@ -13,6 +13,7 @@
 - `live-subscription.test.tsx` uses the real Convex hook with a local watch to catch subscription render loops and verify session unsubscription, native pagination across empty pages, filter reset and independent details.
 - `live-data.test.tsx` checks live subscription states/retry, disabled-session data clearing, socket-derived offline behavior and scoped optimistic receipts.
 - `permissions.test.ts` checks shared module grants, Finance/Teacher restrictions, unknown modules and explicit guardian/staff combinations.
+- `theme.test.tsx` checks dark-mode toggling, persistence, the pre-paint init script and subscriber updates.
 - `setup.ts` provides jest-dom matchers and the matchMedia mock.
 - `app-routing.test.tsx` checks that `/` matches a page rather than only the root route.
 - `school-repository.test.ts` checks shared-core mock behavior including native-safe cloning, nested fixture isolation, snapshot identity, subscriptions, and unsubscribe.

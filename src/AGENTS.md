@@ -17,6 +17,7 @@
 - `start.ts` explicitly installs CSRF middleware for server functions and the error middleware; preserve both when changing request handling.
 - Global design tokens and school layout styles live in `styles.css`. Shared responsive behavior uses `hooks/use-mobile.tsx`.
 - Brand tokens use website red `#C6252B`, gold `#FAB513`, dark red `#861D23`, and charcoal `#3C3C3C`; keep Open Sans and the existing module layout. Supporting background and status colours preserve readable contrast.
+- Dark mode redefines the same tokens under `.dark` (warm red-tinted charcoal surfaces, brighter red `#E5484D`, gold highlights) plus `.dark` overrides for fixed-colour sign-in/loading styles. New styles must use tokens or add a matching `.dark` override.
 
 ## Work Guidance
 
