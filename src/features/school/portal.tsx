@@ -1,44 +1,529 @@
-import { useState } from 'react';
-import { Link } from '@tanstack/react-router';
-import { ArrowDownToLine, ArrowRight, Bell, CalendarDays, Check, CheckCheck, ClipboardList, Clock, CreditCard, FileText, Mail, MessageSquare, Plus, Search, Send, Settings, Shirt, Users, WifiOff, MapPin, Award, Eye, BookOpen, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import campus from '@/assets/school-campus.jpg';
-import { schoolConfig, children, money, visibleNotices, type Notice, type NoticeStatus, type SchoolEvent, type Enquiry } from '../../../packages/school-core/src';
-import { useSchool } from './store';
-import { SchoolShell, navigation, staffNavigation } from './shell';
-import { Heading, ChildPicker, NoticeCard, NoticeDialog, EventRow, EventDialog, ConsentDialog, PaymentDialog, Empty } from './components';
-export function SchoolPortal({module='home'}:{module?:string}) {
- const {state,update,role,account,signOut,child,notify,offline,setOffline}=useSchool();const staff=role!=='Parent';
- const [category,setCategory]=useState('All updates');const [query,setQuery]=useState('');const [notice,setNotice]=useState<Notice|null>(null);const [event,setEvent]=useState<SchoolEvent|null>(null);const [consent,setConsent]=useState(false);const [payment,setPayment]=useState(false);const [editor,setEditor]=useState(false);const [editing,setEditing]=useState<Notice|null>(null);const [title,setTitle]=useState('');const [body,setBody]=useState('');const [audience,setAudience]=useState('Grade 4');const [noticeCategory,setNoticeCategory]=useState<Notice['category']>('Academic');const [status,setStatus]=useState<NoticeStatus>('Draft');const [schedule,setSchedule]=useState('');const [preview,setPreview]=useState(false);const [eventEditor,setEventEditor]=useState(false);const [eventTitle,setEventTitle]=useState('');const [eventDay,setEventDay]=useState(27);const [eventPlace,setEventPlace]=useState('School hall');const [eventTime,setEventTime]=useState('14:00 – 15:00');
- const [agenda,setAgenda]=useState(false);const [resource,setResource]=useState<string|null>(null);const [resourceEditor,setResourceEditor]=useState(false);const [resourceTitle,setResourceTitle]=useState('');const [resourceCategory,setResourceCategory]=useState('School documents');const [enquiry,setEnquiry]=useState<Enquiry|null>(null);const [reply,setReply]=useState('');const [enquiryEditor,setEnquiryEditor]=useState(false);const [enquiryTitle,setEnquiryTitle]=useState('');const [department,setDepartment]=useState('Finance');const [enquiryBody,setEnquiryBody]=useState('');const [childTab,setChildTab]=useState('Overview');const [conductEditor,setConductEditor]=useState(false);const [conductTitle,setConductTitle]=useState('');const [conductType,setConductType]=useState('Merit');const [invite,setInvite]=useState(false);const [email,setEmail]=useState('');const [featureFlags,setFeatureFlags]=useState<Record<string,boolean>>({});const [reportPreview,setReportPreview]=useState(false);const [errorState,setErrorState]=useState(false);const [loading,setLoading]=useState(false);
- const notices=visibleNotices(state,role,child).filter(n=>(category==='All updates'||n.category===category||n.status===category)&&`${n.title} ${n.body}`.toLowerCase().includes(query.toLowerCase()));
- const openNotice=(n:Notice)=>{setNotice(n);if(role==='Parent')update(s=>({...s,notices:s.notices.map(item=>item.id===n.id?{...item,read:true}:item)}));};
- const openEditor=(n?:Notice)=>{setEditing(n||null);setTitle(n?.title||'');setBody(n?.body||'');setAudience(n?.audience||'Grade 4');setNoticeCategory(n?.category||'Academic');setStatus(n?.status||'Draft');setPreview(false);setEditor(true);};
- const saveNotice=()=>{const n:Notice={id:editing?.id||`notice-${state.notices.length}`,title,body,category:noticeCategory,audience,date:'14 Oct 2026',author:'Ms Sarah Jacobs',status};update(s=>({...s,notices:editing?s.notices.map(item=>item.id===editing.id?n:item):[n,...s.notices]}));notify(status==='Published'?'Notice published to eligible families.':status==='Scheduled'?`Notice scheduled for ${schedule}.`:`Notice saved as ${status.toLowerCase()}.`);setEditor(false);};
- const sectionLink=(text:string,to:'/'|'/messages'|'/calendar'|'/resources'|'/forms'|'/payments')=><Link to={to}>{text}<ArrowRight size={12}/></Link>;
- const feed=<><div className="feed-tabs">{['All updates','Academic','Sport','General',...(staff?['Draft','Review','Scheduled']:[])].map(c=><Button key={c} size="sm" variant={category===c?'secondary':'ghost'} onClick={()=>setCategory(c)}>{c}</Button>)}</div>{notices.length?notices.slice(0,module==='home'?3:100).map(n=><NoticeCard key={n.id} notice={n} onOpen={openNotice}/>):<Empty title="No matching updates" text="Choose another category or search term."/>}</>;
- const actions=<><div className="section-title"><h2>Needs your attention</h2>{!state.consent&&<span className="tag gold">2 actions</span>}</div>{!state.consent&&<div className="action-item"><span className="tag gold"><ClipboardList size={10}/>CONSENT REQUIRED</span><h3>Grade 4 excursion consent</h3><p>Emma Williams · Due 20 October</p><Button variant="outline" onClick={()=>setConsent(true)}>Complete form<ArrowRight size={12}/></Button></div>}<div className="action-item payment"><span className="tag neutral"><CreditCard size={10}/>ACTIVITY PAYMENT</span><h3>Botanical gardens excursion</h3><p>Emma Williams · {money(250)}</p><Button variant="outline" onClick={()=>setPayment(true)}>{state.payment==='Due'?'View payment':state.payment}<ArrowRight size={12}/></Button></div></>;
- const childrenView=<><div className="feed-tabs">{['Overview','Reports','Conduct','Attendance','Timetable'].map(tab=><Button variant={childTab===tab?'secondary':'ghost'} key={tab} onClick={()=>setChildTab(tab)}>{tab}</Button>)}</div>{childTab==='Overview'?<div className="module-grid">{children.map(c=><div className="record-card" key={c.id}><div className="avatar">{c.initials}</div><h2>{c.name}</h2><span className="tag">{c.grade} · Class {c.className}</span><div className="record-details"><div><span>Class teacher</span>{c.teacher}</div><div><span>School year</span>2026 · Term 4</div><div><span>Attendance</span>{c.id==='emma'?'96%':'100%'}</div><div><span>Latest report</span>Term 3 · Published</div></div><div className="flex gap-2"><Button variant="outline" size="sm" onClick={()=>{setChildTab('Reports');}}>View reports<FileText/></Button><Button variant="outline" size="sm" onClick={()=>setChildTab('Timetable')}>Timetable<CalendarDays/></Button></div></div>)}</div>:childTab==='Reports'?<div className="data-table-wrap"><table className="data-table"><thead><tr><th>Learner</th><th>Report</th><th>Status</th><th/></tr></thead><tbody><tr><td>Emma Williams</td><td>Term 3 academic report</td><td><span className="tag green">Published</span></td><td><Button variant="outline" size="sm" onClick={()=>setReportPreview(true)}>View report<Eye/></Button></td></tr>{(staff||state.reportReleased)&&<tr><td>Emma Williams</td><td>Term 4 progress report</td><td><span className={`tag ${state.reportReleased?'green':'gold'}`}>{state.reportReleased?'Published':'Unpublished'}</span></td><td>{staff&&!state.reportReleased?<Button size="sm" onClick={()=>{update(s=>({...s,reportReleased:true}));notify('Term 4 report released to Emma’s parent.');}}>Release report</Button>:<Button variant="outline" size="sm" onClick={()=>setReportPreview(true)}>View report</Button>}</td></tr>}</tbody></table></div>:childTab==='Conduct'?<>{state.conduct.map((c,i)=><div key={i} className="notice-card"><span className="tag green"><Award size={12}/>{c.type}</span><h3 className="mt-3">{c.title}</h3><p className="body-excerpt">{c.child} · 12 October 2026 · Ms Sarah Jacobs</p></div>)}</>:childTab==='Attendance'?<><div className="summary-grid"><div className="summary-card"><div className="summary-icon green"><Check/></div><div><strong>96%</strong><span>Emma’s term attendance</span></div></div></div><div className="notice-card"><span className="tag gold">Excused absence</span><h3 className="mt-3">Absent · 8 October 2026</h3><p className="body-excerpt">Emma Williams · Reason: Medical appointment · Recorded by Ms Sarah Jacobs</p></div></>:<div className="data-table-wrap"><table className="data-table"><thead><tr><th>Time</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr></thead><tbody>{['07:45','08:30','09:15','10:30','11:15','12:00'].map((time,i)=><tr key={time}><td>{time}</td>{['English','Mathematics','Life Skills','Natural Science','Social Sciences'].map((s,j)=><td key={s}>{['English','Mathematics','Life Skills','Natural Science','Social Sciences'][(i+j)%5]}</td>)}</tr>)}</tbody></table></div>}</>;
- const enquiryCurrent=state.enquiries.find(e=>e.id===enquiry?.id);
- const denied=staff&&role==='Teacher'&&['people','settings','audit','payments'].includes(module);
- return <SchoolShell module={module}>
- {denied?<><Heading title="Access restricted" description="This module is available to the school’s authorised office team."/><Empty title="This demo role doesn’t have access" text="Switch to Principal, Finance or Administrator to view this module."/></>:module==='home'?<>
- <Heading title={`Welcome back, ${account?.name.split(' ')[0] ?? 'there'} 👋`} description={staff?'Here’s what’s happening across your school today.':'A little closer to everything happening at school.'}/>
- <div className="campus-banner"><img src={campus} width={1536} height={768} alt="Sunny primary school campus with a green playing field"/><div className="banner-copy"><span className="term"><span>●</span> TERM 4 · 2026</span><h2>Big moments. Everyday connections.</h2><p>Stay in the loop. Be part of their school day.</p></div></div>
- {staff?<div className="flex justify-between items-center"><span className="text-xs text-muted-foreground">Your school at a glance</span><Button size="sm" onClick={()=>openEditor()}><Plus/>Create notice</Button></div>:<ChildPicker/>}
- <div className="summary-grid">{[{label:staff?'Published notices':'Unread updates',value:state.notices.filter(n=>n.status==='Published'&&(staff||!n.read)).length,icon:MessageSquare,to:'/messages' as const,tone:''},{label:'Upcoming events',value:state.events.length,icon:CalendarDays,to:'/calendar' as const,tone:'green'},{label:staff?'Consent responses':'Form to complete',value:state.consent?(staff?1:0):(staff?0:1),icon:ClipboardList,to:'/forms' as const,tone:'gold'},{label:staff?'Pending payments':'Outstanding payment',value:state.payment==='Paid'?money(0):money(250),icon:CreditCard,to:'/payments' as const,tone:''}].map(item=><Link key={item.label} to={item.to} className="summary-card"><div className={`summary-icon ${item.tone}`}><item.icon size={20}/></div><div><strong>{item.value}</strong><span>{item.label}</span></div></Link>)}</div>
- <div className="dashboard-grid"><section><div className="section-title"><h2>Latest updates</h2>{sectionLink('View all','/messages')}</div>{feed}</section><aside className="dashboard-aside"><section className="right-section"><div className="section-title"><h2>Coming up</h2>{sectionLink('Calendar','/calendar')}</div><div className="event-list">{state.events.slice(0,3).map(e=><EventRow key={e.id} event={e} onOpen={setEvent}/>)}</div></section><section className="right-section">{actions}</section><section className="right-section"><div className="section-title"><h2>Quick links</h2></div><div className="quick-grid"><Link to="/resources" className="quick-link"><BookOpen/>Resources</Link><Link to="/contact" className="quick-link"><Mail/>Contact school</Link><Link to="/children" className="quick-link"><FileText/>School reports</Link><a href="https://www.schoolandlife.com/" target="_blank" rel="noreferrer" className="quick-link"><Shirt/>Uniform store<ArrowRight size={10}/></a></div></section></aside></div>
- </>:module==='messages'?<><Heading title={staff?'School messages':'Your school updates'} description={staff?'Create, review and share messages with your school community.':'The latest news, important notices and little moments.'} action={staff?<Button onClick={()=>openEditor()}><Plus/>Create notice</Button>:undefined}/><div className="toolbar"><div className="relative flex-1 max-w-sm"><Search className="absolute left-3 top-3 text-muted-foreground" size={16}/><input className="field pl-9" placeholder="Search messages…" aria-label="Search messages" value={query} onChange={e=>setQuery(e.target.value)}/></div>{!staff&&<ChildPicker/>}</div>{feed}{staff&&<section className="plain-section"><h2>Delivery history</h2><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Notice</th><th>Provider accepted</th><th>Opened</th><th>Acknowledged</th></tr></thead><tbody>{state.notices.filter(n=>n.status==='Published').map(n=><tr key={n.id}><td>{n.title}</td><td>24 demo recipients</td><td>{n.read?'1':'0'}</td><td>{n.acknowledged?'1':'0'}</td></tr>)}</tbody></table></div></section>}</>:module==='calendar'?<><Heading title="School calendar" description="Make room for the moments that matter." action={staff?<Button onClick={()=>setEventEditor(true)}><Plus/>Create event</Button>:undefined}/><div className="toolbar"><h2 className="text-lg font-semibold mr-auto">October 2026</h2><Button variant={agenda?'outline':'secondary'} onClick={()=>setAgenda(false)}>Month</Button><Button variant={agenda?'secondary':'outline'} onClick={()=>setAgenda(true)}>Agenda</Button></div>{agenda?<div className="event-list">{state.events.map(e=><EventRow key={e.id} event={e} onOpen={setEvent}/>)}</div>:<div className="calendar-grid">{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=><div className="calendar-cell header" key={d}>{d}</div>)}{Array.from({length:35},(_,i)=>{const day=i-2;return <div key={i} className={`calendar-cell ${day===14?'today':''}`}><span>{day>0&&day<=31?day:''}</span>{state.events.filter(e=>e.day===day).map(e=><Button key={e.id} variant="secondary" onClick={()=>setEvent(e)}>{e.title}</Button>)}</div>;})}</div>}</>:module==='children'?<><Heading title={staff?'Your learners':'My children'} description="Every milestone, all in one place."/>{childrenView}</>:module==='resources'?<><Heading title="School resources" description="Newsletters, school documents and useful information." action={staff?<Button onClick={()=>setResourceEditor(true)}><Plus/>Publish resource</Button>:undefined}/><div className="toolbar"><input className="field" placeholder="Search resources…" value={query} onChange={e=>setQuery(e.target.value)}/><select className="field" value={category} onChange={e=>setCategory(e.target.value)}><option>All updates</option><option>Newsletters</option><option>School documents</option><option>Academic</option></select></div>{state.resources.filter(r=>r.title.toLowerCase().includes(query.toLowerCase())&&(category==='All updates'||r.category===category)).map(r=><div className="resource-row" key={r.title}><div className="summary-icon"><FileText size={20}/></div><div><h3>{r.title}</h3><p>{r.category} · PDF · {r.size}</p></div><Button variant="outline" size="sm" onClick={()=>setResource(r.title)}>Preview<Eye/></Button></div>)}</>:module==='payments'?<><Heading title={staff?'Charges & payments':'School payments'} description={staff?'Track charges, simulated payments and reconciliation exceptions.':'School fees and activities, without the paperwork.'}/><div className="status-banner mb-6"><span>Demo payments only. No money is taken and no card details are requested.</span></div><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Charge</th><th>Learner</th><th>Due date</th><th>Amount</th><th>Status</th><th/></tr></thead><tbody><tr><td>Botanical gardens excursion</td><td>Emma Williams · 4B</td><td>20 Oct 2026</td><td>{money(250)}</td><td><span className="tag gold">{state.payment}</span></td><td><Button size="sm" variant="outline" onClick={()=>setPayment(true)}>View charge</Button></td></tr><tr><td>October school fees</td><td>Both children</td><td>1 Oct 2026</td><td>{money(2800)}</td><td><span className="tag green">Paid · Demo</span></td><td><Button variant="ghost" size="icon" title="View fee receipt" onClick={()=>setResource('October school fees · Simulated receipt')}><FileText/></Button></td></tr></tbody></table></div>{staff&&<section className="plain-section"><h2>Reconciliation exceptions</h2>{state.payment==='Pending verification'?<div className="notice-card"><span className="tag gold">Awaiting provider confirmation</span><h3 className="mt-3">SC-2026-0041 · {money(250)}</h3><p className="body-excerpt">Payment return received. Match a simulated provider confirmation before marking paid.</p><div className="flex gap-2 mt-4"><Button onClick={()=>{update(s=>({...s,payment:'Paid'}));notify('Simulated provider confirmation matched. Demo receipt is available.');}}>Simulate provider confirmation</Button><Button variant="outline" onClick={()=>{update(s=>({...s,payment:'Failed'}));notify('Simulated payment failed. Parent can retry.');}}>Simulate failure</Button></div></div>:<Empty title="No unmatched payments" text="Payments awaiting provider confirmation appear here."/>}</section>}</>:module==='forms'?<><Heading title="Forms & consent" description={staff?'View responses and follow up with families.':'A few small things to keep their school day moving.'}/><div className="notice-card"><span className={`tag ${state.consent?'green':'gold'}`}>{state.consent?'Submitted':'Consent required'}</span><h3 className="mt-3">Grade 4 excursion consent</h3><p className="body-excerpt">Emma Williams · Johannesburg Botanical Gardens · Due 20 October 2026</p><div className="notice-footer"><span className="notice-author">{staff?`${state.consent?1:0} of 24 responses`:'Emergency contact and parental permission'}</span><Button variant="link" onClick={()=>setConsent(true)}>{state.consent?'View response':'Complete form'}<ArrowRight/></Button></div></div>{staff&&<div className="plain-section"><h2>Response list</h2><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Parent</th><th>Learner</th><th>Consent</th></tr></thead><tbody><tr><td>Jamie Williams</td><td>Emma Williams</td><td><span className={`tag ${state.consent?'green':'gold'}`}>{state.consent?'Granted':'Awaiting response'}</span></td></tr></tbody></table></div></div>}</>:module==='contact'?<><Heading title={staff?'School enquiry inbox':'Let’s stay in touch'} description={staff?'Assign enquiries and reply to families.':'The right people, just a message away.'} action={<Button onClick={()=>setEnquiryEditor(true)}><Plus/>New enquiry</Button>}/><div className="toolbar"><input className="field" placeholder="Search enquiries…" value={query} onChange={e=>setQuery(e.target.value)}/><select className="field" value={category} onChange={e=>setCategory(e.target.value)}><option>All updates</option><option>Open</option><option>Assigned</option><option>Resolved</option></select></div>{state.enquiries.filter(e=>e.subject.toLowerCase().includes(query.toLowerCase())&&(category==='All updates'||e.status===category)).map(e=><div className="notice-card" key={e.id}><div className="notice-top"><span className="tag">{e.department}</span><span className="tag gold">{e.status}</span></div><h3>{e.subject}</h3><p className="body-excerpt">{e.messages.at(-1)?.body}</p><div className="notice-footer"><span className="notice-author">{e.messages.length} message{e.messages.length!==1?'s':''}</span><Button variant="link" onClick={()=>setEnquiry(e)}>Open conversation<ArrowRight/></Button></div></div>)}<section className="plain-section"><h2>School office</h2><p className="text-xs text-muted-foreground">School contact details are awaiting confirmation.</p></section></>:module==='more'?<><Heading title="More from your school" description="Everything else you need, close at hand."/><div className="module-grid">{[...navigation.slice(4),...(staff?staffNavigation:[]),{id:'profile',path:'/profile' as const,name:'Profile & notifications',icon:Settings}].map(n=><Link className="quick-link" key={n.id} to={n.path}><n.icon/>{n.name}<ArrowRight className="ml-auto"/></Link>)}<a href="https://www.schoolandlife.com/" target="_blank" rel="noreferrer" className="quick-link"><Shirt/>External uniform store<ArrowRight className="ml-auto"/></a></div></>:module==='profile'?<><Heading title="Your profile" description="Your connection to the school community."/><div className="flex items-center gap-4 mb-8"><div className="avatar">{account?.name.split(" ").map(part=>part[0]).join("")}</div><div><h2 className="font-semibold">{account?.name}</h2><p className="text-xs text-muted-foreground">{role} demo account ? {account?.email}</p></div></div><div className="setting-row"><div><h3>School notifications</h3><p>{state.notifications?'Receive updates from your school.':'Notifications disabled — you may miss urgent notices.'}</p></div><input aria-label="School notifications" type="checkbox" checked={state.notifications} onChange={e=>update(s=>({...s,notifications:e.target.checked}))}/></div><div className="setting-row"><div><h3>{staff?"Learners":"My children"}</h3><p>Emma Williams · Grade 4B<br/>Noah Williams · Grade 1A</p></div><Link to="/children" className="text-primary text-xs">View children</Link></div><div className="setting-row"><div><h3>Demo connection</h3><p>{offline?'Offline — changes cannot be saved.':'Online — demo changes are shared across roles.'}</p></div><Button variant="outline" size="sm" onClick={()=>setOffline(!offline)}><WifiOff/>{offline?'Reconnect':'Go offline'}</Button></div><div className="setting-row"><div><h3>Demo error & retry</h3><p>{errorState?'The requested update could not be loaded.':'All school information is available.'}</p></div><Button variant="outline" size="sm" onClick={()=>{if(errorState){setLoading(true);setTimeout(()=>{setErrorState(false);setLoading(false);},650);}else setErrorState(true);}}>{loading?'Loading…':errorState?'Retry':'Simulate error'}</Button></div><div className="mt-6"><Button variant="outline" onClick={signOut}>Sign out / switch account<ArrowRight size={13}/></Button></div></>:module==='groups'?<><Heading title="Groups & assigned classes" description="Share the right updates with the right families."/><div className="module-grid">{['Grade 4 · Class 4B','Grade 1 · Class 1A','Whole school','Choir activity group'].map((g,i)=><div className="record-card" key={g}><div className="summary-icon mb-4"><Users/></div><h2>{g}</h2><p>{i===0?'Assigned teacher: Ms Sarah Jacobs':'School managed group'} · {i===2?320:24} demo recipients</p><Button className="mt-5" variant="outline" size="sm" onClick={()=>{openEditor();setAudience(i===0?'Grade 4':i===1?'Grade 1':'Whole school');}}>Message group<Send/></Button></div>)}</div></>:module==='attendance'?<><Heading title="Attendance register" description="Grade 4B · Wednesday, 14 October 2026" action={<Button onClick={()=>notify('Grade 4B attendance register saved in the demo.')}><Check/>Save register</Button>}/><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Learner</th><th>Class</th><th>Present</th><th>Status</th></tr></thead><tbody>{Object.entries(state.attendance).map(([name,present])=><tr key={name}><td>{name}</td><td>4B</td><td><input type="checkbox" aria-label={`${name} present`} checked={present} onChange={e=>update(s=>({...s,attendance:{...s.attendance,[name]:e.target.checked}}))}/></td><td><span className={`tag ${present?'green':'gold'}`}>{present?'Present':'Absent'}</span></td></tr>)}</tbody></table></div></>:module==='conduct'?<><Heading title="Learner conduct" description="Recognise achievements and record pastoral notes." action={<Button onClick={()=>setConductEditor(true)}><Plus/>Add conduct entry</Button>}/>{state.conduct.map((c,i)=><div className="notice-card" key={i}><span className={`tag ${c.type==='Merit'?'green':'gold'}`}>{c.type}</span><h3 className="mt-3">{c.title}</h3><p className="body-excerpt">{c.child} · Grade 4B · Ms Sarah Jacobs</p></div>)}</>:module==='reports'?<><Heading title="Learner reports" description="Review reports before releasing them to families." action={<Button variant="outline" onClick={()=>setReportPreview(true)}><FileText/>Import / review demo report</Button>}/><div className="feed-tabs"><Button variant="secondary" onClick={()=>setChildTab('Reports')}>Reports</Button></div>{childrenView}</>:module==='people'?<><Heading title="People & invitations" description="Manage the school’s families and staff." action={<Button onClick={()=>setInvite(true)}><Plus/>Invite person</Button>}/><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead><tbody><tr><td>Jamie Williams</td><td>Parent · Teacher</td><td><span className="tag green">Active</span></td></tr><tr><td>Sarah Jacobs</td><td>Teacher · Grade 4B</td><td><span className="tag green">Active</span></td></tr>{state.invited.map(e=><tr key={e}><td>{e}</td><td>Parent</td><td><span className="tag gold">Invitation pending · Demo</span></td></tr>)}</tbody></table></div></>:module==='settings'?<><Heading title="School settings" description="Configure your school’s identity and available modules."/><div className="module-grid"><div><div className="form-field"><label>School name</label><input className="field" defaultValue={schoolConfig.name}/></div><div className="form-field"><label>School contact email</label><input className="field" placeholder="Awaiting confirmation" type="email"/></div><Button onClick={()=>notify('School settings preview saved for Wynberg Girls Junior School.')}><Check/>Save preview</Button></div><div><h2 className="font-semibold mb-3">Feature flags</h2>{['Full accounting','Native clothing shop','Elections','AI assistant','Custom school modules'].map(f=><div className="setting-row" key={f}><div><h3>{f}</h3><p>{featureFlags[f]?'Enabled in preview · Not implemented':'Coming later · Disabled'}</p></div><input aria-label={f} type="checkbox" checked={!!featureFlags[f]} onChange={e=>setFeatureFlags({...featureFlags,[f]:e.target.checked})}/></div>)}</div></div></>:module==='audit'?<><Heading title="Audit log" description="A clear record of activity in your school demo."/><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Time</th><th>Person</th><th>Action</th><th>Record</th></tr></thead><tbody>{state.notices.map(n=><tr key={n.id}><td>14 Oct · 09:00</td><td>{n.author}</td><td>{n.status}</td><td>{n.title}</td></tr>)}{state.consent&&<tr><td>14 Oct · Demo</td><td>Jamie Williams</td><td>Consent granted</td><td>Grade 4 excursion</td></tr>}</tbody></table></div></>:<Empty/>}
- <NoticeDialog notice={notice} onClose={()=>setNotice(null)} onConsent={()=>setConsent(true)} onPayment={()=>setPayment(true)} onEdit={openEditor}/><ConsentDialog open={consent} onClose={()=>setConsent(false)}/><PaymentDialog open={payment} onClose={()=>setPayment(false)}/><EventDialog event={event} onClose={()=>setEvent(null)}/>
- <Dialog open={editor} onOpenChange={setEditor}><DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogTitle>{editing?'Edit notice':'Create school notice'}</DialogTitle><DialogDescription>Compose a message for your school community.</DialogDescription><form onSubmit={e=>{e.preventDefault();saveNotice();}}>{preview?<div className="modal-body"><span className="tag">{audience}</span><h2 className="text-lg text-foreground my-4">{title}</h2><p>{body}</p></div>:<><div className="form-field"><label htmlFor="notice-title">Notice title</label><input id="notice-title" className="field" value={title} onChange={e=>setTitle(e.target.value)} required/></div><div className="form-field"><label htmlFor="notice-body">Message</label><textarea id="notice-body" className="field" value={body} onChange={e=>setBody(e.target.value)} required/></div><div className="module-grid"><div className="form-field"><label>Audience</label><select className="field" aria-label="Notice audience" value={audience} onChange={e=>setAudience(e.target.value)}><option>Grade 4</option><option>Grade 1</option><option>Whole school</option></select></div><div className="form-field"><label>Category</label><select className="field" value={noticeCategory} onChange={e=>setNoticeCategory(e.target.value as Notice['category'])}>{['Academic','Sport','General','Events'].map(c=><option key={c}>{c}</option>)}</select></div></div></>}<p className="text-xs text-muted-foreground mb-4">Recipient preview: {audience==='Whole school'?'320':'24'} demo families{audience==='Grade 4'?' · Jamie Williams (Emma, 4B)':''}</p><div className="form-field"><label>Status</label><select className="field" aria-label="Notice status" value={status} onChange={e=>setStatus(e.target.value as NoticeStatus)}>{['Draft','Review','Published','Scheduled'].map(s=><option key={s}>{s}</option>)}</select></div>{status==='Scheduled'&&<div className="form-field"><label>Publication time · Johannesburg</label><input className="field" type="datetime-local" required value={schedule} onChange={e=>setSchedule(e.target.value)}/></div>}<div className="flex gap-2"><Button variant="outline" type="button" onClick={()=>setPreview(!preview)}><Eye/>{preview?'Back to editor':'Preview'}</Button><Button type="submit">{status==='Published'?'Publish notice':status==='Review'?'Submit for review':status==='Scheduled'?'Schedule notice':'Save draft'}<Send/></Button></div></form></DialogContent></Dialog>
- <Dialog open={eventEditor} onOpenChange={setEventEditor}><DialogContent><DialogTitle>Create school event</DialogTitle><DialogDescription>Share an event in the school calendar.</DialogDescription><form onSubmit={e=>{e.preventDefault();update(s=>({...s,events:[...s.events,{id:`event-${s.events.length}`,title:eventTitle,day:eventDay,month:'OCT',time:eventTime,location:eventPlace,category:'General',audience:'Whole school'}].sort((a,b)=>a.day-b.day)}));notify('School event created.');setEventEditor(false);}}><div className="form-field"><label>Event title</label><input className="field" required value={eventTitle} onChange={e=>setEventTitle(e.target.value)}/></div><div className="form-field"><label>Day in October 2026</label><input className="field" type="number" min={1} max={31} value={eventDay} onChange={e=>setEventDay(Number(e.target.value))}/></div><div className="form-field"><label>Time</label><input className="field" required value={eventTime} onChange={e=>setEventTime(e.target.value)}/></div><div className="form-field"><label>Location</label><input className="field" required value={eventPlace} onChange={e=>setEventPlace(e.target.value)}/></div><Button type="submit">Create event<Plus/></Button></form></DialogContent></Dialog>
- <Dialog open={!!resource} onOpenChange={v=>{if(!v)setResource(null);}}><DialogContent><DialogTitle>{resource}</DialogTitle><DialogDescription>Sample document preview · {schoolConfig.name}</DialogDescription><div className="bg-muted p-6 border rounded-md modal-body"><FileText className="text-primary mb-4" size={30}/><h2 className="text-lg text-foreground mb-3">{resource}</h2><p>{schoolConfig.name} · {schoolConfig.term}</p><p>This sample school document is provided for the frontend preview. Final school PDFs will be supplied by the school.</p><p>{schoolConfig.subtitle}</p></div></DialogContent></Dialog>
- <Dialog open={resourceEditor} onOpenChange={setResourceEditor}><DialogContent><DialogTitle>Publish resource</DialogTitle><DialogDescription>Add a sample document to the school library.</DialogDescription><form onSubmit={e=>{e.preventDefault();update(s=>({...s,resources:[{title:resourceTitle,category:resourceCategory,size:'Demo document'},...s.resources]}));notify('Sample resource published.');setResourceEditor(false);}}><div className="form-field"><label>Document title</label><input className="field" required value={resourceTitle} onChange={e=>setResourceTitle(e.target.value)}/></div><div className="form-field"><label>Category</label><select className="field" value={resourceCategory} onChange={e=>setResourceCategory(e.target.value)}><option>School documents</option><option>Newsletters</option><option>Academic</option></select></div><Button type="submit">Publish sample resource</Button></form></DialogContent></Dialog>
- <Dialog open={!!enquiry} onOpenChange={v=>{if(!v)setEnquiry(null);}}><DialogContent className="max-h-[90dvh] overflow-auto"><DialogTitle>{enquiryCurrent?.subject}</DialogTitle><DialogDescription>{enquiryCurrent?.department} · {enquiryCurrent?.status}</DialogDescription>{enquiryCurrent?.messages.map((m,i)=><div className="chat-message" key={i}><strong>{m.author}</strong>{m.body}</div>)}{staff&&<div className="flex gap-2"><Button variant="outline" size="sm" onClick={()=>{update(s=>({...s,enquiries:s.enquiries.map(e=>e.id===enquiryCurrent?.id?{...e,status:'Assigned'}:e)}));notify('Enquiry assigned to the school office.');}}>Assign to me</Button><Button variant="outline" size="sm" onClick={()=>{update(s=>({...s,enquiries:s.enquiries.map(e=>e.id===enquiryCurrent?.id?{...e,status:'Resolved'}:e)}));notify('Enquiry marked resolved.');}}>Mark resolved<Check/></Button></div>}<form onSubmit={e=>{e.preventDefault();update(s=>({...s,enquiries:s.enquiries.map(item=>item.id===enquiryCurrent?.id?{...item,messages:[...item.messages,{author:staff?'School office':'You',body:reply}]}:item)}));setReply('');notify('Reply added to the demo conversation.');}}><div className="form-field"><label>Your reply</label><textarea className="field" required value={reply} onChange={e=>setReply(e.target.value)} placeholder="Write your reply…"/></div><Button type="submit">Send reply<Send/></Button></form></DialogContent></Dialog>
- <Dialog open={enquiryEditor} onOpenChange={setEnquiryEditor}><DialogContent><DialogTitle>New school enquiry</DialogTitle><DialogDescription>Send a demo enquiry to the right department.</DialogDescription><form onSubmit={e=>{e.preventDefault();update(s=>({...s,enquiries:[{id:`enquiry-${s.enquiries.length}`,subject:enquiryTitle,department,status:'Open',messages:[{author:'You',body:enquiryBody}]},...s.enquiries]}));notify('Enquiry submitted to the demo inbox.');setEnquiryEditor(false);}}><div className="form-field"><label>Department</label><select className="field" value={department} onChange={e=>setDepartment(e.target.value)}><option>Finance</option><option>School office</option><option>Academic</option><option>Sport</option></select></div><div className="form-field"><label>Subject</label><input className="field" required value={enquiryTitle} onChange={e=>setEnquiryTitle(e.target.value)}/></div><div className="form-field"><label>Message</label><textarea className="field" required value={enquiryBody} onChange={e=>setEnquiryBody(e.target.value)}/></div><Button type="submit">Submit enquiry<Send/></Button></form></DialogContent></Dialog>
- <Dialog open={conductEditor} onOpenChange={setConductEditor}><DialogContent><DialogTitle>Add conduct entry</DialogTitle><DialogDescription>Emma Williams · Grade 4B</DialogDescription><form onSubmit={e=>{e.preventDefault();update(s=>({...s,conduct:[{title:conductTitle,type:conductType,child:'Emma Williams'},...s.conduct]}));notify('Conduct entry recorded.');setConductEditor(false);}}><div className="form-field"><label>Entry type</label><select className="field" value={conductType} onChange={e=>setConductType(e.target.value)}><option>Merit</option><option>Demerit</option></select></div><div className="form-field"><label>Details</label><textarea className="field" required value={conductTitle} onChange={e=>setConductTitle(e.target.value)}/></div><Button type="submit">Record entry<Check/></Button></form></DialogContent></Dialog>
- <Dialog open={reportPreview} onOpenChange={setReportPreview}><DialogContent><DialogTitle>Emma Williams · Academic report</DialogTitle><DialogDescription>Grade 4B · Term 3, 2026 · Published sample</DialogDescription><div className="data-table-wrap"><table className="data-table min-w-0"><thead><tr><th>Subject</th><th>Achievement</th></tr></thead><tbody>{[['English','78%'],['Mathematics','84%'],['Natural Sciences','81%'],['Life Skills','88%']].map(([s,m])=><tr key={s}><td>{s}</td><td>{m}</td></tr>)}</tbody></table></div><p className="modal-body">Emma has shown excellent progress and brings a wonderful enthusiasm to the classroom.</p>{staff&&!state.reportReleased&&<Button onClick={()=>{update(s=>({...s,reportReleased:true}));notify('Demo Term 4 progress report reviewed and released.');setReportPreview(false);}}>Approve & release Term 4 demo report</Button>}</DialogContent></Dialog>
- <Dialog open={invite} onOpenChange={setInvite}><DialogContent><DialogTitle>Invite a parent</DialogTitle><DialogDescription>Preview only — no real email will be sent.</DialogDescription><form onSubmit={e=>{e.preventDefault();update(s=>({...s,invited:[...s.invited,email]}));notify('Demo invitation created. No email was sent.');setInvite(false);}}><div className="form-field"><label>Email address</label><input className="field" type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></div><Button type="submit">Create demo invitation<Mail/></Button></form></DialogContent></Dialog>
- </SchoolShell>;
+import { NotificationPanel } from "./notification-panel";
+import { WorkflowPanel } from "./workflow-panel";
+import { schoolConfig, money } from "@school-connect/core";
+import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import type { SchoolModule } from "@school-connect/core/permissions";
+import { canAccessModule } from "@school-connect/core/permissions";
+import type {
+  ReadModule,
+  ReadOptions,
+  RecordDetail,
+  ModuleRecord,
+} from "@school-connect/core/live";
+import { NOTICE_CATEGORIES, RESOURCE_CATEGORIES } from "@school-connect/core/domain";
+import {
+  monthCells,
+  monthRange,
+  moveMonth,
+  schoolDate,
+  eventDays,
+  eventIcs,
+} from "@school-connect/core/calendar";
+import { SchoolDataBoundary } from "@school-connect/backend/react";
+import type { Id } from "@school-connect/backend/dataModel";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { SchoolShell, navigation, staffNavigation } from "./shell";
+import { Heading, ChildPicker, Empty, RecordCard } from "./components";
+import { useRecords, useDetail, useDashboard, useReceipt, useSchool } from "./store";
+import { AccountManagement, PeopleInvitations } from "./account-management";
+const titles: Record<SchoolModule, string> = {
+  home: "Your school, connected",
+  messages: "School updates",
+  calendar: "School calendar",
+  children: "Learners",
+  resources: "Resources",
+  payments: "Payments",
+  forms: "Forms & consent",
+  contact: "Contact school",
+  more: "More from your school",
+  profile: "Your profile",
+  groups: "Groups & classes",
+  attendance: "Attendance",
+  conduct: "Learner conduct",
+  reports: "Learner reports",
+  people: "People & invitations",
+  settings: "School settings",
+  audit: "Audit log",
+};
+
+function Failure({ retry }: { retry: () => void }) {
+  return (
+    <div role="alert" className="status-banner">
+      This information could not be loaded.{" "}
+      <Button variant="outline" onClick={retry}>
+        Try again
+      </Button>
+    </div>
+  );
+}
+function Boundary({ children }: { children: React.ReactNode }) {
+  return (
+    <SchoolDataBoundary fallback={(retry) => <Failure retry={retry} />}>
+      {children}
+    </SchoolDataBoundary>
+  );
+}
+function exportEvent(record: ModuleRecord) {
+  const blob = new Blob([eventIcs(record, Date.now())], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "school-event.ics";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function Dashboard() {
+  const result = useDashboard();
+  return result.status === "error" ? (
+    <Failure retry={result.retry} />
+  ) : result.status !== "ready" ? (
+    <p role="status">Updating your school summary...</p>
+  ) : (
+    <div className="module-grid mb-6">
+      {[
+        ["Unread updates", result.data?.unread],
+        ["Pending actions", result.data?.pendingActions],
+        ["Upcoming events", result.data?.upcomingEvents],
+        [
+          "Amount due",
+          result.data?.amountDueCents === null
+            ? null
+            : money((result.data?.amountDueCents ?? 0) / 100),
+        ],
+      ]
+        .filter(([, v]) => v !== null)
+        .map(([label, value]) => (
+          <div className="record-card" key={label}>
+            <p>{label}</p>
+            <strong className="text-2xl">{value}</strong>
+          </div>
+        ))}
+    </div>
+  );
+}
+function DetailPanel({
+  module,
+  id,
+  options,
+  learnerId,
+}: {
+  module: ReadModule;
+  id: string;
+  options: ReadOptions;
+  learnerId?: string | undefined;
+}) {
+  const result = useDetail(module, id, options, learnerId);
+  const receipt = useReceipt();
+  const { offline } = useSchool();
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState("");
+  const [section, setSection] = useState(0);
+  const r = result.data?.record;
+  async function save(acknowledge: boolean) {
+    if (!r || offline) return;
+    setBusy(true);
+    setFailure("");
+    try {
+      await receipt({ noticeId: r.id as Id<"notices">, acknowledge });
+    } catch {
+      setFailure("Could not save your response. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (result.status === "error")
+    return (
+      <>
+        <DialogTitle>Record unavailable</DialogTitle>
+        <DialogDescription>
+          This record may no longer be available for your account and selection.
+        </DialogDescription>
+        <Failure retry={result.retry} />
+      </>
+    );
+  if (!r)
+    return (
+      <>
+        <DialogTitle>Loading record</DialogTitle>
+        <DialogDescription>Please wait...</DialogDescription>
+      </>
+    );
+  const related = result.data?.related ?? [];
+  const current = related[section];
+  return (
+    <>
+      <DialogTitle>{r.title}</DialogTitle>
+      <DialogDescription>
+        {r.subtitle} {r.status}
+      </DialogDescription>
+      <WorkflowPanel module={module} itemId={id} learnerId={learnerId} />
+      {module === "messages" && related.some((r) => r.module === "noticeReceipts") && (
+        <Boundary>
+          <NotificationPanel noticeId={id} />
+        </Boundary>
+      )}
+      <div className="modal-body whitespace-pre-wrap">{r.body}</div>
+      {r.fields?.map((f, i) => (
+        <p key={i}>
+          <strong>{f.label}: </strong>
+          {f.value}
+        </p>
+      ))}
+      {module === "messages" && r.canMarkRead && (
+        <div className="flex gap-2">
+          <Button disabled={offline || busy || r.read} onClick={() => void save(false)}>
+            {r.read ? "Read" : "Mark as read"}
+          </Button>
+          {r.requiresAcknowledgement && r.canAcknowledge && (
+            <Button disabled={offline || busy || r.acknowledged} onClick={() => void save(true)}>
+              {r.acknowledged ? "Acknowledged" : "Acknowledge"}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {module === "calendar" && (
+        <Button
+          onClick={() => {
+            try {
+              exportEvent(r);
+            } catch {
+              setFailure("Could not export this event.");
+            }
+          }}
+        >
+          Add to calendar (.ics)
+        </Button>
+      )}
+      {failure && <p role="alert">{failure}</p>}
+      {related.length > 0 && (
+        <>
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Related information">
+            {related.map((tab, i) => (
+              <Button
+                key={tab.module}
+                role="tab"
+                aria-selected={section === i}
+                variant={section === i ? "default" : "outline"}
+                onClick={() => setSection(i)}
+              >
+                {tab.title}
+              </Button>
+            ))}
+          </div>
+          {current && (
+            <Boundary key={`${current.module}:${r.id}`}>
+              <RecordBrowser
+                module={current.module}
+                options={{ ...(current.parentId ? { parentId: current.parentId } : {}) }}
+                learnerId={current.learnerId}
+                compact
+              />
+            </Boundary>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+export function RecordBrowser({
+  module,
+  options = {},
+  learnerId,
+  compact = false,
+}: {
+  module: ReadModule;
+  options?: ReadOptions;
+  learnerId?: string | undefined;
+  compact?: boolean;
+}) {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [outstanding, setOutstanding] = useState(false);
+  const [mode, setMode] = useState("agenda");
+  const [month, setMonth] = useState(() => schoolDate(Date.now()).slice(0, 7));
+  const [day, setDay] = useState("");
+  const [selected, setSelected] = useState<string>();
+  const [manage, setManage] = useState(false);
+  const { account } = useSchool();
+  const staff = account?.roles.some((r) => ["Teacher", "Principal", "Administrator"].includes(r));
+  const range = module === "calendar" && mode === "month" ? monthRange(month) : {};
+  const result = useRecords(
+    module,
+    {
+      ...options,
+      ...range,
+      ...(manage ? { manage: true } : {}),
+      ...(search ? { search } : {}),
+      ...(category ? { category } : {}),
+      ...(outstanding ? { outstandingOnly: true } : {}),
+    },
+    learnerId,
+  );
+  const categories =
+    module === "messages" ? NOTICE_CATEGORIES : module === "resources" ? RESOURCE_CATEGORIES : [];
+  const rows = result.data.records.filter(
+    (r) => !day || module !== "calendar" || mode !== "month" || eventDays(r, month).includes(day),
+  );
+  return (
+    <>
+      {!compact && !["home", "settings"].includes(module) && (
+        <div className="toolbar flex-wrap">
+          <input
+            aria-label="Search records"
+            className="field"
+            placeholder="Search records..."
+            maxLength={200}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {categories.length > 0 && (
+            <select
+              aria-label="Category"
+              className="field"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="">All categories</option>
+              {categories.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          )}
+          {module === "forms" && (
+            <label>
+              <input
+                type="checkbox"
+                checked={outstanding}
+                onChange={(e) => setOutstanding(e.target.checked)}
+              />{" "}
+              Outstanding only
+            </label>
+          )}
+        </div>
+      )}
+      {staff && ["messages", "calendar", "resources"].includes(module) && (
+        <label className="block my-3">
+          <input type="checkbox" checked={manage} onChange={(e) => setManage(e.target.checked)} />{" "}
+          Show staff workflow records
+        </label>
+      )}
+      {module === "calendar" && (
+        <>
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={mode === "agenda" ? "default" : "outline"}
+              onClick={() => {
+                setMode("agenda");
+                setDay("");
+              }}
+            >
+              Agenda
+            </Button>
+            <Button
+              variant={mode === "month" ? "default" : "outline"}
+              onClick={() => setMode("month")}
+            >
+              Month
+            </Button>
+          </div>
+          {mode === "month" && (
+            <>
+              <div className="flex items-center gap-3 mb-3">
+                <Button
+                  variant="outline"
+                  aria-label="Previous month"
+                  onClick={() => {
+                    setMonth(moveMonth(month, -1));
+                    setDay("");
+                  }}
+                >
+                  Previous
+                </Button>
+                <strong>{month}</strong>
+                <Button
+                  variant="outline"
+                  aria-label="Next month"
+                  onClick={() => {
+                    setMonth(moveMonth(month, 1));
+                    setDay("");
+                  }}
+                >
+                  Next
+                </Button>
+                <Button variant="ghost" onClick={() => setDay("")}>
+                  All days
+                </Button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 mb-4">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+                  <span className="text-center text-xs" key={d}>
+                    {d}
+                  </span>
+                ))}
+                {monthCells(month).map((date, i) =>
+                  date ? (
+                    <Button
+                      key={date}
+                      aria-label={date}
+                      aria-pressed={day === date}
+                      variant={day === date ? "default" : "outline"}
+                      onClick={() => setDay(date)}
+                    >
+                      {Number(date.slice(-2))}
+                      {result.data.records.some((r) => eventDays(r, month).includes(date))
+                        ? " *"
+                        : ""}
+                    </Button>
+                  ) : (
+                    <span key={`blank-${i}`} />
+                  ),
+                )}
+              </div>
+            </>
+          )}
+        </>
+      )}
+      {result.status === "loading" && <p role="status">Loading your school information...</p>}
+      {result.status === "ready" && !rows.length && (
+        <Empty
+          text={
+            result.canLoadMore
+              ? "No matches on these pages. Load more to continue searching."
+              : "No records match your account and selection."
+          }
+        />
+      )}
+      {rows.map((r) => (
+        <RecordCard key={r.id} record={r} onOpen={() => setSelected(r.id)} />
+      ))}
+      {(result.canLoadMore || result.loadingMore) && (
+        <Button
+          className="my-4"
+          variant="outline"
+          disabled={result.loadingMore}
+          onClick={result.loadMore}
+        >
+          {result.loadingMore ? "Loading..." : "Load more"}
+        </Button>
+      )}
+      <Dialog
+        open={!!selected}
+        onOpenChange={(v) => {
+          if (!v) setSelected(undefined);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          {selected && (
+            <Boundary key={selected}>
+              <DetailPanel module={module} id={selected} options={options} learnerId={learnerId} />
+            </Boundary>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+export function SchoolPortal({ module }: { module: SchoolModule }) {
+  const { account, accessRoles } = useSchool();
+  const [source, setSource] = useState<ReadModule>(module);
+  const directory = [...navigation, ...staffNavigation].filter(
+    (n) => canAccessModule(accessRoles, n.id, account?.disabledModules) && n.id !== "home",
+  );
+  return (
+    <SchoolShell module={module}>
+      <Heading
+        title={titles[module]}
+        description={
+          module === "home"
+            ? `Welcome, ${account?.name ?? ""}. Your school information updates automatically.`
+            : "Information shared securely with your school account."
+        }
+      />
+      {!!account?.learners.length && <ChildPicker />}
+      {module === "more" ? (
+        <div className="module-grid">
+          {directory.map((n) => (
+            <Link className="quick-link" to={n.path} key={n.id}>
+              <n.icon />
+              {n.name}
+            </Link>
+          ))}
+          <Link className="quick-link" to="/profile">
+            Your profile
+          </Link>
+          <a
+            className="quick-link"
+            href={schoolConfig.clothingStoreUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Uniform store
+          </a>
+        </div>
+      ) : module === "profile" ? (
+        <>
+          <div className="record-card">
+            <h2>{account?.name}</h2>
+            <p>{account?.email}</p>
+            <p>{accessRoles.join(" | ")}</p>
+            <p>{account?.learners.map((l) => l.name).join(", ")}</p>
+          </div>
+          <WorkflowPanel module="profile" />
+          <Boundary>
+            <NotificationPanel />
+          </Boundary>
+          <AccountManagement />
+        </>
+      ) : (
+        <>
+          <WorkflowPanel module={module} />
+          {module === "home" && (
+            <Boundary>
+              <Dashboard />
+            </Boundary>
+          )}
+          {(module === "groups" || module === "payments" || module === "people") && (
+            <div className="flex gap-2 mb-4">
+              {(module === "groups"
+                ? (["groups", "classes"] as const)
+                : module === "people"
+                  ? (["people", "invitations"] as const)
+                  : (["payments", "paymentHistory"] as const)
+              ).map((m) => (
+                <Button
+                  key={m}
+                  variant={source === m ? "default" : "outline"}
+                  onClick={() => setSource(m)}
+                >
+                  {m === "people"
+                    ? "Accounts"
+                    : m === "invitations"
+                      ? "Invitations"
+                      : m === "paymentHistory"
+                        ? "Payment history"
+                        : m === "payments"
+                          ? "Charges"
+                          : m === "classes"
+                            ? "Classes"
+                            : "Groups"}
+                </Button>
+              ))}
+            </div>
+          )}
+          <Boundary key={`${module}:${source}`}>
+            <RecordBrowser
+              module={
+                module === "groups" || module === "payments" || module === "people"
+                  ? source
+                  : module
+              }
+            />
+          </Boundary>
+        </>
+      )}
+    </SchoolShell>
+  );
 }

@@ -79,6 +79,7 @@ Default section order:
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 
 - Use DOX for this repository and keep the instruction hierarchy and indexes current.
+- Defer Phase 9 payment integration until the other feature work is complete. Continue with Phase 10 notifications next; leave payment-dependent reminders, receipt emails and payment journey checks pending until payments are implemented. Final launch still requires the applicable payment checks.
 - Keep the project independent of the original scaffold provider: no editor integration, telemetry, branding, project metadata, or Git synchronization. Shared links must use school names, descriptions, and the supplied crest.
 - Preserve the current Open Sans font and TanStack module design; use a light, premium banking-inspired layout for the Expo parent frontend while applying Wynberg Girls Junior School website colours and the user-supplied crest. Naming: Wynberg Girls Junior Connect (store/app name), WGJS Connect (phone label), Wynberg Girls Junior School (inside the app), Honor Before Honours (tagline).
 
@@ -86,28 +87,35 @@ When the user requests a durable behavior change, record it here or in the relev
 ## School Connect architecture
 - Keep the supported TanStack Start web application at the monorepo root and provider-independent domain types and mock repositories in `packages/school-core`; this allows future clients to reuse the same domain contracts without changing the preview bootstrap.
 - Keep TanStack module presentation under `src/features/school` and Expo presentation under `apps/expo/src/features/school`. Give named modules their own leaf routes in each client.
-- Share one in-memory mock repository through the root provider; prototype role switching must see the same state without creating production authorisation or persistence.
-- Prepare the future Convex backend in `packages/backend`. Clients remain on mocks until production adapters and authentication are implemented; components must not call providers directly.
+- Keep mock repositories for isolated tests/previews and backend fixtures. Runtime providers own identity and view state; module data comes from the shared live Convex hook.
+- `packages/backend` is the single Convex backend and database for both clients, linked to a dev deployment; never run Convex from the root. Convex Auth supplies identity on both clients; shared authenticated hooks read paginated modules and independent details from normalized tables. Scoped dashboard counts use the aggregate component and rebuildable projections. Components use the owning client store rather than calling providers directly.
+- Backend fixture commands seed the identified dev database through internal functions, preserve existing fixture edits, and expose reset separately. Production and unknown deployment targets are blocked by both command and server guards. CI uses isolated convex-test databases; cloud preview CI is deferred.
 
 ## Project Scope and Root Ownership
 
-- School Connect is a monorepo: the supported TanStack Start web app stays at the root, Expo Android/iOS/web is in `apps/expo`, the Convex scaffold is in `packages/backend`, and provider-independent domain code is in `packages/school-core`.
+- School Connect is a monorepo: the supported TanStack Start web app stays at the root, Expo Android/iOS/web is in `apps/expo`, the shared Convex backend is in `packages/backend`, and provider-independent domain code is in `packages/school-core`.
 - Root owns build and workspace configuration, dependency manifests and lockfiles, `.gitignore`, `README.md`, `FRONTEND.md`, and `roadmap.md`.
-- `FRONTEND.md` records delivered modules, research sources, and prototype limitations; keep it aligned with meaningful scope changes. `roadmap.md` owns planned work.
-- No production backend, authentication, persistence, real email, or payment processing is provisioned. Expo provides interactive parent screens with local mock data; staff routes remain placeholders. The existing TanStack frontend retains its broader role workflows.
+- Root also owns the client deliverable `WGJS-Connect-Scope-and-Requirements.pdf`; its reproducible source and diagram contracts live under `documents/`.
+- `FRONTEND.md` records delivered modules, research sources, and prototype limitations; keep it aligned with meaningful scope changes. `roadmap.md` owns planned work. `Backend-and-Database-Integration.md` owns the phased Convex backend/database integration checklist for both clients; tick steps only after verification.
+- Dev Convex Auth is connected on web and Expo, with real sessions, server-derived identity, invitations, and recovery flows. Live email delivery awaits deployment-only Resend configuration and a verified sender. No production deployment or payment processing is provisioned. Both clients read fictional dev database records; notice receipts persist across clients. Phase 7 writes persist on both clients: notice publication/scheduling, events, consent, enquiries, attendance/conduct, report review/release, people/settings and profiles. Native staff controls use server-derived roles. Payment processing remains disabled.
+- Web creates one Convex client per router alongside its TanStack Query bridge; private data is deferred until the client restores identity. Expo creates one client above its navigator. Expo web exports a SPA so real database-ID detail URLs resolve without build-time private-data enumeration.
+- Public identity/onboarding/protected-read references and types are exported through `@school-connect/backend/client`, verified against generated APIs by backend tests; internal generated APIs stay in backend code. No hard-coded demo passwords or role/account IDs may restore a session. Development accounts require the backend flag and the known dev URL; private credentials live only in ignored `.env.auth.local`.
+- Shared module grants live in school-core; backend session actors and document-scope checks enforce guardian, teacher and Finance boundaries. Authenticated school mutations require audit entries; runtime screens do not mount mock repositories. Server-produced workflow forms drive both clients through their store adapters; clients never grant authority from a displayed control. Module flags govern server reads/writes and navigation. Phase 8 files use session-owned upload reservations (PDF 10 MiB, images 5 MiB), authorized two-minute download grants, school-branded receipt PDFs from verified payment records, and conservative hourly cleanup. Receipt generation never changes payment status. Phase 10 adds session-bound phone registration, preference/quiet-hour-aware notice and consent notifications through bounded Workpools, provider-confirmed delivery reporting and hourly invitation expiry. Payment messages remain deferred; live email and physical-phone acceptance require service credentials and a compatible build.
 - Keep generated and local output out of the DOX tree: `node_modules/`, `.git/`, `.output/`, `.tanstack/`, `.wrangler/`, and `.firecrawl/`. Research downloads in `.firecrawl/` are ignored; durable findings belong in the owning documentation.
 
 ## Root Work Guidance
 
 - `vite.config.ts` directly configures Vite, TanStack Start, React, Tailwind, native TypeScript path resolution, and build-only Nitro. Production output is a standalone Node server; `npm start` serves the build. Preserve the custom SSR entry and CSRF middleware.
-- Dokploy hosts the root web app using the root `Dockerfile` with repository-root build context. Build with Node 24/npm 11 and run Nitro on `0.0.0.0:3000`; do not deploy this server-rendered client through static-site Caddy detection. `.dockerignore` excludes private environments, local dependencies and generated output. Copy only the complete `.output` into the runtime image; no Expo or database process runs there.
+- Dokploy hosts the root web app using the root `Dockerfile` with repository-root build context. Build with Node 24/npm 11 and run Nitro on `0.0.0.0:3000`; do not deploy this server-rendered client through static-site Caddy detection. `.dockerignore` excludes private environments, local dependencies and generated output. Copy only the complete `.output` into the runtime image; no Expo or database process runs there. Pass the public `VITE_CONVEX_URL` as a Docker build argument for authentication; never copy backend signing/email secrets into the image.
 - Local setup is documented in `README.md`; use npm 11 with the single root `package-lock.json` for all workspaces. Do not add competing package-manager lockfiles; EAS uses the root lockfile to select npm.
 - DOX is Markdown only. Do not add a DOX package, dependency, or runtime.
 
 ## Root Verification
 
 - Run existing checks relevant to code changes from the repository root: `npm test`, `npm run build`, `node node_modules/typescript/bin/tsc --noEmit`, and `npm run lint`.
-- Existing tests cover web demo credentials/session lifecycle/parent module visibility, home-route matching, shared mock repository isolation/subscription/native cloning, and pure parent mobile filtering/validation/counters/privacy; do not describe them as native device coverage.
+- Frontend Vitest uses two workers; backend Vitest uses one worker and a 15-second default test timeout to bound component/fixture memory on Windows and CI.
+- `npm run test:backend` verifies development fixture commands, Convex seed/reset, authentication, role/ownership denials and audit rollback. GitHub CI runs both test suites and web/Expo/backend TypeScript checks without cloud credentials.
+- Existing tests cover real-session store delegation/rendering, parent module visibility, home-route matching, shared mock repository isolation/subscription/native cloning, pure parent mobile filtering/validation/counters/privacy, backend verification/recovery/invitations/session revocation and seed/reset, live subscription stability/connection/retry, module scope, persisted notice receipts, cursor pagination beyond 50 rows, independent details, scoped aggregate counts, calendar exports, audited write workflows, scheduling/fanout, PDF release access, account reactivation/session cutoffs, submission confirmation/error UI, protected file grants, upload validation and conservative orphan cleanup. Mocked email tests and API smoke checks are not live email delivery or native device coverage.
 - For Expo/backend changes, run `typecheck:expo`, `typecheck:backend`, `check:expo`, and `export:expo` root commands as relevant. Keep private `.env` files ignored and access tokens out of app configuration and bundles.
 - For documentation changes, check referenced local paths, child indexes, inherited contracts, and `git diff --check`.
 
@@ -117,8 +125,26 @@ When the user requests a durable behavior change, record it here or in the relev
 
 ## Child DOX Index
 
+- [documents/AGENTS.md](documents/AGENTS.md): client-facing documents, scope sources, diagrams, and PDF verification.
 - [src/AGENTS.md](src/AGENTS.md): web application, runtime, styling, and frontend subdomains.
 - [packages/AGENTS.md](packages/AGENTS.md): reusable workspace packages and the school core.
 - [public/AGENTS.md](public/AGENTS.md): static files served directly by the web app.
 - [apps/AGENTS.md](apps/AGENTS.md): additional client workspaces, including Expo for Android/iOS/web.
-- [scripts/AGENTS.md](scripts/AGENTS.md): Expo account helpers, phone/QR development launcher, and native asset preparation.
+- [scripts/AGENTS.md](scripts/AGENTS.md): Expo account helpers, phone/QR development launcher, native/receipt asset preparation, and guarded backend fixture/auth helpers.
+- [.github/AGENTS.md](.github/AGENTS.md): Node/npm CI with isolated backend tests and client/backend TypeScript verification.
+
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+All Convex code lives in `packages/backend/convex/` (run Convex CLI commands from
+`packages/backend`). When working on Convex code, **always read
+`packages/backend/convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills are installed at the repository root (`.claude/skills`,
+`.agents/skills`). Refresh guidelines with `npx convex ai-files install` from
+`packages/backend`, then delete the duplicate skill folders it creates there.
+
+<!-- convex-ai-end -->

@@ -1,6 +1,7 @@
-export type Role = 'Parent' | 'Teacher' | 'Principal' | 'Finance' | 'Administrator';
-export type NoticeStatus = 'Draft' | 'Review' | 'Published' | 'Scheduled';
-export interface Notice { id: string; title: string; body: string; category: 'Academic' | 'Sport' | 'General' | 'Events'; audience: string; date: string; author: string; status: NoticeStatus; urgent?: boolean; attachment?: string; action?: 'consent'; read?: boolean; acknowledged?: boolean }
+import type { NoticeCategory, NoticeStatus, Role } from './domain';
+export * from './domain';
+export * from './permissions';
+export interface Notice { id: string; title: string; body: string; category: NoticeCategory; audience: string; date: string; author: string; status: NoticeStatus; urgent?: boolean; attachment?: string; action?: 'consent'; read?: boolean; acknowledged?: boolean }
 export interface Child { id: string; name: string; grade: string; className: string; initials: string; teacher: string }
 export interface SchoolEvent { id: string; title: string; day: number; month: string; time: string; location: string; category: string; audience: string }
 export interface Enquiry { id: string; subject: string; department: string; status: 'Open' | 'Assigned' | 'Resolved'; messages: { author: string; body: string }[] }

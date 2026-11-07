@@ -11,7 +11,7 @@
 
 ## Local Contracts
 
-- School modules stay under `school/` and use the shared root provider and repository contracts.
+- School modules stay under `school/` and use the root identity/UI provider and shared live module hook.
 - Components must not call backend providers directly.
 
 ## Work Guidance
@@ -24,4 +24,4 @@
 
 ## Child DOX Index
 
-- [school/AGENTS.md](school/AGENTS.md): school screens, responsive navigation, dialogs, web demo login/session handling, and shared demo state.
+- [school/AGENTS.md](school/AGENTS.md): school screens, responsive navigation, dialogs, Convex Auth login, invitations, session handling, shared module gates, and live module reads and audited workflow presentation.

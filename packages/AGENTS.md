@@ -25,5 +25,5 @@
 
 ## Child DOX Index
 
-- [school-core/AGENTS.md](school-core/AGENTS.md): school domain contracts, fixtures, configuration, and mock repository.
-- [backend/AGENTS.md](backend/AGENTS.md): Convex schema/configuration scaffold and deferred provisioning workflow.
+- [school-core/AGENTS.md](school-core/AGENTS.md): school domain/workflow contracts, shared module permissions, calendar export, fixtures, configuration, and mock repository.
+- [backend/AGENTS.md](backend/AGENTS.md): the single Convex backend shared by both clients, its dev deployment link, typed API exports and shared reactive client hooks.

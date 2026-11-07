@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { children } from "@school-connect/core";
+
 import { SchoolText as Text } from "@/components/school-screen";
 import { colors, fonts } from "@/theme/school";
 import { useSchool } from "./store";
@@ -40,6 +40,7 @@ export function Screen({
   children: ReactNode;
   back?: boolean;
 }) {
+  const { account, connected, offline } = useSchool();
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -82,7 +83,10 @@ export function Screen({
                 style={s.avatar}
               >
                 <Text weight="bold" style={{ color: colors.deepRed }}>
-                  JW
+                  {account?.name
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join("") ?? "WG"}
                 </Text>
               </Pressable>
             </View>
@@ -92,9 +96,21 @@ export function Screen({
               </Text>
               {subtitle && <Text style={s.muted}>{subtitle}</Text>}
             </View>
+            <Text style={s.small}>
+              Connected to the school development database. Records are fictional test data.
+            </Text>
+            {!connected && (
+              <Feedback
+                message={
+                  offline
+                    ? "Connection lost. Showing the last received information."
+                    : "Connecting to your school..."
+                }
+              />
+            )}
             {content}
             <Text style={[s.small, { textAlign: "center", marginTop: 12 }]}>
-              WGJS Connect · Local frontend demo
+              WGJS Connect · Your school, connected
             </Text>
           </View>
         </ScrollView>
@@ -256,16 +272,30 @@ export function Chips({
   );
 }
 export function ChildPicker() {
-  const { child, setChild } = useSchool();
-  const options = [{ id: "all", name: "All children" }, ...children];
+  const { child, setChild, account } = useSchool();
+  const options = [{ id: "all", name: "All children" }, ...(account?.learners ?? [])];
   return (
-    <Chips
-      items={options.map((item) => item.name.split(" Williams")[0])}
-      value={options.find((item) => item.id === child)!.name.split(" Williams")[0]}
-      onChange={(value) =>
-        setChild(options.find((item) => item.name.split(" Williams")[0] === value)!.id)
-      }
-    />
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {options.map((option) => (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: child === option.id }}
+            key={option.id}
+            onPress={() => setChild(option.id)}
+            style={{
+              padding: 12,
+              borderRadius: 20,
+              backgroundColor: child === option.id ? colors.primary : colors.surface,
+            }}
+          >
+            <Text style={{ color: child === option.id ? "white" : colors.muted }}>
+              {option.name}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 export function Field({ label, ...props }: ComponentProps<typeof TextInput> & { label: string }) {

@@ -1,15 +1,17 @@
 # Wynberg Girls Junior Connect frontend inventory
 
 ## Delivery and limits
-The root workspace remains the standalone TanStack Start web app. `packages/school-core` contains provider-independent domain types, school configuration, fixtures and a repository contract. `apps/expo` adds an Expo SDK 57 / Expo Router client for Android, iOS, and Expo web. `packages/backend` prepares Convex with an empty initial schema and no provisioned deployment.
+The root TanStack Start web app and Expo SDK 57 school app use one development Convex backend. Authentication, identity, paginated module reads, independent details and scoped dashboard counts are live. Records remain fictional development fixtures; no production deployment or school payment processing is provisioned. The school-core mock repository remains available for tests/previews but is not mounted by either runtime provider.
 
-The Expo parent frontend uses a premium light card layout with red/gold branding and five bottom tabs: Home, Updates, Calendar, Children, More. It includes child-scoped dashboard counts, published update search/read/acknowledgement, month/agenda and event details, learner profiles with read-only school records, simulated checkout with pending/failure/retry/receipts, validated consent with a saved response, resource sample previews, local enquiry threads/replies, and profile preferences. Staff modules remain unlinked placeholders. Each running client has its own in-memory repository; live cross-client state requires a future backend adapter.
+Web retains its module URLs, sidebar and responsive navigation. Expo retains its five parent tabs, supplied crest, Open Sans, red/gold palette and premium light cards. Native staff screens use server-derived roles and the shared module matrix. Module lists share server-projected records with native cursor pagination, category filters and server search over successive pages. Detail queries open records independently of loaded pages; related tabs expose actual learner histories, class rosters, consent responses and enquiry threads.
 
-No backend, Clerk, Convex, real email or payment processing has been provisioned. Demo state is in memory and resets on refresh. Demo roles are not security. School branding is Wynberg Girls Junior School; contact information still awaits confirmation. Campus photo is generated, not the actual school, and learner/operational records remain fictional demo data.
+Notice read/acknowledgement receipts persist, are audited, and update other signed-in clients without reload. An optimistic update is rolled back on rejection. Phase 7 school actions save through audited server commands on both clients. Phase 8 adds notice/resource/report uploads, two-minute protected downloads, verified-payment receipt PDFs and conservative scheduled cleanup. PDFs support 10 MiB, images 5 MiB; payment processing remains Phase 9. Screens never claim a simulated save or payment.
 
-The root web build directly configures Vite/TanStack/React/Tailwind/Nitro and produces a standalone Node server. Scaffolding-service dependencies, injected editor scripts, project metadata and browser telemetry hooks are removed. School-only Open Graph and Twitter metadata include the supplied crest; share-image URLs use the request origin, with an optional build-time `VITE_SITE_URL` override.
+Web creates one Convex client per router/request and connects the TanStack Query bridge. Private module subscriptions start only after browser identity restoration; SSR shows the branded session/loading gate without prefetching private data. Expo uses one client above its navigator and SecureStore for native tokens. Expo web exports a SPA so database-ID detail URLs work without enumerating private IDs at build time; hosting must use index.html fallback.
 
-Dokploy deployment uses a repository-root multi-stage Dockerfile with Node 24/npm 11 and the standalone Nitro server on port 3000. Build contexts exclude private environments and generated/local output; the runtime image contains only the complete `.output`. Expo and the future Convex backend are separate deployment concerns.
+Both clients display loading, empty, error/retry and Load more states. Offline/reconnecting feedback comes from the actual Convex socket, with the last received data retained during a disconnect. There is no demo offline toggle. No persistent offline-write queue is implemented.
+
+The web build produces a standalone Nitro Node server. Dokploy uses the root Dockerfile with Node 24/npm 11 and public VITE_CONVEX_URL build configuration. Expo and Convex remain separate deployment concerns. Provider branding, editor hooks and telemetry from the original scaffold remain removed.
 
 ## Research
 - https://help.d6.co.za/portal/en/kb/articles/d6-communicator-mobile-app-user-manual
@@ -29,25 +31,33 @@ Official d6 materials informed the module structure and workflows; this is not a
 - `schoolConfig` in `packages/school-core/src/index.ts` owns the branding labels. Route metadata and school screens consume it.
 - `public/logo.png` is the supplied school crest, used directly in the app, favicon, and Apple touch icon. `public/manifest.webmanifest` provides web app naming and theme metadata; no native store listing is provisioned here.
 
-## TanStack routes and components
-- `/`: parent home / staff overview, child filters, notices, events and actions.
-- `/messages`: search/category filters, notice details, acknowledged state, compose/preview/draft/review/publish/schedule and delivery distinctions.
-- `/calendar`: month/agenda, event detail, create event, calendar download.
-- `/children`: learner overview, published reports, conduct, attendance and timetable.
-- `/resources`: category/search, sample document preview and sample publishing.
-- `/payments`: charge details, simulated checkout return pending verification, finance simulation, failed/retry and receipt.
-- `/forms`: excursion consent and staff response overview.
-- `/contact`: departmental enquiries, threads, reply, assign and resolve.
-- `/more`: mobile module directory and external clothing-store link.
-- `/signin`: branded public demo login with distinct Parent, Teacher, Principal, Finance and Administrator credentials, validation and credential autofill. All other module routes require a demo session.
-- `/profile`: current demo identity, notifications, offline/error/retry demos and sign-out.
-- `/groups`, `/attendance`, `/conduct`, `/reports`: staff learner operations.
-- `/people`, `/settings`, `/audit`: demo invitations, feature flags, settings preview and sample audit list.
+## Live route inventory
+- Home: exact unread, pending-action, upcoming-event and amount-due counts after complete scoped aggregate materialization; school identity/term and live navigation.
+- Messages: paginated published feed, server search/category filters, independent detail, persisted read/acknowledgement. Staff can mark readable notices as read; guardian acknowledgements retain audience checks.
+- Calendar: agenda and month/day views, stored event details and interoperable ICS download/native sharing.
+- Learners: actual class/teacher/profile metadata, timetable, released reports, visible conduct and attendance history through related tabs.
+- Resources: paginated authorized metadata with category/search; secure downloads remain deferred.
+- Payments: per-learner charges and actual stored history/status/receipt references; checkout is disabled.
+- Forms: authorized consent requests, outstanding-only filter and scoped response details; submissions remain deferred.
+- Contact: own enquiries and paginated conversations; assigned teachers and whole-school staff get their authorized view, with internal notes hidden from families.
+- Staff: groups/classes and class rosters, register marks, conduct, reports, people, school settings/flags and chronological audit. Teacher scope uses assignments, never guardian linkage alone. Web retains Administrator email invitation UI, pending email configuration.
+- More/profile: permitted navigation and live identity/session controls. Sign-in retains verification, recovery, invitation acceptance and magic-link confirmation.
 
-`SchoolShell` provides desktop/sidebar and mobile/bottom navigation. `SchoolPortal` composes module screens. Shared detail components provide notice, event, consent and payment dialogs. `SchoolProvider` owns the repository, demo session and role/child context. The header shows the signed-in identity and sign-out control; role changes require signing in with another demo account. The account ID survives refresh in sessionStorage, while repository data remains in memory. Parent sessions cannot open staff-only module previews; staff roles retain the existing shared staff workspace without granular staff permissions.
+## Data ownership and remaining work
+`packages/backend/CLIENT-DATA.md` defines pagination, independent details, dashboard materialization/invalidation and error handling. Stores own auth/onboarding and selection; server data is never copied into SchoolState. An empty filtered page retains Load more so older matching records remain reachable. Dashboard totals show an updating state until complete and use no query wall clock.
 
-## Replacing mocks
-Implement `SchoolRepository` in a future adapter against `packages/backend`. Map subscription/snapshot/update operations to typed Convex queries and mutations. Provision Convex separately using `npm run dev:backend`, and implement production authentication/role checks; never trust frontend demo credentials or session state. Put real messages, document storage, PDF previews, payment verification/webhooks and server audit records behind backend contracts.
+Phase 7 implements publication/scheduling, event changes, validated consent, assigned enquiry replies/status, register corrections, conduct visibility, report review/release, invitations/role/class/deactivation controls, settings and profile preferences. Protected storage downloads are implemented in Phase 8; Phase 10 implements notifications with live activation checks pending; provider payments remain deferred. Native calendar sharing needs a compatible binary and device verification. No production parity or exact d6 equivalence is claimed.
 
-## Deferred scope
-Real PDF rendering/import parsing, rich-text/gallery/video blocks, custom audience group editing, granular class permissions, persistent scheduling, CSV import, live branding configuration, full accounting, native shop, elections, AI and custom modules are not implemented. Settings controls marked preview do not change school branding. Sample audit rows and delivery counts are not provider telemetry. No production parity or exact d6 equivalence is claimed.
+## Authentication delivery status
+Both clients use Convex Auth and the same identity contract. Active linked guardians and explicit staff roles enter Expo with authorized navigation and school actions. Revoked/deactivated sessions are blocked. Development passwords live only in ignored .env.auth.local and require the exact development deployment and flag.
+
+Verification/recovery/invitation email flows are tested with mocked transport; live delivery still needs RESEND_API_KEY, a verified AUTH_EMAIL_FROM and a reachable SITE_URL. Browser/API checks do not establish physical native-device coverage.
+
+## School write controls
+Both clients render server-described forms under School actions, with online completion, explicit confirmations for sensitive changes, disabled pending buttons and retained drafts on failure. Actions appear beside lists and authorized details. A staff-only workflow filter exposes drafts/review/scheduled notices and cancelled events; People includes sanitized invitation history.
+
+Server permissions remain authoritative. Teachers write assigned classes, Principal/Administrator review publication/report release, guardians submit only eligible consent, and only responsible staff resolve enquiries. Submitted-register corrections capture prior/next values and a reason. Deactivated accounts cannot regain old sessions when reactivated. Module switches immediately affect navigation and server access; profile preferences persist without claiming push/email delivery.
+
+Report selection/upload supports PDFs up to 10 MiB through authenticated upload reservations; two-minute download links recheck session and current scope/release at redemption. Notice/resource attachments support PDF, PNG and JPEG; receipt PDFs require matching successful stored payments. Sample text report fixtures are not presented as downloadable PDFs. Native selection/sharing requires a compatible build and physical-device verification. See [write contracts](packages/backend/WRITE-WORKFLOWS.md).
+
+Phase 10 adds paginated personal/staff notice delivery status and confirmed retries to both clients. Expo adds session-bound phone registration and safe notification responses; web is a no-op for device registration. Server delivery respects preferences and quiet hours. Accepted/provider-confirmed/read/acknowledged remain distinct. Live email and physical phone acceptance require the activation steps in packages/backend/NOTIFICATIONS.md; payment notifications remain deferred.

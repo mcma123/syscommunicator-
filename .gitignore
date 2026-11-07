@@ -25,6 +25,7 @@ dist-ssr
 .wrangler/
 .dev.vars
 .firecrawl/
+.cache/scope-qa/
 
 # Editor directories and files
 .vscode/*

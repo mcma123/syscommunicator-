@@ -1,12 +1,16 @@
 # Wynberg Girls Junior Connect
 
-A school communication monorepo for Wynberg Girls Junior School, inspired by d6 module workflows. The existing TanStack web app stays at the root; `apps/expo` provides an Android, iOS, and Expo web parent frontend; `packages/backend` prepares a future Convex database; `packages/school-core` shares domain contracts and mock data. The apps use the school's red and gold colours, supplied crest, and the tagline **Honor Before Honours**, while retaining Open Sans.
+A school communication monorepo for Wynberg Girls Junior School, inspired by d6 module workflows. The existing TanStack web app stays at the root; `apps/expo` provides an Android, iOS, and Expo web school frontend; `packages/backend` is the single Convex backend and database for both clients (dev deployment linked, schema and internal fixture functions deployed; fictional seed data and dev authentication available); `packages/school-core` shares domain contracts and mock data. The apps use the school's red and gold colours, supplied crest, and the tagline **Honor Before Honours**, while retaining Open Sans.
 
-The full app/store name is **Wynberg Girls Junior Connect**, the phone icon label is **WGJS Connect**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. Native store submissions and live backend integration remain future work.
+The full app/store name is **Wynberg Girls Junior Connect**, the phone icon label is **WGJS Connect**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. Live development reads and authenticated sessions are connected. Native store submissions and production backend provisioning remain future work.
 
 ## Development
 
-Use Node.js 24 LTS and npm 11. Install all workspaces from the root. Both clients run on mock data without database credentials; each client owns its own temporary state and changes reset on reload.
+The client-facing [Scope and Requirements PDF](WGJS-Connect-Scope-and-Requirements.pdf) explains the proposed completed system, mobile and web modules, workflows, and delivery boundaries. Reproducible sources and editable diagrams are maintained under [documents/scope](documents/scope/AGENTS.md). It is a proposed scope for review, not a claim that production services are connected.
+
+The phased plan for connecting both the web and Expo clients to one shared Convex backend and database is tracked in [Backend and Database Integration](Backend-and-Database-Integration.md).
+
+Use Node.js 24 LTS and npm 11. Install all workspaces from the root. Both clients use the public Convex URL for real authentication and identity. School modules read fictional development database records through shared paginated queries and independent details; notice read/acknowledgement persists across clients. School write workflows are audited and persist across clients; payment processing remains unavailable.
 
 ```sh
 git clone <this-repository-url>
@@ -50,7 +54,7 @@ In the Dokploy application, select:
 
 Remove any Caddy/static-site start command override, then deploy. The Dockerfile installs from the monorepo root using Node 24/npm 11, builds the web app and starts `node .output/server/index.mjs` as an unprivileged user. It does not start Expo, Convex or a separate database. Do not set `NODE_ENV=production` during dependency installation: the web build needs devDependencies.
 
-`HOST=0.0.0.0`, `PORT=3000` and runtime `NODE_ENV=production` are set in the image. No Expo token or backend credentials are required for this demo. Private `.env` files are excluded from Docker's build context. Optional public build argument `VITE_SITE_URL` can pin the canonical web origin; otherwise share metadata uses the incoming request origin.
+`HOST=0.0.0.0`, `PORT=3000` and runtime `NODE_ENV=production` are set in the image. Set the public Docker build argument `VITE_CONVEX_URL` to the intended deployment URL for sign-in (`https://diligent-bass-226.convex.cloud` for the current dev preview). Rebuild after changing it. No Expo token or backend secrets belong in this image. Private `.env` files are excluded from Docker's build context. Optional public build argument `VITE_SITE_URL` can pin the canonical web origin; otherwise share metadata uses the incoming request origin.
 
 For local container testing with Docker installed:
 
@@ -72,31 +76,55 @@ Open `/signin` and `/logo.png` to verify the application and crest.
 | `npm run dev:mobile:lan` | Optional local-network Expo Go server, port 8081 |
 | `npm run dev:mobile:client` | Metro explicitly for an installed development build |
 | `npm run dev:expo-web` | Expo web development server, port 8081 |
-| `npm run dev:backend` | Convex setup/development; provisions only when explicitly run and authenticated |
+| `npm run dev:backend` | Convex dev server for `packages/backend` (the only Convex folder); requires Convex login |
 | `npm run typecheck:web` | Existing web TypeScript check |
 | `npm run typecheck:expo` | Expo TypeScript check |
-| `npm run typecheck:backend` | Offline backend schema check |
+| `npm run typecheck:backend` | Offline backend schema/function check |
+| `npm run test:backend` | Isolated Convex auth/onboarding/fixture and command-guard tests |
+| `npm run setup:auth:dev` | Configure dev signing keys and private dev accounts |
+| `npm run verify:auth:dev` | Real dev password/identity/session smoke check |
+| `npm run seed:backend` | Push, seed missing dev fixtures, and verify; preserve existing edits |
+| `npm run reset:backend` | Clear dev application data and seed again; removes seed-owned files |
+| `npm run verify:backend` | Read-only dev counts, relationships, and sample-file checks |
 | `npm run check:expo` | Expo diagnostics |
 | `npm run export:expo` | Android, iOS, and web bundle export |
 | `npm run expo:whoami` / `expo:init` / `expo:info` | Authenticate, link, and inspect the Expo account project |
 | `npm run expo:update` | Publish a native update to the preview branch |
 | `npm run expo:deploy` | Deploy the exported Expo web frontend to EAS Hosting preview |
 
-Expo includes a premium parent frontend: five bottom tabs, updates, learner profiles, payments, consent, resources, enquiries, and profile preferences. Interactions use local demo data; staff routes remain placeholders. Follow [the Expo workspace guide](apps/expo/README.md) to develop those screens and [the backend guide](packages/backend/README.md) when ready to provision Convex.
+Expo includes a premium parent frontend: five bottom tabs, updates, learner profiles, payments, consent, resources, enquiries, and profile preferences. Module reads use shared paginated Convex hooks and independent details; staff roles can open their authorized read screens. School actions persist notices, events, consent, enquiries, registers/conduct, report review/release, people/settings and profiles. Payments remain disabled. Follow [the Expo workspace guide](apps/expo/README.md) to develop those screens and [the backend guide](packages/backend/README.md) for Convex setup. Phase 8 supports PDF uploads up to 10 MiB, image attachments up to 5 MiB and expiring protected downloads; native file selection/sharing needs a compatible build and device verification.
 
-## Web demo login
+## Sign-in and identity
 
-Run `npm run dev` and open http://localhost:8080/signin. Select a profile, click **Use these details**, then **Sign in to WGJS Connect**.
+Run `npm run dev` and open http://localhost:8080/signin. Both clients use **Convex Auth** for email/password, email verification, magic links and password recovery. The web login retains the school design; Expo has a parent sign-in screen and stores native session tokens with `expo-secure-store` (browser storage for Expo web). The server supplies profiles, staff roles and linked learners; old browser demo IDs cannot create a session.
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Parent | `parent@wgjs.example` | `ParentDemo!26` |
-| Teacher | `teacher@wgjs.example` | `TeacherDemo!26` |
-| Principal | `principal@wgjs.example` | `PrincipalDemo!26` |
-| Finance | `finance@wgjs.example` | `FinanceDemo!26` |
-| Administrator | `admin@wgjs.example` | `AdminDemo!26` |
+For this linked development deployment:
 
-These fictional accounts apply to the root TanStack web app. Sign out using the header button or Profile to switch accounts. The account ID is stored in sessionStorage for this browser tab; passwords are never stored there. Account identity survives refresh, but mock school changes reset on reload. Staff accounts use the existing staff module previews; granular staff permissions are not implemented. Parents cannot open staff-only module previews through the demo UI. This is frontend demonstration access, not production authentication or server-side authorization. Expo remains the separate parent frontend.
+```sh
+npm run seed:backend
+npm run setup:auth:dev
+npm run verify:auth:dev
+```
+
+Auth setup preserves existing signing keys, configures missing dev keys, enables the dev-account flag and provisions five real password accounts for the seeded fictional profiles. Private passwords are generated in ignored `.env.auth.local`, using `DEV_AUTH_PASSWORD_PARENT`, `DEV_AUTH_PASSWORD_TEACHER`, `DEV_AUTH_PASSWORD_PRINCIPAL`, `DEV_AUTH_PASSWORD_FINANCE` and `DEV_AUTH_PASSWORD_ADMIN`. Their emails are `parent@wgjs.example`, `teacher@wgjs.example`, `principal@wgjs.example`, `finance@wgjs.example`, and `admin@wgjs.example`. There is no credential picker or shared hard-coded password. The setup helper pipes secrets through stdin and removes temporary provisioning passwords from the deployment. Never commit this file or copy its values into public variables.
+
+Development accounts work only with `ENABLE_DEMO_ACCOUNTS=true` on the identified dev deployment. They cannot authenticate on production or an unknown deployment. Sign out from the header/profile to switch accounts; Profile also supports **Sign out everywhere**. Revoked and deactivated accounts are blocked. Expo accepts linked guardians and explicit staff roles. Both clients share fictional development database records and persisted notice receipts.
+
+### Email activation and invitations
+
+In the **Convex dev deployment environment**, configure `RESEND_API_KEY`, `AUTH_EMAIL_FROM` (a verified Resend sender), and `SITE_URL` (the web app URL recipients can open). Never put these secrets in client env files. The default dev `SITE_URL` is `http://localhost:8080`; replace it with the reachable deployed web URL for real recipients. Email actions fail explicitly until configured; no live email delivery has been verified yet.
+
+Parents create a password using the school-registered guardian email and verify the emailed code; the existing profile keeps its learner links. An Administrator uses the **People** account form to email staff/guardian invitations. Recipients sign in/create a password, verify their email and accept the single-use invitation code. Invitations expire after seven days; only hashes are stored and only the matching verified recipient can accept. Unknown emails without an invitation cannot register. Missing/expired access requires school assistance.
+
+Password recovery uses an emailed eight-digit code and invalidates previous sessions after the password changes. Magic links require explicit email confirmation and expire after 15 minutes. Native links use `wgjsconnect://signin`, which needs a compatible installed native build; password and code flows can be tested in SDK-compatible Expo Go. Native runtime 1.0.3 includes SecureStore and notification configuration; existing builds need a new compatible binary before native updates.
+
+`verify:auth:dev` checks real password sessions from two independent HTTP clients, matching parent identity/learners, staff roles, guardian/class/publication/Finance/signed-out authorization and cross-session revocation. Automated email/invitation/recovery tests use a mocked transport. Neither check is native device testing or proof of live email delivery.
+
+## Backend development data
+
+Run `npm run seed:backend` to populate the linked `dev:diligent-bass-226` deployment with fictional school records. The command pushes backend functions first, stores six labelled sample text documents, inserts missing fixture records, and verifies counts and relationships. Run it again safely to preserve existing edits. Both clients read the fictional seeded records through scoped paginated reads and independent details.
+
+`npm run reset:backend` explicitly clears all application records in that development database, deletes only seed-owned sample files, then rebuilds fixtures. Reset also clears auth accounts/sessions: rerun `setup:auth:dev` to restore dev logins. Seed/reset are blocked on production and unknown targets. `npm run verify:backend` is read-only; `npm run test:backend` uses isolated in-memory databases with no credentials. See the [backend guide](packages/backend/README.md) for limits and recovery. GitHub CI runs tests and all three TypeScript checks; cloud preview CI is deferred.
 
 ## Local account credentials
 
@@ -163,7 +191,11 @@ on a network that allows it, use `npm run dev:mobile:lan` and keep both devices
 on that same network. Scan the QR from the mobile terminal when using a tunnel;
 the separate browser-only terminal can still show a local-network QR.
 
-The local frontend uses mock data; no backend server is needed. Reloading resets demo state.
+Local sign-in and module reads use the linked Convex dev backend. Notice read/acknowledgement receipts survive reload and update other clients. School write workflows are audited and persist across clients; payment processing remains unavailable.
+
+## Authorization
+
+Phase 4 adds shared module permissions, session-derived server actors, scoped notice/learner/resource/charge reads and audited mutation builders. Web navigation and route gates use the same module grants. [The authorization contract and audit](packages/backend/AUTHORIZATION.md) records role boundaries and negative tests. Phase 5 connects live bounded module reads and audited receipt updates on both clients; [the client data contract](packages/backend/CLIENT-DATA.md) records limits and remaining module work. No production deployment is changed.
 
 ## Production release
 
@@ -177,3 +209,5 @@ The local frontend uses mock data; no backend server is needed. Reloading resets
 - [Expo web parent frontend](https://wgjs-connect--7krjaw189g.expo.app) � hosted testing preview.
 - [Native preview update](https://expo.dev/accounts/mcmarsh/projects/wynberg-girls-junior-connect/updates/b4845344-2719-44a7-a53c-2bc8cc906cad) � Android/iOS, preview branch/channel, runtime 1.0.0, source commit 1eed9c3.
 - No native APK/IPA has been built for this project yet. Published EAS updates require a compatible installed development or preview build; use the local Expo Go server only with an SDK-compatible Expo Go installation.
+
+Phase 10 implements phone registration, notice push/urgent email, consent reminders, quiet hours and truthful delivery history. See [notification setup](packages/backend/NOTIFICATIONS.md). Install a new native build for runtime 1.0.3; live delivery needs EAS push credentials and a verified Resend sender. Payment integration remains deferred until the other feature work is complete.

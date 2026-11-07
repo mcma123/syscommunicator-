@@ -24,26 +24,17 @@ installed SDK version; use an SDK-compatible Expo Go or a development build.
 ## Where to build modules
 
 - `src/app/` contains thin, named Expo Router leaf routes and the root layout.
-- `src/features/school/` owns screens, the module directory, and mock state.
+- `src/features/school/` owns screens, the module directory and identity/UI adapters.
 - `src/components/` owns reusable native layout/text components.
 - `src/theme/school.ts` owns the WGJS palette and local Open Sans font names.
 - `@school-connect/core` shares school names, domain types, mock fixtures,
   repository contracts, and filtering with the root web app.
 
-The parent frontend uses a light banking-inspired design with red/gold branding,
-rounded cards, and Home/Updates/Calendar/Children/More bottom tabs. Parent modules
-include search and acknowledgement, event and learner details, simulated payment
-checkout/receipts, validated consent, resource previews, enquiry threads, and
-profile preferences. The fictional parent Jamie Williams starts signed in.
-Staff routes remain placeholders and are excluded from parent navigation.
+The parent frontend retains its premium light design, school colours, crest and five tabs. It accepts active linked guardians and explicit staff roles, reading normalized development database records through shared hooks. Audited school actions persist and synchronize with web; Phase 8 file uploads and protected downloads are connected; payment processing remains Phase 9. Loading, empty, error/retry and actual connection feedback replace mock success/offline controls.
 
-`parent-screens.tsx` owns presentation; `ui.tsx` owns shared parent UI;
-`parent-model.ts` owns pure filtering/validation; `store.tsx` mounts one repository
-and preserves selected child, consent response, and payment simulation across
-navigation. Demo controls under Profile can choose success, pending, or failure
-and reset the excursion payment. Reload resets all data. No real payments,
-messages, push notifications, authentication, persistence, or PDF service is
-connected. Use React Native primitives; DOM/Radix components are web-only.
+`parent-screens.tsx` owns presentation; `ui.tsx` owns shared native UI; `store.tsx` owns auth/onboarding and selected learner, adapting `@school-connect/backend/react`. Legacy parent-model selectors remain test-only. No runtime mock repository is mounted. See [the shared client contract](../../packages/backend/CLIENT-DATA.md).
+
+Expo web exports a SPA, using real database IDs in detail routes. Configure hosting to serve index.html for client paths. No private database queries or fixed fixture IDs run at export time. Native builds use the same shared module contract; browser verification does not replace device testing.
 
 ## Branding and account project
 
@@ -89,13 +80,14 @@ npm run start --workspace @school-connect/expo -- --go --clear
 App/runtime version 1.0.1 separates the corrected native dependency set from the
 previously published 1.0.0 preview. Rescan the new terminal QR code for local testing.
 
-## Future backend
+## Shared backend
 
-`packages/backend` contains the Convex scaffold. Authentication and provisioning
-are separate from Expo, and the app does not yet connect to Convex. Copy the
-workspace `.env.example` to an ignored `.env.local` only when a real public
-deployment URL is available. Implement the repository adapter and production
-authorization before switching away from mock state.
+`packages/backend` supplies real Convex Auth sessions, paginated module reads,
+independent detail/history queries and dashboard counts. Set this workspace's
+public `EXPO_PUBLIC_CONVEX_URL` in ignored `.env.local`. Domain authorization
+is enforced on the server for guardians, teachers and other staff roles.
+Records are fictional development data. School actions now persist publication, events, consent, enquiries, registers/conduct, report review/release and administration/profile changes. Phase 8 supports PDF uploads up to 10 MiB, image attachments up to 5 MiB and expiring protected downloads; payment processing remains Phase 9. Calendar events can be exported
+as ICS using browser downloads or native sharing. Report selection uses expo-document-picker; native selection/sharing needs a compatible binary and physical-device verification.
 
 ## Verify
 
@@ -135,3 +127,14 @@ clients, QR testing, Metro shortcuts, and simultaneous web/mobile testing.
 - [Expo web parent frontend](https://wgjs-connect--7krjaw189g.expo.app) � hosted testing preview.
 - [Native preview update](https://expo.dev/accounts/mcmarsh/projects/wynberg-girls-junior-connect/updates/b4845344-2719-44a7-a53c-2bc8cc906cad) � Android/iOS, preview branch/channel, runtime 1.0.0, source commit 1eed9c3.
 - No native APK/IPA has been built for this project yet. Published EAS updates require a compatible installed development or preview build; use the local Expo Go server only with an SDK-compatible Expo Go installation.
+
+## Sign-in
+
+Set the public `EXPO_PUBLIC_CONVEX_URL` in this workspace's ignored `.env.local`. Root `seed:backend` and `setup:auth:dev` create the dev school and private credentials in ignored root `.env.auth.local`. Sign in as the seeded parent using that private password. No passwords or backend secrets belong in `EXPO_PUBLIC_*`, app config or bundles.
+
+Native tokens use SDK-compatible expo-secure-store; Expo web uses browser storage. Password signup requires a registered/invited email plus an emailed verification code. Password reset uses a code; magic links open `wgjsconnect://signin` in a compatible installed build and require explicit confirmation. For Expo Go, use password/code flows. Email sending awaits deployment Resend configuration and a verified sender; the UI shows when this is unavailable. Staff roles can use authorized native read modules; there is no role switch.
+
+Profile displays live identity/linked school learners and supports sign-out everywhere. School-module records come from the fictional development database. Native runtime 1.0.3 includes SecureStore and notification configuration; older installed builds require a new compatible binary before updates. Bundle checks do not test physical secure storage or device deep links.
+
+## Phone notifications
+Runtime 1.0.3 adds SDK-compatible expo-notifications and its config plugin. Create/install a compatible Android/iOS development/native build with EAS push credentials, then sign in and allow notifications. Expo Go and web retain preview support but do not register remote push. Profile shows registration status/retry/settings and delivery history. Push payloads are generic and destination routes recheck access. See [backend activation](../../packages/backend/NOTIFICATIONS.md); exports do not verify physical delivery. No remote EAS build is started automatically.

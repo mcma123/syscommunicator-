@@ -1,0 +1,21 @@
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
+const crons = cronJobs();
+crons.interval(
+  "expire file grants and reclaim owned orphan files",
+  { hours: 1 },
+  internal.files.cleanup,
+  {},
+);
+crons.interval("reclaim abandoned staging uploads", { hours: 1 }, internal.files.sweepUploads, {
+  cursor: null,
+});
+crons.interval("consent reminders", { hours: 1 }, internal.notificationJobs.consentReminders, {});
+crons.interval("expire invitations", { hours: 1 }, internal.notificationJobs.expireInvitations, {});
+crons.interval(
+  "confirm notification delivery",
+  { minutes: 15 },
+  internal.notificationJobs.pollDue,
+  {},
+);
+export default crons;

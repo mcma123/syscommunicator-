@@ -10,7 +10,9 @@ RUN npm ci --include=dev
 
 COPY . .
 ARG VITE_SITE_URL
+ARG VITE_CONVEX_URL
 ENV VITE_SITE_URL=${VITE_SITE_URL}
+ENV VITE_CONVEX_URL=${VITE_CONVEX_URL}
 RUN npm run build
 
 FROM node:24-bookworm-slim AS runtime

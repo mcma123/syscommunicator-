@@ -11,7 +11,7 @@
 
 ## Local Contracts
 
-- Keep `getRouter()` and its QueryClient context compatible with the root route.
+- `getRouter()` creates one ConvexReactClient and TanStack Query bridge per router/request. Pass both queryClient and convexClient through root context; SchoolAuthProvider reuses that client. Authenticated module subscriptions stay client-side until session restoration, so private data is not prefetched into shared SSR output.
 - Generate `routeTree.gen.ts` through Vite/Start; do not edit it by hand.
 - Keep SSR entry and error handling compatible with `src/server.ts` configured in root `vite.config.ts`.
 - `start.ts` explicitly installs CSRF middleware for server functions and the error middleware; preserve both when changing request handling.
@@ -26,7 +26,7 @@
 ## Verification
 
 - From the root, run `npm run build` for runtime/style changes and `node node_modules/typescript/bin/tsc --noEmit` for type changes.
-- `npm test` checks web demo sessions/credentials, home-route matching and shared mock repository behavior; it does not verify responsive layouts or all modules.
+- `npm test` checks web auth-provider/session delegation and module visibility, home-route matching and shared mock repository behavior; it does not verify responsive layouts or all modules.
 
 ## Child DOX Index
 
@@ -34,5 +34,5 @@
 - [features/AGENTS.md](features/AGENTS.md): frontend feature boundaries.
 - [components/AGENTS.md](components/AGENTS.md): shared presentation components.
 - [lib/AGENTS.md](lib/AGENTS.md): utilities, school share metadata, and local SSR error capture.
-- [test/AGENTS.md](test/AGENTS.md): test setup, demo login/session checks, routing/repository checks, and pure Expo parent model checks.
+- [test/AGENTS.md](test/AGENTS.md): frontend identity/routing, live subscriptions, workflow confirmations, shared permissions/repositories and pure Expo model tests.
 - [assets/AGENTS.md](assets/AGENTS.md): bundled visual assets and their provenance.

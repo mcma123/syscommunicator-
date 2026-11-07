@@ -3,14 +3,40 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./client": "./client.ts",
+    "./api": {
+      "types": "./convex/_generated/api.d.ts",
+      "default": "./convex/_generated/api.js"
+    },
+    "./dataModel": {
+      "types": "./convex/_generated/dataModel.d.ts"
+    },
+    "./react": "./react.ts"
+  },
   "scripts": {
     "dev": "convex dev",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
-    "convex": "1.46.0"
+    "@convex-dev/aggregate": "^0.3.4",
+    "@convex-dev/auth": "0.0.96",
+    "@convex-dev/rate-limiter": "^0.4.3",
+    "@convex-dev/workpool": "^0.4.15",
+    "@noble/hashes": "^2.4.0",
+    "@pdf-lib/fontkit": "^1.1.1",
+    "@school-connect/core": "0.1.0",
+    "convex": "^1.48.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "convex-test": "^0.0.66",
+    "edge-runtime": "^4.0.1",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.12"
+  },
+  "peerDependencies": {
+    "react": "^19.2.3"
   }
 }

@@ -6,38 +6,36 @@
 
 ## Ownership
 
-- `demo-login.tsx` owns the branded web login and profile credential picker; `demo-auth.ts` owns public fictional credentials and parent/staff module visibility; `demo-session-gate.tsx` gates module rendering.
-- `portal.tsx` composes module screens and their actions.
-- `shell.tsx` owns desktop sidebar, mobile navigation, signed-in identity, and sign-out.
-- `components.tsx` owns school cards, child filters, and notice/event/consent/payment dialogs.
-- `store.tsx` owns SchoolProvider, useSchool, demo sessions/child selection, offline state, and repository updates.
-- Leaf URLs live in `src/routes/`; reusable domain contracts live in `packages/school-core/`.
+- `auth-provider.tsx` reuses the router-owned Convex client and owns the Convex Auth provider and resilient browser token storage.
+- `demo-login.tsx` owns branded real password/email/verification/recovery UI; `demo-auth.ts` re-exports shared module visibility only, with no demo credentials. Existing demo-named CSS/file names are presentation compatibility.
+- `demo-session-gate.tsx` gates module rendering using server identity and session state; `account-management.tsx` owns acceptance, Administrator invitations and account session controls.
+- `store.tsx` owns identity/onboarding, selected learner, feedback and client hook adapters. `useNotifications`, `useWorkflows`, `useRecords`, `useDetail` and `useDashboard` delegate to shared backend React hooks; `useModule` retains bounded preview compatibility and `useReceipt` delegates to the audited receipt mutation. `shell.tsx`, `portal.tsx`, and `components.tsx` own module presentation.
+- `workflow-panel.tsx` renders server-provided school actions, confirmation, persistent success feedback across form transitions, validation/pending/offline state and PDF file selection/download; components use the store adapter, not provider calls.
+- `notification-panel.tsx` renders own/staff-scoped paginated delivery history, honest acceptance/provider-confirmation labels, configuration feedback and confirmed retry requests through the store adapter. It never exposes device tokens or provider IDs.
+- Routes live in `src/routes/`; reusable domain contracts remain in `packages/school-core/`.
 
 ## Local Contracts
 
-- SchoolProvider creates one mock repository per provider lifetime and shares its snapshot through `useSyncExternalStore`. Role switching must keep the same repository state.
-- Screens use `useSchool` and repository updates; do not instantiate per-screen repositories or call backend providers directly.
-- Offline updates are blocked by the store and report feedback through the existing toast mechanism.
-- Parent and staff demo accounts share module data. Switch accounts through sign-out and credential-based sign-in; do not restore the direct role selector.
-- `/signin` is public. Other web module routes require a demo session; Parent accounts cannot render staff-only module previews. Staff roles retain shared staff previews without granular staff permissions. This is not production authentication or authorization.
-- Restore only recognized fictional account IDs from sessionStorage after hydration; never store passwords. Browser storage is optional. Sign-out clears session/view state without replacing the shared repository.
-- Keep the five web demo profiles (Parent, Teacher, Principal, Finance, Administrator) and their credentials documented in root README.md. Do not apply this web-only login to Expo implicitly.
-- Keep named module routes aligned with `navigation`, `staffNavigation`, and the module branches in SchoolPortal.
-- Payments, consent, invitations, reports, and audit/delivery displays are simulated. Preserve pending-verification and simulated-payment distinctions.
-- School identity is Wynberg Girls Junior School; the app name is Wynberg Girls Junior Connect, the phone label is WGJS Connect, and the tagline is Honor Before Honours. Use `schoolConfig` for these labels and the supplied `/logo.png` crest.
-- Preserve the current Open Sans font and module design. Use the school's website red/gold palette through the global CSS tokens; do not restore the previous blue branding.
-- Campus imagery and learner/operational data remain generated or fictional demo content, not actual school records.
-- The startup/session loading screen must show the supplied school crest, school name, tagline, and an accessible loading status. Keep the crest uncropped and visible in server-rendered HTML while the session restores.
+- Use Convex Auth actions and `@school-connect/backend/client` through SchoolProvider. Never restore identity from a browser account ID, trust a selected role, or include hard-coded passwords.
+- Derive identity, staff roles and linked learners from `users.current`. Block missing, deactivated, revoked and unlinked accounts before module rendering. Use the shared school-core module matrix for navigation and route gates, combining staff roles with Parent only when active learners are linked. Finance alone sees payments and basic home/profile navigation; teachers cannot enter people/settings/audit. Server endpoints independently enforce record scope.
+- Do not import mock repositories, fixture learners or SchoolState into runtime presentation. Render paginated live records, independent details and explicit loading/empty/error/retry states. Search/category filters run on the server over successive pages; retain Load more even when a filtered page is empty. Filter using server learner IDs; receipts persist and update optimistically with rollback on failure.
+- Shared live query definitions must be memoized across renders; the real-subscription regression test protects against render loops.
+- Browser tokens use provider-managed namespacing/storage, with in-memory fallback when browser storage is blocked. Do not log tokens or passwords. Session restoration must remain SSR-safe and show the supplied crest, school name, tagline and accessible status.
+- Password signup requires school registration/invitation and email verification; password reset uses an email code. Magic-link URLs require explicit confirmation and email matching. Keep invitation tokens until acceptance and remove used token parameters from the URL.
+- Only server-confirmed Administrators can send real staff/guardian invitations. Never claim an email was sent if the action fails; disable email entry flows when configuration is absent. School workflows save through audited server commands; never simulate saved or paid status. Payment processing remains unavailable.
+- Keep named leaf URLs, Open Sans, school red/gold palette, existing module design and supplied crest. Use schoolConfig names. Dev records remain fictional. Offline banners derive from the actual Convex socket; there is no simulated offline toggle. Dashboard counts, module pagination/history, learner related sections and calendar month/agenda/ICS export are live. Publication/scheduling, event/consent/enquiry/attendance/conduct/report/admin/profile writes are connected. Notice attachments, resources and report PDF uploads use session-owned Convex upload reservations; protected downloads use expiring links. Receipt PDFs derive only from verified stored payments. Payment processing remains Phase 9.
 
 ## Work Guidance
 
+- `portal.tsx` owns paginated module browsers, related detail tabs, dashboard counts, staff workflow-record filters, people/invitation history and calendar views/downloads. Module flags from live identity filter navigation and route gates.
+- PDF uploads are limited to 10 MiB, images to 5 MiB. Downloads fetch a two-minute gateway URL after current scope checks; only authorized staff or released-report guardians may fetch learner reports. School email invitations show missing deployment configuration explicitly. Wrap paginated consumers in SchoolDataBoundary so server failures offer retry without exposing diagnostics.
 - Use the existing UI primitives and global styles; maintain matching modules across desktop and mobile web.
 - Update root `FRONTEND.md` when delivered functionality or prototype limits change.
 
 ## Verification
 
 - From the root, run `npm run build` and `node node_modules/typescript/bin/tsc --noEmit` for feature changes.
-- `npm test` covers demo credential validation, role visibility, session restore/sign-out, blocked storage, and shared repository continuity alongside existing routing/core/mobile checks.
+- `npm test` covers provider delegation, server identity/loading/blocked session states, credential-free form rendering, module visibility, storage fallback and shared live data/connection behavior, plus routing/core/mobile checks. Backend auth flows are covered by `test:backend`; neither suite is native device coverage.
 
 ## Child DOX Index
 

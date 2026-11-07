@@ -1,15 +1,102 @@
-import { useState } from 'react';
-import { ArrowRight, CalendarDays, Check, Clock, FileText, MapPin, Paperclip, UserRound } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog,DialogContent,DialogTitle,DialogDescription } from '@/components/ui/dialog';
-import { children, money, type Notice, type SchoolEvent } from '../../../packages/school-core/src';
-import { useSchool } from './store';
-export function Heading({title,description,action}:{title:string;description:string;action?:React.ReactNode}){return <div className="page-heading"><div><h1>{title}</h1><p>{description}</p></div>{action||<span className="date-label"><CalendarDays size={14}/>Wednesday, 14 October 2026</span>}</div>;}
-export function ChildPicker(){const {child,setChild}=useSchool();return <div className="child-picker"><label>Updates for</label><Button size="sm" variant={child==='all'?'default':'outline'} onClick={()=>setChild('all')}>All my children</Button>{children.map(c=><Button key={c.id} size="sm" variant={child===c.id?'default':'outline'} onClick={()=>setChild(c.id)}><span className="font-bold">{c.name.split(' ')[0]}</span><span className="opacity-70">· {c.grade}</span></Button>)}</div>;}
-export function Empty({title='Nothing here just yet',text='Try another filter or check back later.'}:{title?:string;text?:string}){return <div className="empty-state"><FileText size={30}/><h3>{title}</h3><p>{text}</p></div>;}
-export function NoticeCard({notice,onOpen}:{notice:Notice;onOpen:(n:Notice)=>void}){return <article className="notice-card"><div className="notice-top"><div className="notice-badges"><span className={`tag ${notice.category==='Sport'?'green':notice.category==='General'?'neutral':''}`}>{notice.category}</span><span className="tag neutral">{notice.audience}</span>{!notice.read&&notice.status==='Published'&&<span className="text-[8px] text-primary font-bold">● NEW</span>}{notice.status!=='Published'&&<span className="tag gold">{notice.status}</span>}</div><span className="notice-date">{notice.date}</span></div><h3>{notice.title}</h3><p className="body-excerpt">{notice.body}</p>{notice.attachment&&<div className="notice-attachment"><Paperclip size={12}/><span className="truncate">{notice.attachment}</span></div>}<div className="notice-footer"><span className="notice-author"><UserRound size={12}/>{notice.author}</span><Button variant="link" onClick={()=>onOpen(notice)}>{notice.action?'View notice & respond':'Read more'}<ArrowRight size={12}/></Button></div></article>;}
-export function EventRow({event,onOpen}:{event:SchoolEvent;onOpen:(event:SchoolEvent)=>void}){return <div className="event-row" role="button" tabIndex={0} onClick={()=>onOpen(event)} onKeyDown={e=>{if(e.key==='Enter')onOpen(event);}}><div className="event-date"><strong>{event.day}</strong><span>{event.month}</span></div><div className="event-info"><h3>{event.title}</h3><p><Clock size={10}/>{event.time}</p><p><MapPin size={10}/>{event.location}</p></div></div>;}
-export function EventDialog({event,onClose}:{event:SchoolEvent|null;onClose:()=>void}){const {notify}=useSchool();return <Dialog open={!!event} onOpenChange={open=>{if(!open)onClose();}}><DialogContent><DialogTitle>{event?.title}</DialogTitle><DialogDescription>{event?.audience} · October {event?.day}, 2026</DialogDescription><div className="modal-body"><p className="flex gap-2 items-center"><Clock size={16}/>{event?.time} · Africa/Johannesburg</p><p className="flex gap-2 items-center"><MapPin size={16}/>{event?.location}</p></div><Button onClick={()=>{if(!event)return;const content=`BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART:202610${String(event.day).padStart(2,'0')}T063000Z\nSUMMARY:${event.title}\nLOCATION:${event.location}\nEND:VEVENT\nEND:VCALENDAR`;const url=URL.createObjectURL(new Blob([content],{type:'text/calendar'}));const a=document.createElement('a');a.href=url;a.download='school-event.ics';a.click();URL.revokeObjectURL(url);notify('Calendar event downloaded.');}}>Add to my calendar<CalendarDays/></Button></DialogContent></Dialog>;}
-export function ConsentDialog({open,onClose}:{open:boolean;onClose:()=>void}){const {state,update,notify}=useSchool();const [checked,setChecked]=useState(false);const [contact,setContact]=useState('');return <Dialog open={open} onOpenChange={v=>{if(!v)onClose();}}><DialogContent><DialogTitle>Grade 4 excursion consent</DialogTitle><DialogDescription>Emma Williams · 23 October 2026</DialogDescription>{state.consent?<div className="modal-body"><span className="tag green"><Check size={13}/>Consent submitted</span><p className="mt-4">Thank you, Jamie. Emma’s consent has been recorded in this demo.</p><Button onClick={onClose}>Done</Button></div>:<form onSubmit={e=>{e.preventDefault();update(s=>({...s,consent:true}));notify('Excursion consent submitted for Emma.');onClose();}}><div className="modal-body"><p>Johannesburg Botanical Gardens · 08:00 – 14:00</p><p>I give permission for Emma Williams to attend the Grade 4 excursion. I understand that school supervision and transport will be provided.</p></div><div className="form-field"><label htmlFor="emergency">Emergency contact number</label><input id="emergency" className="field" type="tel" required minLength={10} placeholder="e.g. 082 000 0000" value={contact} onChange={e=>setContact(e.target.value)}/></div><label className="consent-label"><input type="checkbox" required checked={checked} onChange={e=>setChecked(e.target.checked)}/>I have read the excursion information and give my consent.</label><Button type="submit" disabled={!checked}>Submit consent<Check/></Button></form>}</DialogContent></Dialog>;}
-export function PaymentDialog({open,onClose}:{open:boolean;onClose:()=>void}){const {state,update,notify}=useSchool();return <Dialog open={open} onOpenChange={v=>{if(!v)onClose();}}><DialogContent><DialogTitle>Grade 4 excursion</DialogTitle><DialogDescription>Emma Williams · Activity charge · Simulation only</DialogDescription><div className="record-details"><div><span>Amount due</span><strong>{money(250)}</strong></div><div><span>Due date</span>20 October 2026</div><div><span>Reference</span>SC-2026-0041</div><div><span>Status</span><span className="tag gold">{state.payment}</span></div></div>{state.payment==='Due'||state.payment==='Failed'?<><p className="modal-body">No real payment will be taken. Do not enter card or banking details.</p><Button onClick={()=>{update(s=>({...s,payment:'Pending verification'}));notify('Simulated checkout returned. Payment is pending verification.');}}>Simulate checkout · {money(250)}<ArrowRight/></Button></>:state.payment==='Pending verification'?<div className="modal-body"><p>Your payment return has been received. It is not marked paid until the payment provider confirms it.</p><span className="tag gold"><Clock size={13}/>Pending verification</span></div>:<div className="modal-body"><span className="tag green"><Check size={13}/>Simulated payment confirmed</span><p className="mt-3">Demo receipt SC-2026-0041 · {money(250)}</p><Button variant="outline" onClick={()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['SIMULATED RECEIPT\nSC-2026-0041\nEmma Williams\nGrade 4 excursion\nZAR 250.00\nNo real payment taken.'],{type:'text/plain'}));a.download='demo-receipt.txt';a.click();URL.revokeObjectURL(a.href);}}>Download demo receipt</Button></div>}</DialogContent></Dialog>;}
-export function NoticeDialog({notice,onClose,onConsent,onPayment,onEdit}:{notice:Notice|null;onClose:()=>void;onConsent:()=>void;onPayment:()=>void;onEdit?:(n:Notice)=>void}){const {state,update,role,notify}=useSchool();const current=state.notices.find(n=>n.id===notice?.id)||notice;return <Dialog open={!!notice} onOpenChange={v=>{if(!v)onClose();}}><DialogContent><DialogTitle>{current?.title}</DialogTitle><DialogDescription>{current?.author} · {current?.date} · {current?.audience}</DialogDescription><div className="modal-body"><p>{current?.body}</p>{current?.attachment&&<div className="notice-attachment"><FileText size={14}/>{current.attachment}</div>}</div>{role==='Parent'?<div className="flex flex-wrap gap-2">{current?.action&&<><Button onClick={()=>{onClose();onConsent();}}>{state.consent?'View consent':'Complete consent form'}</Button><Button variant="outline" onClick={()=>{onClose();onPayment();}}>Activity payment</Button></>}<Button variant="outline" onClick={()=>{update(s=>({...s,notices:s.notices.map(n=>n.id===current?.id?{...n,acknowledged:true,read:true}:n)}));notify('Notice acknowledged.');}} disabled={current?.acknowledged}>{current?.acknowledged?'Acknowledged':'Acknowledge'}<Check/></Button></div>:<div className="flex flex-wrap gap-2"><Button variant="outline" onClick={()=>{if(current){onClose();onEdit?.(current);}}}>Edit notice</Button><Button onClick={()=>{update(s=>({...s,notices:s.notices.map(n=>n.id===current?.id?{...n,status:'Published'}:n)}));notify('Notice published to eligible families.');onClose();}}>Publish notice</Button></div>}</DialogContent></Dialog>;}
+import type { ReactNode } from "react";
+import type { ModuleRecord } from "@school-connect/core/live";
+import { Button } from "@/components/ui/button";
+import { useSchool } from "./store";
+export function Heading({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="page-heading">
+      <div>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+      {action}
+    </div>
+  );
+}
+export function ChildPicker() {
+  const { account, child, setChild } = useSchool();
+  return (
+    <div className="child-picker">
+      <label>Updates for</label>
+      <Button
+        size="sm"
+        variant={child === "all" ? "default" : "outline"}
+        onClick={() => setChild("all")}
+      >
+        All my children
+      </Button>
+      {account?.learners.map((c) => (
+        <Button
+          key={c.id}
+          size="sm"
+          variant={child === c.id ? "default" : "outline"}
+          onClick={() => setChild(c.id)}
+        >
+          {c.name}
+        </Button>
+      ))}
+    </div>
+  );
+}
+export function Empty({
+  title = "Nothing here just yet",
+  text = "There are no matching records for your account.",
+}: {
+  title?: string;
+  text?: string;
+}) {
+  return (
+    <div className="empty-state">
+      <h3>{title}</h3>
+      <p>{text}</p>
+    </div>
+  );
+}
+export function RecordCard({ record, onOpen }: { record: ModuleRecord; onOpen?: () => void }) {
+  return (
+    <article className="notice-card">
+      <div className="notice-top">
+        <span className="tag neutral">{record.status || record.subtitle}</span>
+        {record.at !== null && (
+          <span className="notice-date">
+            {new Date(record.at).toLocaleDateString("en-ZA", { timeZone: "Africa/Johannesburg" })}
+          </span>
+        )}
+      </div>
+      <h3>{record.title}</h3>
+      <p className="notice-author">{record.subtitle}</p>
+      <p className="body-excerpt whitespace-pre-wrap">{record.body}</p>
+      {record.amountCents !== null && (
+        <strong>
+          {new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(
+            record.amountCents / 100,
+          )}
+        </strong>
+      )}
+      {onOpen && (
+        <div className="notice-footer">
+          <span>
+            {record.canAcknowledge || record.canMarkRead
+              ? record.acknowledged
+                ? "Acknowledged"
+                : record.read
+                  ? "Read"
+                  : "Unread"
+              : ""}
+          </span>
+          <Button variant="link" onClick={onOpen}>
+            View details
+          </Button>
+        </div>
+      )}
+    </article>
+  );
+}

@@ -1,5 +1,1 @@
-import { ModulePlaceholder } from "@/features/school/module-placeholder";
-
-export default function ModuleRoute() {
-  return <ModulePlaceholder moduleId="signin" />;
-}
+export { SignInScreen as default } from "@/features/school/signin";

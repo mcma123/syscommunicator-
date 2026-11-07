@@ -1,5 +1,5 @@
+import { DeviceNotifications } from "@/features/school/device-notifications";
 import { useEffect } from "react";
-import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, Image, Platform, View } from "react-native";
@@ -9,6 +9,8 @@ import {
   OpenSans_600SemiBold,
   OpenSans_700Bold,
 } from "@expo-google-fonts/open-sans";
+import { SchoolAuthProvider } from "@/features/school/auth-provider";
+import { SchoolNavigator } from "@/features/school/signin";
 import { SchoolProvider } from "@/features/school/store";
 import { colors, fonts } from "@/theme/school";
 
@@ -39,20 +41,21 @@ export default function RootLayout() {
       </View>
     );
   return (
-    <SchoolProvider>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: "none",
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.primary,
-          headerTitleStyle: { fontFamily: fonts.semibold },
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ title: "WGJS Connect" }} />
-      </Stack>
-    </SchoolProvider>
+    <SchoolAuthProvider>
+      <SchoolProvider>
+        <DeviceNotifications />
+        <StatusBar style="dark" />
+        <SchoolNavigator
+          screenOptions={{
+            headerShown: false,
+            animation: "none",
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.primary,
+            headerTitleStyle: { fontFamily: fonts.semibold },
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        />
+      </SchoolProvider>
+    </SchoolAuthProvider>
   );
 }

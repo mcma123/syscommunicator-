@@ -2,11 +2,17 @@
 
 ## Purpose
 
-- Own shared test setup and the existing routing regression test.
+- Own frontend auth/store, routing, shared repository and pure parent model tests and setup.
 
 ## Ownership
 
-- `demo-auth.test.tsx` checks five demo accounts, invalid credentials, parent/staff module visibility, optional tab session storage, sign-out, and repository continuity across account switches.
+- `demo-auth.test.tsx` checks server-derived identity, auth-provider delegation, loading/revoked states, parent/staff visibility, browser token fallback, credential-free form rendering, sign-out and absence of runtime repository/update/offline-toggle APIs. Its historic filename does not imply demo authentication remains.
+- `workflow-panel.test.tsx` verifies confirmation, pending-state disabling, server validation, retained drafts on failure, success only after a resolved submission, and success feedback surviving newly created workflow forms.
+- `notifications.test.tsx` verifies accepted-versus-confirmed labels, explicit retry, pending disabling and offline controls.
+- `calendar.test.ts` checks Johannesburg month boundaries, spanning/all-day events and interoperable ICS text.
+- `live-subscription.test.tsx` uses the real Convex hook with a local watch to catch subscription render loops and verify session unsubscription, native pagination across empty pages, filter reset and independent details.
+- `live-data.test.tsx` checks live subscription states/retry, disabled-session data clearing, socket-derived offline behavior and scoped optimistic receipts.
+- `permissions.test.ts` checks shared module grants, Finance/Teacher restrictions, unknown modules and explicit guardian/staff combinations.
 - `setup.ts` provides jest-dom matchers and the matchMedia mock.
 - `app-routing.test.tsx` checks that `/` matches a page rather than only the root route.
 - `school-repository.test.ts` checks shared-core mock behavior including native-safe cloning, nested fixture isolation, snapshot identity, subscriptions, and unsubscribe.

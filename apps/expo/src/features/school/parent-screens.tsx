@@ -1,1146 +1,702 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Switch, View } from "react-native";
+import { NotificationPanel } from "./notification-panel";
+import { WorkflowPanel } from "./workflow-panel";
+import { SchoolDataBoundary } from "@school-connect/backend/react";
+import { NOTICE_CATEGORIES, RESOURCE_CATEGORIES } from "@school-connect/core/domain";
+import {
+  monthCells,
+  schoolDate,
+  monthRange,
+  moveMonth,
+  eventDays,
+} from "@school-connect/core/calendar";
+import { shareEvent } from "./calendar-export";
+import { schoolConfig } from "@school-connect/core";
+import { useState } from "react";
+import { ActivityIndicator, Pressable, View, Linking } from "react-native";
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { children, money, visibleNotices, type SchoolEvent } from "@school-connect/core";
-import { colors } from "@/theme/school";
-import { useSchool } from "./store";
-import { consentError, familyView, markNotice } from "./parent-model";
+import type { ReadModule, ReadOptions, ModuleRecord } from "@school-connect/core/live";
 import {
+  canAccessModule,
+  accessRolesFor,
+  type SchoolModule,
+} from "@school-connect/core/permissions";
+import type { Id } from "@school-connect/backend/dataModel";
+import { colors } from "@/theme/school";
+import { useModule, useRecords, useDetail, useDashboard, useReceipt, useSchool } from "./store";
+import {
+  Chips,
   Badge,
   Button,
   Card,
   ChildPicker,
-  Chips,
   Empty,
   Feedback,
   Field,
   Heading,
-  Icon,
   LinkRow,
   Screen,
   Text,
   s,
-  type IconName,
 } from "./ui";
-
 function open(path: string) {
   router.push(path as Href);
 }
-function EventRow({ event }: { event: SchoolEvent }) {
+function Row({
+  record,
+  path,
+  onOpen,
+}: {
+  record: ModuleRecord;
+  path?: string;
+  onOpen?: () => void;
+}) {
   return (
-    <Pressable accessibilityRole="button" onPress={() => open(`/event/${event.id}`)} style={s.row}>
-      <View style={[s.avatar, { width: 52, height: 58 }]}>
-        <Text weight="bold" style={{ color: colors.deepRed, fontSize: 20 }}>
-          {event.day}
-        </Text>
-        <Text style={{ fontSize: 9, lineHeight: 12 }}>{event.month}</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text weight="semibold">{event.title}</Text>
-        <Text style={s.small}>
-          {event.time} · {event.audience}
-        </Text>
-      </View>
-      <Icon name="chevron-forward" size={16} />
+    <Pressable
+      accessibilityRole={path || onOpen ? "button" : undefined}
+      disabled={!path && !onOpen}
+      onPress={() => (onOpen ? onOpen() : path && open(path))}
+    >
+      <Card>
+        <View style={s.row}>
+          <View style={{ flex: 1 }}>
+            <Text weight="bold">{record.title}</Text>
+            <Text style={s.small}>{record.subtitle}</Text>
+          </View>
+          {record.status ? <Badge label={record.status} /> : null}
+        </View>
+        {record.at !== null && (
+          <Text style={s.small}>
+            {new Date(record.at).toLocaleDateString("en-ZA", { timeZone: "Africa/Johannesburg" })}
+          </Text>
+        )}
+        {record.body ? (
+          <Text numberOfLines={3} style={s.muted}>
+            {record.body}
+          </Text>
+        ) : null}
+        {record.amountCents !== null && (
+          <Text weight="bold">
+            {new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(
+              record.amountCents / 100,
+            )}
+          </Text>
+        )}
+        {(record.canAcknowledge || record.canMarkRead) && (
+          <Text style={s.small}>
+            {record.acknowledged ? "Acknowledged" : record.read ? "Read" : "Unread"}
+          </Text>
+        )}
+      </Card>
     </Pressable>
   );
 }
-
-export function ParentHome() {
-  const { state, child } = useSchool();
-  const view = familyView(state, child);
-  const actions: { title: string; icon: IconName; path: string }[] = [
-    { title: "Payments", icon: "wallet-outline", path: "/payments" },
-    { title: "Consent", icon: "checkbox-outline", path: "/forms" },
-    { title: "Resources", icon: "folder-open-outline", path: "/resources" },
-    { title: "Contact", icon: "chatbubbles-outline", path: "/contact" },
-  ];
+function QueryState({ result }: { result: ReturnType<typeof useModule> }) {
+  if (result.status === "loading")
+    return (
+      <View accessibilityRole="progressbar" style={{ padding: 20 }}>
+        <ActivityIndicator color={colors.primary} />
+        <Text>Loading your school information...</Text>
+      </View>
+    );
+  if (result.status === "error")
+    return (
+      <Card>
+        <Feedback error message="This information could not be loaded." />
+        <Button title="Try again" onPress={result.retry} />
+      </Card>
+    );
+  if (result.status === "ready" && !result.data?.records.length)
+    return (
+      <Empty
+        title="Nothing here just yet"
+        body="No records are available for your account and selection."
+      />
+    );
+  return null;
+}
+function DataFailure({ retry }: { retry: () => void }) {
   return (
-    <Screen title="Hello, Jamie 👋" subtitle="A little closer to their school day.">
+    <Card>
+      <Feedback error message="This information could not be loaded." />
+      <Button title="Try again" onPress={retry} />
+    </Card>
+  );
+}
+function Boundary({ children }: { children: React.ReactNode }) {
+  return (
+    <SchoolDataBoundary fallback={(retry) => <DataFailure retry={retry} />}>
+      {children}
+    </SchoolDataBoundary>
+  );
+}
+export function ModuleList({
+  module,
+  title,
+  detail,
+}: {
+  module: SchoolModule;
+  title: string;
+  detail?: string;
+}) {
+  const { account } = useSchool();
+  const allowed = canAccessModule(
+    accessRolesFor(account?.roles ?? [], !!account?.learners.length),
+    module,
+    account?.disabledModules,
+  );
+  return (
+    <Screen title={title} subtitle="Shared securely with your school account.">
       <ChildPicker />
-      <LinearGradient
-        colors={["#ae252c", "#711b26"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ borderRadius: 26, padding: 24, gap: 22, overflow: "hidden" }}
-      >
-        <View
-          style={{
-            position: "absolute",
-            right: -35,
-            top: -40,
-            width: 185,
-            height: 185,
-            borderWidth: 28,
-            borderColor: "#ffffff08",
-            borderRadius: 100,
+      {allowed ? (
+        <Boundary>
+          <ModuleContent module={module} detail={detail} />
+        </Boundary>
+      ) : (
+        <Empty
+          title="Access unavailable"
+          body="This module is not available to your school account."
+        />
+      )}
+    </Screen>
+  );
+}
+function ModuleContent({ module, detail }: { module: SchoolModule; detail?: string }) {
+  const [source, setSource] = useState<ReadModule>(module);
+  return (
+    <>
+      {(module === "groups" || module === "payments" || module === "people") && (
+        <Chips
+          items={
+            module === "groups"
+              ? ["Groups", "Classes"]
+              : module === "people"
+                ? ["Accounts", "Invitations"]
+                : ["Charges", "Payment history"]
+          }
+          value={
+            source === "people"
+              ? "Accounts"
+              : source === "invitations"
+                ? "Invitations"
+                : source === "classes"
+                  ? "Classes"
+                  : source === "groups"
+                    ? "Groups"
+                    : source === "paymentHistory"
+                      ? "Payment history"
+                      : "Charges"
+          }
+          onChange={(v) =>
+            setSource(
+              v === "Accounts"
+                ? "people"
+                : v === "Invitations"
+                  ? "invitations"
+                  : v === "Classes"
+                    ? "classes"
+                    : v === "Groups"
+                      ? "groups"
+                      : v === "Payment history"
+                        ? "paymentHistory"
+                        : "payments",
+            )
+          }
+        />
+      )}
+      <WorkflowPanel module={module} />
+      <RecordList key={source} module={source} detail={source === module ? detail : undefined} />
+    </>
+  );
+}
+function RecordList({
+  module,
+  detail,
+  options = {},
+  learnerId,
+  compact = false,
+}: {
+  module: ReadModule;
+  detail?: string;
+  options?: ReadOptions;
+  learnerId?: string;
+  compact?: boolean;
+}) {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All categories");
+  const [outstanding, setOutstanding] = useState("All requests");
+  const [mode, setMode] = useState("Agenda");
+  const [month, setMonth] = useState(() => schoolDate(Date.now()).slice(0, 7));
+  const [day, setDay] = useState("All days");
+  const [selected, setSelected] = useState<string>();
+  const [manage, setManage] = useState("Published records");
+  const { account } = useSchool();
+  const staff = account?.roles.some((r) => ["Teacher", "Principal", "Administrator"].includes(r));
+  const result = useRecords(
+    module,
+    {
+      ...options,
+      ...(manage === "Staff workflow records" ? { manage: true } : {}),
+      ...(search ? { search } : {}),
+      ...(category !== "All categories" ? { category } : {}),
+      ...(outstanding === "Outstanding" ? { outstandingOnly: true } : {}),
+      ...(module === "calendar" && mode === "Month" ? monthRange(month) : {}),
+    },
+    learnerId,
+  );
+  const categories =
+    module === "messages" ? NOTICE_CATEGORIES : module === "resources" ? RESOURCE_CATEGORIES : [];
+  if (selected)
+    return (
+      <>
+        <Button secondary title="Back to list" onPress={() => setSelected(undefined)} />
+        <RecordDetails module={module} id={selected} options={options} learnerId={learnerId} />
+      </>
+    );
+  const rows = result.data.records.filter(
+    (r) =>
+      module !== "calendar" ||
+      mode !== "Month" ||
+      day === "All days" ||
+      eventDays(r, month).includes(day),
+  );
+  return (
+    <>
+      {!compact && (
+        <Field label="Search records" value={search} onChangeText={setSearch} maxLength={200} />
+      )}
+      {categories.length > 0 && (
+        <Chips items={["All categories", ...categories]} value={category} onChange={setCategory} />
+      )}
+      {module === "forms" && (
+        <Chips
+          items={["All requests", "Outstanding"]}
+          value={outstanding}
+          onChange={setOutstanding}
+        />
+      )}
+      {staff && ["messages", "calendar", "resources"].includes(module) && (
+        <Chips
+          items={["Published records", "Staff workflow records"]}
+          value={manage}
+          onChange={setManage}
+        />
+      )}
+      {module === "calendar" && (
+        <>
+          <Chips items={["Agenda", "Month"]} value={mode} onChange={setMode} />
+          {mode === "Month" && (
+            <>
+              <View style={s.row}>
+                <Button
+                  secondary
+                  title="Previous"
+                  onPress={() => {
+                    setMonth(moveMonth(month, -1));
+                    setDay("All days");
+                  }}
+                />
+                <Text weight="bold">{month}</Text>
+                <Button
+                  secondary
+                  title="Next"
+                  onPress={() => {
+                    setMonth(moveMonth(month, 1));
+                    setDay("All days");
+                  }}
+                />
+              </View>
+              <Button secondary title="All days" onPress={() => setDay("All days")} />
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+                  <Text key={d} style={{ width: "13%", fontSize: 11, textAlign: "center" }}>
+                    {d}
+                  </Text>
+                ))}
+                {monthCells(month).map((date, i) =>
+                  date ? (
+                    <Pressable
+                      key={date}
+                      accessibilityRole="button"
+                      accessibilityLabel={date}
+                      accessibilityState={{ selected: day === date }}
+                      onPress={() => setDay(date)}
+                      style={{
+                        width: "13%",
+                        paddingVertical: 10,
+                        alignItems: "center",
+                        borderWidth: 1,
+                        borderColor: day === date ? colors.primary : colors.border,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text>
+                        {Number(date.slice(-2))}
+                        {result.data.records.some((r) => eventDays(r, month).includes(date))
+                          ? " *"
+                          : ""}
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    <View key={i} style={{ width: "13%" }} />
+                  ),
+                )}
+              </View>
+            </>
+          )}
+        </>
+      )}
+      {result.status === "loading" && (
+        <ActivityIndicator accessibilityLabel="Loading records" color={colors.primary} />
+      )}
+      {result.status === "ready" && !rows.length && (
+        <Empty
+          title="No matching records"
+          body={
+            result.canLoadMore
+              ? "Load more to continue searching all records."
+              : "No records match your account and selection."
+          }
+        />
+      )}
+      {rows.map((r) =>
+        detail ? (
+          <Row key={r.id} record={r} path={`/${detail}/${r.id}`} />
+        ) : (
+          <Row key={r.id} record={r} onOpen={() => setSelected(r.id)} />
+        ),
+      )}
+      {(result.canLoadMore || result.loadingMore) && (
+        <Button
+          secondary
+          title={result.loadingMore ? "Loading..." : "Load more"}
+          disabled={result.loadingMore}
+          onPress={result.loadMore}
+        />
+      )}
+    </>
+  );
+}
+function RecordDetails({
+  module,
+  id,
+  options = {},
+  learnerId,
+}: {
+  module: ReadModule;
+  id: string;
+  options?: ReadOptions;
+  learnerId?: string;
+}) {
+  const result = useDetail(module, id, options, learnerId);
+  const item = result.data?.record;
+  const receipt = useReceipt();
+  const { offline } = useSchool();
+  const [failure, setFailure] = useState("");
+  const [pending, setPending] = useState(false);
+  const [section, setSection] = useState("");
+  async function save(acknowledge: boolean) {
+    if (!item || offline) return;
+    setPending(true);
+    setFailure("");
+    try {
+      await receipt({ noticeId: item.id as Id<"notices">, acknowledge });
+    } catch {
+      setFailure("Could not save your response. Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+  if (result.status === "error")
+    return (
+      <>
+        <Empty
+          title="Record unavailable"
+          body="This record may no longer be available for your account and selection."
+        />
+        <DataFailure retry={result.retry} />
+      </>
+    );
+  if (!item)
+    return <ActivityIndicator accessibilityLabel="Loading record" color={colors.primary} />;
+  const related = result.data?.related ?? [];
+  const current = related.find((tab) => tab.module === section) ?? related[0];
+  return (
+    <>
+      <WorkflowPanel module={module} itemId={id} learnerId={learnerId} />
+      {module === "messages" && related.some((r) => r.module === "noticeReceipts") && (
+        <Boundary>
+          <NotificationPanel noticeId={id} />
+        </Boundary>
+      )}
+      <Row record={item} />
+      <Card>
+        <Text>{item.body || "No additional information has been provided."}</Text>
+        {item.fields?.map((f, i) => (
+          <Text key={i}>
+            <Text weight="bold">{f.label}: </Text>
+            {f.value}
+          </Text>
+        ))}
+      </Card>
+      {module === "messages" && item.canMarkRead && (
+        <>
+          <Button
+            title={item.read ? "Read" : "Mark as read"}
+            disabled={offline || pending || item.read}
+            onPress={() => void save(false)}
+          />
+          {item.requiresAcknowledgement && item.canAcknowledge && (
+            <Button
+              title={item.acknowledged ? "Acknowledged" : "Acknowledge"}
+              disabled={offline || pending || item.acknowledged}
+              onPress={() => void save(true)}
+            />
+          )}
+        </>
+      )}
+      {module === "calendar" && (
+        <Button
+          title="Add to calendar (.ics)"
+          onPress={() => {
+            void shareEvent(item).catch(() =>
+              setFailure("Could not export this event on this device."),
+            );
           }}
         />
-        <View style={s.row}>
-          <Text weight="semibold" style={{ color: "#ffe8e5", flex: 1, fontSize: 12 }}>
-            YOUR FAMILY, AT A GLANCE
-          </Text>
-          <Icon name="sparkles-outline" color={colors.gold} />
-        </View>
-        <View>
-          <Text style={{ color: "#ffe8e5", fontSize: 12 }}>Activity payments outstanding</Text>
-          <Text weight="bold" style={{ color: "white", fontSize: 37, lineHeight: 52 }}>
-            {money(view.amountDue)}
-          </Text>
-          <Text style={{ color: "#ffe8e5", fontSize: 11 }}>
-            {view.amountDue ? "Grade 4 excursion · Due 20 October" : "You're all caught up"}
-          </Text>
-        </View>
-        <View style={[s.row, { borderTopWidth: 1, borderTopColor: "#ffffff25", paddingTop: 16 }]}>
-          {[
-            { value: view.unread, label: "Unread updates", path: "/messages" },
-            { value: view.consentDue, label: "Forms to sign", path: "/forms" },
-            { value: view.events.length, label: "Upcoming events", path: "/calendar" },
-          ].map((item) => (
-            <Pressable
-              key={item.path}
-              accessibilityRole="button"
-              onPress={() => open(item.path)}
-              style={{ flex: 1, minHeight: 48 }}
-            >
-              <Text weight="bold" style={{ color: "white", fontSize: 22, lineHeight: 30 }}>
-                {item.value}
-              </Text>
-              <Text style={{ color: "#ffe8e5", fontSize: 10 }}>{item.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </LinearGradient>
-      <Heading title="Make it a quick visit" />
-      <View style={[s.row, { alignItems: "flex-start" }]}>
-        {actions.map((item) => (
-          <Pressable
-            key={item.path}
-            accessibilityRole="button"
-            onPress={() => open(item.path)}
-            style={{ flex: 1, alignItems: "center", gap: 8 }}
-          >
-            <View
-              style={[
-                s.iconTile,
-                {
-                  width: 58,
-                  height: 58,
-                  borderRadius: 20,
-                  backgroundColor: "white",
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <Icon name={item.icon} size={25} />
-            </View>
-            <Text weight="semibold" style={{ fontSize: 10 }}>
-              {item.title}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      {view.consentDue > 0 && (
-        <Card style={{ backgroundColor: colors.goldSoft, borderColor: "#f6e5b2" }}>
-          <View style={s.row}>
-            <Icon name="alert-circle-outline" color={colors.deepRed} />
-            <Text weight="bold" style={{ flex: 1 }}>
-              An adventure needs your yes
-            </Text>
-            <Badge label="20 OCT" />
-          </View>
-          <Text style={s.muted}>
-            Emma&apos;s excursion consent is ready. It only takes a moment.
-          </Text>
-          <Button secondary title="Review consent form" onPress={() => open("/forms")} />
-        </Card>
       )}
-      <Heading title="What's happening" action="Calendar" onPress={() => open("/calendar")} />
-      <Card>
-        {view.events.slice(0, 2).map((event) => (
-          <EventRow key={event.id} event={event} />
-        ))}
-      </Card>
-      <Heading title="Latest from school" action="View all" onPress={() => open("/messages")} />
-      <Card>
-        {view.notices.slice(0, 2).map((notice) => (
-          <LinkRow
-            key={notice.id}
-            title={notice.title}
-            subtitle={`${notice.category} · ${notice.date}`}
-            icon="newspaper-outline"
-            href={`/notice/${notice.id}` as Href}
-            badge={!notice.read ? "NEW" : undefined}
+      {failure && <Feedback error message={failure} />}
+      {related.length > 0 && (
+        <>
+          <Chips
+            items={related.map((t) => t.title)}
+            value={current?.title ?? ""}
+            onChange={(title) => setSection(related.find((t) => t.title === title)?.module ?? "")}
           />
-        ))}
-      </Card>
+          {current && (
+            <Boundary key={`${current.module}:${id}`}>
+              <RecordList
+                module={current.module}
+                learnerId={current.learnerId}
+                options={current.parentId ? { parentId: current.parentId } : {}}
+                compact
+              />
+            </Boundary>
+          )}
+        </>
+      )}
+      {module === "payments" && <Feedback message="Payments are not yet enabled." />}
+    </>
+  );
+}
+function Detail({
+  module,
+  title,
+}: {
+  module: SchoolModule;
+  title: string;
+  receiptEnabled?: boolean;
+}) {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return (
+    <Screen title={title} back>
+      <Boundary>
+        <RecordDetails key={id} module={module} id={id} />
+      </Boundary>
     </Screen>
   );
 }
-
-export function UpdatesScreen() {
-  const { state, child } = useSchool();
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
-  const [unread, setUnread] = useState(false);
-  const notices = familyView(state, child).notices.filter(
-    (n) =>
-      (category === "All" || n.category === category) &&
-      (!unread || !n.read) &&
-      `${n.title} ${n.body}`.toLowerCase().includes(query.toLowerCase()),
+function Dashboard() {
+  const result = useDashboard();
+  return result.status === "error" ? (
+    <DataFailure retry={result.retry} />
+  ) : result.status !== "ready" ? (
+    <Text accessibilityRole="progressbar">Updating your school summary...</Text>
+  ) : (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+      {[
+        ["Unread updates", result.data?.unread],
+        ["Pending actions", result.data?.pendingActions],
+        ["Upcoming events", result.data?.upcomingEvents],
+        [
+          "Amount due",
+          result.data?.amountDueCents === null
+            ? null
+            : `R ${((result.data?.amountDueCents ?? 0) / 100).toFixed(2)}`,
+        ],
+      ]
+        .filter(([, v]) => v !== null)
+        .map(([label, value]) => (
+          <Card key={label} style={{ minWidth: 140, flex: 1 }}>
+            <Text style={s.small}>{label}</Text>
+            <Text weight="bold" style={{ fontSize: 24 }}>
+              {value}
+            </Text>
+          </Card>
+        ))}
+    </View>
   );
+}
+export function ParentHome() {
+  const { account } = useSchool();
+  const grants = accessRolesFor(account?.roles ?? [], !!account?.learners.length);
+  const school = useModule("home");
+  const messages = useModule("messages");
   return (
-    <Screen title="School updates" subtitle="The news that matters to your family.">
+    <Screen
+      title={`Hello, ${account?.name.split(" ")[0] ?? ""}`}
+      subtitle="A little closer to their school day."
+    >
+      <LinearGradient
+        colors={[colors.deepRed, colors.primary]}
+        style={{ padding: 24, borderRadius: 24, gap: 12 }}
+      >
+        <Text weight="bold" style={{ color: "white", fontSize: 22 }}>
+          {school.data?.records[0]?.title ?? "Your school, connected"}
+        </Text>
+        <Text style={{ color: "white" }}>
+          {school.data?.records[0]?.subtitle ?? "Honor Before Honours"}
+        </Text>
+      </LinearGradient>
       <ChildPicker />
-      <Field
-        label="Search updates"
-        placeholder="Search a topic or announcement"
-        value={query}
-        onChangeText={setQuery}
-      />
-      <Chips
-        items={["All", "Academic", "Sport", "General", "Events"]}
-        value={category}
-        onChange={setCategory}
-      />
-      <View style={s.row}>
-        <Text style={{ flex: 1 }}>Only unread updates</Text>
-        <Switch
-          accessibilityLabel="Only unread updates"
-          value={unread}
-          onValueChange={setUnread}
-          trackColor={{ true: colors.primary }}
-        />
+      <Boundary>
+        <Dashboard />
+      </Boundary>
+      <View style={{ gap: 12 }}>
+        {canAccessModule(grants, "payments", account?.disabledModules) && (
+          <LinkRow title="Payments" icon="wallet-outline" href="/payments" />
+        )}
+        {canAccessModule(grants, "forms", account?.disabledModules) && (
+          <LinkRow title="Forms & consent" icon="checkbox-outline" href="/forms" />
+        )}
+        {canAccessModule(grants, "resources", account?.disabledModules) && (
+          <LinkRow title="Resources" icon="folder-open-outline" href="/resources" />
+        )}
+        {canAccessModule(grants, "contact", account?.disabledModules) && (
+          <LinkRow title="Contact school" icon="chatbubbles-outline" href="/contact" />
+        )}
       </View>
-      {notices.length === 0 && (
-        <Empty
-          title="All clear here"
-          body="Try another filter or check back for new school updates."
-        />
+      {canAccessModule(grants, "messages", account?.disabledModules) && (
+        <Heading title="Latest updates" />
       )}
-      {notices.map((notice) => (
-        <Card key={notice.id}>
-          <View style={s.row}>
-            <Badge label={notice.category} />
-            <Text style={[s.small, { flex: 1, textAlign: "right" }]}>{notice.date}</Text>
-            {!notice.read && (
-              <View
-                accessibilityLabel="Unread"
-                style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.primary }}
-              />
-            )}
-          </View>
-          <Text weight="bold" style={{ fontSize: 18, lineHeight: 26 }}>
-            {notice.title}
-          </Text>
-          <Text numberOfLines={2} style={s.muted}>
-            {notice.body}
-          </Text>
-          <LinkRow
-            title="Read update"
-            subtitle={notice.author}
-            icon="arrow-forward-outline"
-            href={`/notice/${notice.id}` as Href}
-          />
-        </Card>
+      <QueryState result={school} />
+      <QueryState result={messages} />
+      {messages.data?.records.slice(0, 3).map((r) => (
+        <Row key={r.id} record={r} path={`/notice/${r.id}`} />
       ))}
+      {canAccessModule(grants, "messages", account?.disabledModules) && (
+        <Button secondary title="All updates" onPress={() => open("/messages")} />
+      )}
     </Screen>
   );
+}
+export function UpdatesScreen() {
+  return <ModuleList module="messages" title="School updates" detail="notice" />;
 }
 export function NoticeScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, update } = useSchool();
-  const notice = visibleNotices(state, "Parent", "all").find((n) => n.id === id);
-  useEffect(() => {
-    if (notice && !notice.read) update((current) => markNotice(current, id));
-  }, [id, notice, update]);
-  return (
-    <Screen back title="School update">
-      {!notice ? (
-        <Empty title="Update unavailable" body="This update is not published for parents." />
-      ) : (
-        <>
-          <View style={s.row}>
-            <Badge label={notice.category} />
-            <Text style={s.small}>{notice.date}</Text>
-          </View>
-          <Text weight="bold" style={{ fontSize: 24, lineHeight: 34 }}>
-            {notice.title}
-          </Text>
-          <Text style={s.muted}>
-            {notice.author} · {notice.audience}
-          </Text>
-          <Card>
-            <Text style={{ lineHeight: 26 }}>{notice.body}</Text>
-          </Card>
-          {notice.attachment && (
-            <Card>
-              <LinkRow
-                title={notice.attachment}
-                subtitle="Open sample attachment preview"
-                icon="document-text-outline"
-                onPress={() =>
-                  open(`/document/attachment?title=${encodeURIComponent(notice.attachment!)}`)
-                }
-              />
-            </Card>
-          )}
-          {notice.action === "consent" && (
-            <Button title="Review excursion consent" onPress={() => open("/forms")} />
-          )}
-          <Button
-            secondary
-            disabled={notice.acknowledged}
-            title={notice.acknowledged ? "Acknowledged ✓" : "Acknowledge update"}
-            onPress={() => update((current) => markNotice(current, id, true))}
-          />
-        </>
-      )}
-    </Screen>
-  );
+  return <Detail module="messages" title="Notice" receiptEnabled />;
 }
-
 export function CalendarScreen() {
-  const { state, child } = useSchool();
-  const [day, setDay] = useState<number | null>(null);
-  const [mode, setMode] = useState("Month");
-  const events = familyView(state, child).events.filter((e) => day === null || e.day === day);
-  return (
-    <Screen title="Your school calendar" subtitle="October 2026 · Term 4">
-      <ChildPicker />
-      <Chips items={["Month", "Agenda"]} value={mode} onChange={setMode} />
-      {mode === "Month" && (
-        <Card>
-          <Heading title="October 2026" action="All dates" onPress={() => setDay(null)} />
-          <View style={{ flexDirection: "row" }}>
-            {["M", "T", "W", "T", "F", "S", "S"].map((label, i) => (
-              <Text
-                key={i}
-                weight="semibold"
-                style={{
-                  width: "14.2857%",
-                  textAlign: "center",
-                  color: colors.muted,
-                  fontSize: 11,
-                }}
-              >
-                {label}
-              </Text>
-            ))}
-          </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-            {Array.from({ length: 35 }, (_, i) => (i < 3 || i > 33 ? null : i - 2)).map(
-              (date, i) => (
-                <Pressable
-                  key={i}
-                  disabled={!date}
-                  accessibilityRole={date ? "button" : undefined}
-                  accessibilityLabel={date ? `October ${date}, 2026` : undefined}
-                  accessibilityState={{ selected: date === day }}
-                  onPress={() => setDay(date)}
-                  style={{
-                    width: "14.2857%",
-                    minHeight: 46,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: date === day ? colors.deepRed : "transparent",
-                    borderRadius: 14,
-                  }}
-                >
-                  <Text
-                    weight={date === 14 ? "bold" : "regular"}
-                    style={{ color: date === day ? "white" : colors.text }}
-                  >
-                    {date}
-                  </Text>
-                  {date && familyView(state, child).events.some((e) => e.day === date) ? (
-                    <View
-                      style={{
-                        width: 4,
-                        height: 4,
-                        borderRadius: 2,
-                        backgroundColor: date === day ? colors.gold : colors.primary,
-                      }}
-                    />
-                  ) : null}
-                </Pressable>
-              ),
-            )}
-          </View>
-        </Card>
-      )}
-      <Heading
-        title={day ? `October ${day}` : "Coming up"}
-        action={day ? "Clear date" : undefined}
-        onPress={() => setDay(null)}
-      />
-      {events.length ? (
-        <Card>
-          {events.map((event) => (
-            <EventRow key={event.id} event={event} />
-          ))}
-        </Card>
-      ) : (
-        <Empty
-          title="A little breathing room"
-          body="No school events on this date for the selected child."
-        />
-      )}
-    </Screen>
-  );
+  return <ModuleList module="calendar" title="School calendar" detail="event" />;
 }
 export function EventScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { state } = useSchool();
-  const event = state.events.find((e) => e.id === id);
-  return (
-    <Screen back title="Event details">
-      {event ? (
-        <>
-          <Badge label={event.category} />
-          <Text weight="bold" style={{ fontSize: 25, lineHeight: 35 }}>
-            {event.title}
-          </Text>
-          <Card>
-            <LinkRow
-              title={`${event.day} October 2026`}
-              subtitle={event.time}
-              icon="calendar-outline"
-              onPress={() => open("/calendar")}
-            />
-            <View style={s.row}>
-              <Icon name="location-outline" />
-              <Text style={{ flex: 1 }}>{event.location}</Text>
-            </View>
-            <Text style={s.muted}>
-              For {event.audience.toLowerCase()} families. Please check the related update for what
-              to bring.
-            </Text>
-          </Card>
-          {id === "trip" && (
-            <>
-              <Button title="Excursion consent" onPress={() => open("/forms")} />
-              <Button secondary title="View activity payment" onPress={() => open("/payments")} />
-            </>
-          )}
-        </>
-      ) : (
-        <Empty title="Event unavailable" body="Return to the calendar to find upcoming events." />
-      )}
-    </Screen>
-  );
+  return <Detail module="calendar" title="School event" />;
 }
-
 export function ChildrenScreen() {
-  const { child } = useSchool();
-  return (
-    <Screen title="Your children" subtitle="Their school journey, in one place.">
-      <ChildPicker />
-      {children
-        .filter((c) => child === "all" || child === c.id)
-        .map((c) => (
-          <Card key={c.id}>
-            <View style={s.row}>
-              <View style={[s.avatar, { width: 60, height: 60, borderRadius: 22 }]}>
-                <Text weight="bold" style={{ color: colors.deepRed, fontSize: 20 }}>
-                  {c.initials}
-                </Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text weight="bold" style={{ fontSize: 18 }}>
-                  {c.name}
-                </Text>
-                <Text style={s.muted}>
-                  {c.grade} · Class {c.className}
-                </Text>
-              </View>
-            </View>
-            <Text style={s.small}>Class teacher · {c.teacher}</Text>
-            <Button
-              secondary
-              title="View learner profile"
-              onPress={() => open(`/learner/${c.id}`)}
-            />
-          </Card>
-        ))}
-    </Screen>
-  );
+  return <ModuleList module="children" title="Your children" detail="learner" />;
 }
 export function LearnerScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { state } = useSchool();
-  const c = children.find((item) => item.id === id);
-  const [section, setSection] = useState("Overview");
-  return (
-    <Screen
-      back
-      title={c?.name ?? "Learner unavailable"}
-      subtitle={c && `${c.grade} · ${c.className}`}
-    >
-      {c ? (
-        <>
-          <Chips
-            items={["Overview", "Reports", "Attendance", "Conduct", "Timetable"]}
-            value={section}
-            onChange={setSection}
-          />
-          {section === "Overview" && (
-            <Card>
-              <Badge label="Linked learner" good />
-              <Text weight="bold">A growing school journey</Text>
-              <Text style={s.muted}>Class teacher: {c.teacher}</Text>
-              <Text style={s.muted}>House: Red · Academic year: 2026</Text>
-              <Text style={s.small}>Sample learner details · Parent view is read-only.</Text>
-            </Card>
-          )}
-          {section === "Reports" && (
-            <>
-              <Card>
-                <LinkRow
-                  title="Term 3 learning report"
-                  subtitle="Published sample · 2026"
-                  icon="document-text-outline"
-                  onPress={() =>
-                    open(
-                      `/document/report?title=${encodeURIComponent(`${c.name} · Term 3 report`)}`,
-                    )
-                  }
-                />
-              </Card>
-              {state.reportReleased ? (
-                <Card>
-                  <LinkRow
-                    title="Term 4 learning report"
-                    subtitle="Published in demo"
-                    icon="document-text-outline"
-                    onPress={() =>
-                      open(
-                        `/document/report?title=${encodeURIComponent(`${c.name} · Term 4 report`)}`,
-                      )
-                    }
-                  />
-                </Card>
-              ) : (
-                <Empty
-                  title="Term 4 report is on its way"
-                  body="Only published reports appear in your parent view."
-                />
-              )}
-            </>
-          )}
-          {section === "Attendance" && (
-            <Card>
-              <Badge
-                label={
-                  state.attendance[c.name] === undefined
-                    ? "No record available"
-                    : state.attendance[c.name]
-                      ? "Present"
-                      : "Absent"
-                }
-                good={state.attendance[c.name]}
-              />
-              <Text weight="bold">14 October 2026</Text>
-              <Text style={s.muted}>
-                This is a sample daily attendance record. Contact the school office for any
-                corrections.
-              </Text>
-            </Card>
-          )}
-          {section === "Conduct" &&
-            (state.conduct.filter((item) => item.child === c.name).length ? (
-              state.conduct
-                .filter((item) => item.child === c.name)
-                .map((item, i) => (
-                  <Card key={i}>
-                    <Badge label={item.type} good />
-                    <Text weight="bold">{item.title}</Text>
-                    <Text style={s.small}>A moment to celebrate · Sample record</Text>
-                  </Card>
-                ))
-            ) : (
-              <Empty
-                title="No conduct records"
-                body="New recognitions will appear here when shared by the school."
-              />
-            ))}
-          {section === "Timetable" && (
-            <Card>
-              <Text weight="bold">Wednesday · Sample timetable</Text>
-              {[
-                "08:00 · Registration",
-                "08:15 · Mathematics",
-                "09:15 · English",
-                "10:15 · Break",
-                "10:45 · Life Skills",
-                "12:00 · Creative Arts",
-                "13:00 · End of day",
-              ].map((item) => (
-                <Text key={item} style={s.muted}>
-                  {item}
-                </Text>
-              ))}
-            </Card>
-          )}
-        </>
-      ) : (
-        <Empty title="Learner not found" body="Choose a linked learner from Children." />
-      )}
-    </Screen>
-  );
+  return <Detail module="children" title="Learner" />;
 }
-
 export function PaymentsScreen() {
-  const { state, child } = useSchool();
-  const view = familyView(state, child);
-  return (
-    <Screen back title="Payments" subtitle="A clear picture of school expenses.">
-      <ChildPicker />
-      <LinearGradient
-        colors={[colors.deepRed, "#ac2830"]}
-        style={{ borderRadius: 24, padding: 24, gap: 8 }}
-      >
-        <Text style={{ color: "#ffe8e5" }}>Activity balance</Text>
-        <Text weight="bold" style={{ color: "white", fontSize: 34, lineHeight: 48 }}>
-          {money(view.amountDue)}
-        </Text>
-        <Text style={{ color: "#ffe8e5", fontSize: 11 }}>
-          Frontend demo · No real money is collected
-        </Text>
-      </LinearGradient>
-      <Heading title="Activity payments" />
-      {child === "all" || child === "emma" ? (
-        <Card>
-          <LinkRow
-            title="Botanical gardens excursion"
-            subtitle="Emma · Due 20 October · R250.00"
-            icon="leaf-outline"
-            href="/payment/excursion"
-            badge={state.payment}
-          />
-        </Card>
-      ) : (
-        <Empty
-          title="No activity payments due"
-          body="There are no activity charges for Noah in this demo."
-        />
-      )}
-      <Heading title="Payment history" />
-      <Card>
-        <LinkRow
-          title="October school fees"
-          subtitle="Family · R2,800.00 · 1 October"
-          icon="receipt-outline"
-          href="/payment/october"
-          badge="Paid"
-        />
-      </Card>
-    </Screen>
-  );
+  return <ModuleList module="payments" title="Payments" detail="payment" />;
 }
 export function PaymentScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, processing: busy, simulatePayment } = useSchool();
-  const [checkout, setCheckout] = useState(false);
-  const known = id === "excursion" || id === "october";
-  const historical = id === "october";
-  const paid = historical || state.payment === "Paid";
-  return (
-    <Screen back title={paid ? "Payment receipt" : "Activity payment"}>
-      {!known ? (
-        <Empty title="Payment unavailable" body="Choose a payment from your activity list." />
-      ) : (
-        <>
-          <Card>
-            <Icon
-              name={paid ? "checkmark-circle-outline" : "wallet-outline"}
-              size={42}
-              color={paid ? "#246442" : colors.primary}
-            />
-            <Badge label={historical ? "Paid" : state.payment} good={paid} />
-            <Text weight="bold" style={{ fontSize: 21 }}>
-              {historical ? "October school fees" : "Botanical gardens excursion"}
-            </Text>
-            <Text style={s.muted}>
-              {historical ? "Family school fees" : "Emma Williams · Grade 4"}
-            </Text>
-            <Text weight="bold" style={{ fontSize: 34, lineHeight: 46 }}>
-              {money(historical ? 2800 : 250)}
-            </Text>
-            <Text style={s.small}>
-              {paid
-                ? `Demo receipt · WGJS-${historical ? "OCT-001" : "TRIP-002"}`
-                : "Due 20 October 2026"}
-            </Text>
-          </Card>
-          {paid ? (
-            <Feedback message="Recorded in this demo. This receipt is a sample and is not proof of a real payment." />
-          ) : (
-            <>
-              {state.payment === "Failed" && (
-                <Feedback
-                  error
-                  message="The simulated payment failed. Nothing was charged. You can retry."
-                />
-              )}
-              {state.payment === "Pending verification" && (
-                <Feedback message="Pending demo verification. The balance remains outstanding until marked paid." />
-              )}
-              {checkout ? (
-                <Card>
-                  <Text weight="bold">Confirm demo payment</Text>
-                  <Text style={s.muted}>
-                    Simulate a R250 activity payment. No payment details are required and no money
-                    will move.
-                  </Text>
-                  {busy && (
-                    <ActivityIndicator
-                      color={colors.primary}
-                      accessibilityLabel="Simulating payment"
-                    />
-                  )}
-                  <Button
-                    disabled={busy}
-                    title={busy ? "Verifying…" : "Simulate payment"}
-                    onPress={simulatePayment}
-                  />
-                  <Button
-                    secondary
-                    disabled={busy}
-                    title="Cancel"
-                    onPress={() => setCheckout(false)}
-                  />
-                </Card>
-              ) : (
-                <Button
-                  title={
-                    state.payment === "Failed" ? "Retry demo payment" : "Continue to demo checkout"
-                  }
-                  onPress={() => setCheckout(true)}
-                />
-              )}
-            </>
-          )}
-        </>
-      )}
-    </Screen>
-  );
+  return <Detail module="payments" title="School charge" />;
 }
-
 export function FormsScreen() {
-  const { state, child, update, consentPhone, setConsentPhone } = useSchool();
-  const [phone, setPhone] = useState(consentPhone);
-  const [permission, setPermission] = useState(false);
-  const [error, setError] = useState("");
-  return (
-    <Screen back title="Forms & consent" subtitle="A little permission for a big adventure.">
-      <ChildPicker />
-      {child === "noah" ? (
-        <Empty title="Nothing to sign" body="No forms are awaiting a response for Noah." />
-      ) : (
-        <>
-          <Card>
-            <Badge label={state.consent ? "Submitted" : "Action needed"} good={state.consent} />
-            <Text weight="bold" style={{ fontSize: 21 }}>
-              Grade 4 excursion consent
-            </Text>
-            <Text style={s.muted}>Emma Williams · 23 October 2026</Text>
-            <Text>
-              Botanical gardens · 08:00–14:00. Bring a packed lunch, water bottle and sun hat.
-              Response due 20 October.
-            </Text>
-          </Card>
-          {state.consent ? (
-            <Card>
-              <Icon name="checkmark-circle-outline" color="#246442" size={34} />
-              <Text weight="bold">You&apos;re all set, Jamie</Text>
-              <Text style={s.muted}>Permission granted for Emma to attend.</Text>
-              <Text>Emergency contact: {consentPhone}</Text>
-              <Feedback message="Your response is saved for this demo session." />
-              <Button
-                secondary
-                title="View excursion payment"
-                onPress={() => open("/payment/excursion")}
-              />
-            </Card>
-          ) : (
-            <Card>
-              <Field
-                label="Emergency contact number"
-                keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="e.g. 082 123 4567"
-              />
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: permission }}
-                onPress={() => setPermission(!permission)}
-                style={[s.row, { minHeight: 52 }]}
-              >
-                <Icon name={permission ? "checkbox" : "square-outline"} />
-                <Text style={{ flex: 1 }}>I give permission for Emma to attend the excursion.</Text>
-              </Pressable>
-              {!!error && <Feedback error message={error} />}
-              <Button
-                title="Submit consent"
-                onPress={() => {
-                  const message = consentError(phone, permission);
-                  setError(message);
-                  if (!message) {
-                    setConsentPhone(phone.trim());
-                    update((current) => ({ ...current, consent: true }));
-                  }
-                }}
-              />
-              <Text style={s.small}>Local demo response · Resets when the app reloads.</Text>
-            </Card>
-          )}
-        </>
-      )}
-    </Screen>
-  );
+  return <ModuleList module="forms" title="Forms & consent" />;
 }
-
 export function ResourcesScreen() {
-  const { state, child } = useSchool();
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
-  const resources = state.resources.filter(
-    (item) =>
-      (child !== "noah" || !item.title.includes("Grade 4")) &&
-      (category === "All" || category === item.category) &&
-      item.title.toLowerCase().includes(query.toLowerCase()),
-  );
-  return (
-    <Screen back title="School resources" subtitle="The useful things, always close by.">
-      <ChildPicker />
-      <Field
-        label="Search resources"
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Find a newsletter or school document"
-      />
-      <Chips
-        items={["All", "Newsletters", "School documents", "Academic"]}
-        value={category}
-        onChange={setCategory}
-      />
-      {resources.length ? (
-        resources.map((item, i) => (
-          <Card key={item.title}>
-            <LinkRow
-              title={item.title}
-              subtitle={`${item.category} · PDF · ${item.size}`}
-              icon="document-text-outline"
-              href={`/document/${i}?title=${encodeURIComponent(item.title)}` as Href}
-            />
-          </Card>
-        ))
-      ) : (
-        <Empty title="No matching resources" body="Try another search or category." />
-      )}
-    </Screen>
-  );
+  return <ModuleList module="resources" title="Resources" detail="document" />;
 }
 export function DocumentScreen() {
-  const { title } = useLocalSearchParams<{ title: string }>();
-  return (
-    <Screen back title="Document preview" subtitle="Sample preview">
-      <Card>
-        <Icon name="document-text-outline" size={44} />
-        <Badge label="SAMPLE" />
-        <Text weight="bold" style={{ fontSize: 23, lineHeight: 33 }}>
-          {title || "School document"}
-        </Text>
-        <Text style={s.muted}>Wynberg Girls Junior School · 2026</Text>
-        <View style={{ height: 1, backgroundColor: colors.border }} />
-        <Text>
-          This is a frontend sample of the document viewing experience. A school document would
-          appear here once the resource service is connected.
-        </Text>
-        <Text style={s.small}>
-          PDF download and native PDF rendering are not connected in this demo.
-        </Text>
-      </Card>
-      <Button secondary title="Back to resources" onPress={() => open("/resources")} />
-    </Screen>
-  );
+  return <Detail module="resources" title="School resource" />;
 }
-
 export function ContactScreen() {
-  const { state, update } = useSchool();
-  const [compose, setCompose] = useState(false);
-  const [department, setDepartment] = useState("School office");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [error, setError] = useState("");
-  return (
-    <Screen back title="Let's stay connected" subtitle="A direct line to the right school team.">
-      <Card>
-        <Text weight="bold">How can we help?</Text>
-        <Text style={s.muted}>Ask about school life, class activities or your fee statement.</Text>
-        <Button
-          title={compose ? "Close new enquiry" : "New enquiry"}
-          icon="add-outline"
-          onPress={() => setCompose(!compose)}
-        />
-      </Card>
-      {compose && (
-        <Card>
-          <Text weight="bold">Send a message</Text>
-          <Chips
-            items={["School office", "Finance", "Class teacher", "Sports"]}
-            value={department}
-            onChange={setDepartment}
-          />
-          <Field
-            label="Subject"
-            value={subject}
-            onChangeText={setSubject}
-            placeholder="What would you like help with?"
-          />
-          <Field
-            label="Your message"
-            multiline
-            value={body}
-            onChangeText={setBody}
-            placeholder="Write your enquiry…"
-          />
-          {!!error && <Feedback error message={error} />}
-          <Button
-            title="Send demo enquiry"
-            onPress={() => {
-              if (!subject.trim() || !body.trim()) {
-                setError("Add a subject and message before sending.");
-                return;
-              }
-              const id = `enquiry-${Date.now()}`;
-              update((current) => ({
-                ...current,
-                enquiries: [
-                  ...current.enquiries,
-                  {
-                    id,
-                    subject: subject.trim(),
-                    department,
-                    status: "Open",
-                    messages: [{ author: "You", body: body.trim() }],
-                  },
-                ],
-              }));
-              setCompose(false);
-              setSubject("");
-              setBody("");
-              setError("");
-              open(`/enquiry/${id}`);
-            }}
-          />
-          <Text style={s.small}>Saved locally. This message will not be sent to the school.</Text>
-        </Card>
-      )}
-      <Heading title="Your enquiries" />
-      <Card>
-        {state.enquiries.map((item) => (
-          <LinkRow
-            key={item.id}
-            title={item.subject}
-            subtitle={`${item.department} · ${item.messages.length} message${item.messages.length === 1 ? "" : "s"}`}
-            icon="chatbubble-ellipses-outline"
-            href={`/enquiry/${item.id}` as Href}
-            badge={item.status}
-          />
-        ))}
-      </Card>
-    </Screen>
-  );
+  return <ModuleList module="contact" title="Contact school" detail="enquiry" />;
 }
 export function EnquiryScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, update } = useSchool();
-  const enquiry = state.enquiries.find((item) => item.id === id);
-  const [reply, setReply] = useState("");
-  const [error, setError] = useState("");
-  return (
-    <Screen
-      back
-      title={enquiry?.subject ?? "Enquiry unavailable"}
-      subtitle={enquiry && `${enquiry.department} · ${enquiry.status}`}
-    >
-      {enquiry ? (
-        <>
-          <Text style={s.small}>Demo conversation · Messages are stored locally only.</Text>
-          {enquiry.messages.map((message, i) => (
-            <Card
-              key={i}
-              style={{ backgroundColor: message.author === "You" ? colors.primarySoft : "white" }}
-            >
-              <Text weight="bold">
-                {message.author === "You" ? "Jamie Williams · You" : message.author}
-              </Text>
-              <Text>{message.body}</Text>
-            </Card>
-          ))}
-          <Card>
-            <Field
-              label="Reply"
-              value={reply}
-              onChangeText={setReply}
-              multiline
-              placeholder="Add to your enquiry…"
-            />
-            {!!error && <Feedback error message={error} />}
-            <Button
-              title="Send demo reply"
-              onPress={() => {
-                if (!reply.trim()) {
-                  setError("Write a message before sending.");
-                  return;
-                }
-                update((current) => ({
-                  ...current,
-                  enquiries: current.enquiries.map((item) =>
-                    item.id === id
-                      ? {
-                          ...item,
-                          messages: [...item.messages, { author: "You", body: reply.trim() }],
-                        }
-                      : item,
-                  ),
-                }));
-                setReply("");
-                setError("");
-              }}
-            />
-          </Card>
-        </>
-      ) : (
-        <Empty title="Enquiry not found" body="Return to Contact to view your messages." />
-      )}
-    </Screen>
-  );
+  return <Detail module="contact" title="School enquiry" />;
 }
-
 export function ProfileScreen() {
-  const { state, update, outcome, setOutcome, processing } = useSchool();
-  const [tools, setTools] = useState(false);
+  const { account, signOut, signOutEverywhere } = useSchool();
+  const [error, setError] = useState("");
+  async function logout(all: boolean) {
+    try {
+      await (all ? signOutEverywhere() : signOut());
+    } catch {
+      setError("Could not sign out. Please try again.");
+    }
+  }
   return (
-    <Screen back title="Your profile" subtitle="The family behind the school journey.">
+    <Screen title="Your profile">
       <Card>
-        <View style={s.row}>
-          <View style={[s.avatar, { width: 64, height: 64 }]}>
-            <Text weight="bold" style={{ fontSize: 22, color: colors.deepRed }}>
-              JW
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text weight="bold" style={{ fontSize: 20 }}>
-              Jamie Williams
-            </Text>
-            <Text style={s.muted}>Parent · Fictional demo account</Text>
-          </View>
-        </View>
-        <Text style={s.small}>jamie.williams@example.com</Text>
+        <Text weight="bold">{account?.name}</Text>
+        <Text>{account?.email}</Text>
+        <Text>{account?.learners.map((l) => l.name).join(", ")}</Text>
       </Card>
-      <Heading title="Linked children" />
-      <Card>
-        {children.map((c) => (
-          <LinkRow
-            key={c.id}
-            title={c.name}
-            subtitle={`${c.grade} · ${c.className}`}
-            icon="person-outline"
-            href={`/learner/${c.id}` as Href}
-          />
-        ))}
-      </Card>
-      <Card>
-        <View style={s.row}>
-          <View style={{ flex: 1 }}>
-            <Text weight="semibold">School notifications</Text>
-            <Text style={s.small}>Demo preference only</Text>
-          </View>
-          <Switch
-            accessibilityLabel="School notifications"
-            value={state.notifications}
-            onValueChange={(notifications) => update((current) => ({ ...current, notifications }))}
-            trackColor={{ true: colors.primary }}
-          />
-        </View>
-        <Text style={s.small}>
-          Push notifications and account editing will be available when the backend is connected.
-        </Text>
-      </Card>
-      <Button
-        secondary
-        title={tools ? "Hide demo controls" : "Demo controls"}
-        onPress={() => setTools(!tools)}
-      />
-      {tools && (
-        <Card>
-          <Text weight="bold">Payment simulation</Text>
-          <Text style={s.small}>Choose the next demo payment result.</Text>
-          <Chips
-            items={["Paid", "Failed", "Pending verification"]}
-            value={outcome}
-            onChange={(value) => setOutcome(value as typeof outcome)}
-          />
-          <Button
-            secondary
-            disabled={processing}
-            title="Reset excursion payment to Due"
-            onPress={() => update((current) => ({ ...current, payment: "Due" }))}
-          />
-          <Text style={s.small}>Reload the app to reset all demo data.</Text>
-        </Card>
-      )}
+      <WorkflowPanel module="profile" />
+      <Boundary>
+        <NotificationPanel />
+      </Boundary>
+      {error && <Feedback error message={error} />}
+      <Button title="Sign out" onPress={() => void logout(false)} />
+      <Button secondary title="Sign out on all devices" onPress={() => void logout(true)} />
     </Screen>
   );
 }
 export function MoreScreen() {
+  const { account } = useSchool();
+  const grants = accessRolesFor(account?.roles ?? [], !!account?.learners.length);
+  const [error, setError] = useState("");
   return (
-    <Screen title="A little more" subtitle="Everything else your family needs.">
-      <Card>
-        <LinkRow
-          title="Payments"
-          subtitle="Activity balances & receipts"
-          icon="wallet-outline"
-          href="/payments"
-        />
-        <LinkRow
-          title="Forms & consent"
-          subtitle="Permissions, made simple"
-          icon="checkbox-outline"
-          href="/forms"
-        />
-        <LinkRow
-          title="Resources"
-          subtitle="Newsletters & school documents"
-          icon="folder-open-outline"
-          href="/resources"
-        />
-        <LinkRow
-          title="Contact the school"
-          subtitle="Enquiries & conversations"
-          icon="chatbubbles-outline"
-          href="/contact"
-        />
-      </Card>
-      <Card>
-        <LinkRow
-          title="Your profile"
-          subtitle="Family details & preferences"
-          icon="person-circle-outline"
-          href="/profile"
-        />
-      </Card>
-      <Card style={{ backgroundColor: colors.goldSoft }}>
-        <Icon name="heart-outline" color={colors.deepRed} />
-        <Text weight="bold">Honor Before Honours</Text>
-        <Text style={s.muted}>Connected families. A caring school community.</Text>
-      </Card>
+    <Screen title="More from your school">
+      <LinkRow
+        title="Uniform store"
+        icon="shirt-outline"
+        onPress={() =>
+          void Linking.openURL(schoolConfig.clothingStoreUrl).catch(() =>
+            setError("Could not open the uniform store."),
+          )
+        }
+      />
+      {error && <Feedback error message={error} />}
+      {(
+        [
+          ["payments", "Payments"],
+          ["forms", "Forms & consent"],
+          ["resources", "Resources"],
+          ["contact", "Contact school"],
+          ["groups", "Groups & classes"],
+          ["attendance", "Attendance"],
+          ["conduct", "Conduct"],
+          ["reports", "Reports"],
+          ["people", "People"],
+          ["settings", "Settings"],
+          ["audit", "Audit log"],
+        ] as const
+      )
+        .filter(([module]) => canAccessModule(grants, module, account?.disabledModules))
+        .map(([module, title]) => (
+          <LinkRow
+            key={module}
+            title={title}
+            icon="folder-open-outline"
+            href={`/${module}` as Href}
+          />
+        ))}
+      <LinkRow title="Your profile" icon="person-outline" href="/profile" />
     </Screen>
   );
 }

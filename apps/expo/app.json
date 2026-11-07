@@ -2,9 +2,13 @@
   "expo": {
     "name": "WGJS Connect",
     "slug": "wynberg-girls-junior-connect",
-    "version": "1.0.1",
-    "runtimeVersion": { "policy": "appVersion" },
-    "updates": { "url": "https://u.expo.dev/6cd3c02c-5a24-4596-84b0-7048bf2c7ea8" },
+    "version": "1.0.3",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6cd3c02c-5a24-4596-84b0-7048bf2c7ea8"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "wgjsconnect",
@@ -20,7 +24,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/logo.png",
       "name": "Wynberg Girls Junior Connect",
       "shortName": "WGJS Connect",
@@ -35,6 +39,14 @@
           "backgroundColor": "#ffffff",
           "image": "./assets/logo.png",
           "imageWidth": 160
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "school-updates",
+          "color": "#c6252b"
         }
       ]
     ],

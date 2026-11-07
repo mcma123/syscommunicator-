@@ -1,3 +1,4 @@
+import type { ConvexReactClient } from "convex/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -12,6 +13,7 @@ import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { getSchoolShareMeta } from "../lib/school-metadata";
+import { SchoolAuthProvider } from "../features/school/auth-provider";
 import { SchoolProvider } from "../features/school/store";
 import { DemoSessionGate } from "../features/school/demo-session-gate";
 import { Toaster } from "sonner";
@@ -74,7 +76,10 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  convexClient: ConvexReactClient | null;
+}>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -124,17 +129,19 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+  const { queryClient, convexClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <SchoolProvider>
-        <DemoSessionGate>
-          <Outlet />
-        </DemoSessionGate>
-        <Toaster position="top-right" richColors />
-      </SchoolProvider>
+      <SchoolAuthProvider client={convexClient}>
+        <SchoolProvider>
+          <DemoSessionGate>
+            <Outlet />
+          </DemoSessionGate>
+          <Toaster position="top-right" richColors />
+        </SchoolProvider>
+      </SchoolAuthProvider>
     </QueryClientProvider>
   );
 }

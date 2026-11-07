@@ -1,1 +1,14 @@
-{"name":"@school-connect/core","private":true,"version":"0.1.0","type":"module","exports":{".":"./src/index.ts"}}
+{
+  "name": "@school-connect/core",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./domain": "./src/domain.ts",
+    "./permissions": "./src/permissions.ts",
+    "./live": "./src/live.ts",
+    "./calendar": "./src/calendar.ts",
+    "./workflows": "./src/workflows.ts"
+  }
+}

@@ -1,8 +1,12 @@
+import { useSchool } from "@/features/school/store";
+import { accessRolesFor, canAccessModule } from "@school-connect/core/permissions";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme/school";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function ParentTabs() {
+  const { account } = useSchool();
+  const grants = accessRolesFor(account?.roles ?? [], !!account?.learners.length);
   const insets = useSafeAreaInsets();
   return (
     <Tabs
@@ -32,6 +36,7 @@ export default function ParentTabs() {
       <Tabs.Screen
         name="messages"
         options={{
+          href: canAccessModule(grants, "messages", account?.disabledModules) ? undefined : null,
           title: "Updates",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "newspaper" : "newspaper-outline"} size={23} color={color} />
@@ -41,6 +46,7 @@ export default function ParentTabs() {
       <Tabs.Screen
         name="calendar"
         options={{
+          href: canAccessModule(grants, "calendar", account?.disabledModules) ? undefined : null,
           title: "Calendar",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "calendar" : "calendar-outline"} size={23} color={color} />
@@ -50,6 +56,7 @@ export default function ParentTabs() {
       <Tabs.Screen
         name="children"
         options={{
+          href: canAccessModule(grants, "children", account?.disabledModules) ? undefined : null,
           title: "Children",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "people" : "people-outline"} size={23} color={color} />
