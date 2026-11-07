@@ -484,6 +484,19 @@ export default defineSchema({
     rejected: v.number(),
     updatedAt: v.number(),
   }).index("by_status", ["status"]),
+  // One row per processed spreadsheet row of a batch: makes counters replay-safe.
+  // digest = SHA-256 of kind + canonical cells; a changed replay is refused.
+  importBatchRows: defineTable({
+    batchId: v.id("importBatches"),
+    row: v.number(),
+    digest: v.string(),
+    outcome: v.union(
+      v.literal("create"),
+      v.literal("update"),
+      v.literal("unchanged"),
+      v.literal("rejected"),
+    ),
+  }).index("by_batchId_and_row", ["batchId", "row"]),
   // Imported guardians/staff awaiting activation. A contact grants no sign-in,
   // role or learner access: authPolicy only links users rows and invitations.
   rosterContacts: defineTable({

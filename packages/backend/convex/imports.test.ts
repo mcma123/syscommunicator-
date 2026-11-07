@@ -392,3 +392,93 @@ it("matches grades case-insensitively beyond the first page and caps new grades 
   expect(overflow.results[0]!.messages[0]).toMatch(/already has 50 grades/);
   expect(await t.run((ctx) => ctx.db.query("grades").take(100))).toHaveLength(50);
 });
+
+it("counts each batch row once: exact replay is inert, changed replay is refused", async () => {
+  const { t, admin } = await setup();
+  const rows = chunk("classes", classesCsv);
+  const first = await admin.mutation(api.imports.commit, {
+    kind: "classes",
+    fileName: "c.csv",
+    totalRows: 2,
+    rows: [rows[1]!],
+  });
+  // SEC-07: the same row sent again in another call must not count as a second row.
+  const replay = await admin.mutation(api.imports.commit, {
+    kind: "classes",
+    fileName: "c.csv",
+    totalRows: 2,
+    batchId: first.batchId,
+    rows: [rows[1]!],
+  });
+  expect(replay.results[0]).toMatchObject({
+    outcome: "create",
+    messages: ["Already processed in this import."],
+  });
+  await expect(admin.mutation(api.imports.complete, { batchId: first.batchId })).rejects.toThrow(
+    /incomplete: 1 of 2/,
+  );
+  const changed = { ...rows[1]!, cells: { ...rows[1]!.cells, class_name: "5Z" } };
+  await expect(
+    admin.mutation(api.imports.commit, {
+      kind: "classes",
+      fileName: "c.csv",
+      totalRows: 2,
+      batchId: first.batchId,
+      rows: [rows[0]!, changed],
+    }),
+  ).rejects.toThrow(/different content/);
+  // The refused chunk rolled back entirely, including the new row 2 it carried.
+  const state = await t.run(async (ctx) => ({
+    batch: await ctx.db.get("importBatches", first.batchId),
+    rows: await ctx.db.query("importBatchRows").take(10),
+    classes: await ctx.db
+      .query("classes")
+      .withIndex("by_year_and_name", (q) => q.eq("year", 2026).eq("name", "5Z"))
+      .take(1),
+  }));
+  expect(state.batch).toMatchObject({ created: 1, updated: 0, unchanged: 0, rejected: 0 });
+  expect(state.rows.map((r) => r.row)).toEqual([3]);
+  expect(state.classes).toEqual([]);
+  await admin.mutation(api.imports.commit, {
+    kind: "classes",
+    fileName: "c.csv",
+    totalRows: 2,
+    batchId: first.batchId,
+    rows: [rows[0]!],
+  });
+  await admin.mutation(api.imports.complete, { batchId: first.batchId });
+});
+
+it("counts a row once when the same chunk is committed concurrently", async () => {
+  const { t, admin } = await setup();
+  const rows = chunk("classes", classesCsv);
+  const opened = await admin.mutation(api.imports.commit, {
+    kind: "classes",
+    fileName: "c.csv",
+    totalRows: 3,
+    rows: [rows[0]!],
+  });
+  const send = () =>
+    admin.mutation(api.imports.commit, {
+      kind: "classes",
+      fileName: "c.csv",
+      totalRows: 3,
+      batchId: opened.batchId,
+      rows: [rows[1]!],
+    });
+  await Promise.all([send(), send()]);
+  const batch = await t.run((ctx) => ctx.db.get("importBatches", opened.batchId));
+  expect(batch!.created + batch!.updated + batch!.unchanged + batch!.rejected).toBe(2);
+  await expect(admin.mutation(api.imports.complete, { batchId: opened.batchId })).rejects.toThrow(
+    /incomplete: 2 of 3/,
+  );
+});
+
+it("refuses row numbers that are not spreadsheet data rows", async () => {
+  const { admin } = await setup();
+  const row = chunk("classes", classesCsv)[0]!;
+  for (const bad of [1, 0, -4, 2.5])
+    await expect(
+      admin.query(api.imports.preview, { kind: "classes", rows: [{ ...row, row: bad }] }),
+    ).rejects.toThrow(/spreadsheet rows/);
+});

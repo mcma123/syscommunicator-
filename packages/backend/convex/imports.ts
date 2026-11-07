@@ -54,7 +54,20 @@ function invalid(message: string): never {
 function checkChunk(rows: { row: number }[]) {
   if (rows.length === 0 || rows.length > IMPORT_BATCH_SIZE)
     invalid(`Send between 1 and ${IMPORT_BATCH_SIZE} rows at a time.`);
+  if (rows.some((r) => !Number.isInteger(r.row) || r.row < 2))
+    invalid("Row numbers must be spreadsheet rows after the header.");
   if (new Set(rows.map((r) => r.row)).size !== rows.length) invalid("Row numbers must be unique.");
+}
+/** Binds a batch row number to its exact content (kind + cells in key order). */
+async function rowDigest(kind: ImportKind, cells: Record<string, string>) {
+  const canonical = JSON.stringify([
+    kind,
+    Object.keys(cells)
+      .sort()
+      .map((k) => [k, cells[k]]),
+  ]);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 const rejected = (...messages: string[]): Plan => ({ outcome: "rejected", messages });
 /** Fields whose imported value differs; blank optional imports never erase stored values. */
@@ -409,15 +422,44 @@ export const commit = authedMutation({
     const counts = { create: 0, update: 0, unchanged: 0, rejected: 0 };
     const results = [];
     for (const input of args.rows) {
+      // Replay safety: each batch row is counted once and bound to its content.
+      const digest = await rowDigest(args.kind, input.cells);
+      const prior = await ctx.db
+        .query("importBatchRows")
+        .withIndex("by_batchId_and_row", (q) => q.eq("batchId", batch._id).eq("row", input.row))
+        .unique();
+      if (prior) {
+        if (prior.digest !== digest)
+          invalid(`Row ${input.row} was already imported in this batch with different content.`);
+        results.push({
+          row: input.row,
+          outcome: prior.outcome,
+          messages: ["Already processed in this import."],
+        });
+        continue;
+      }
       const plan = await planRow(ctx, args.kind, input);
       counts[plan.outcome]++;
+      await ctx.db.insert("importBatchRows", {
+        batchId: batch._id,
+        row: input.row,
+        digest,
+        outcome: plan.outcome,
+      });
       if (plan.outcome !== "rejected" && plan.apply)
         for (const write of await plan.apply(ctx, batch._id))
           await ctx.audit(write.action, write.table, write.id, `Import row ${input.row}`);
       results.push({ row: input.row, outcome: plan.outcome, messages: plan.messages });
     }
     const processed =
-      batch.created + batch.updated + batch.unchanged + batch.rejected + args.rows.length;
+      batch.created +
+      batch.updated +
+      batch.unchanged +
+      batch.rejected +
+      counts.create +
+      counts.update +
+      counts.unchanged +
+      counts.rejected;
     if (processed > batch.totalRows) invalid("More rows were sent than the import declared.");
     await ctx.db.patch("importBatches", batch._id, {
       created: batch.created + counts.create,

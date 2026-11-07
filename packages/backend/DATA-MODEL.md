@@ -162,5 +162,6 @@ Upload reservations store server-derived user/session, validated upload specific
 | Staged guardian contact | `rosterContacts.by_kind_and_email_and_learnerId`; per-learner bound via `rosterContacts.by_learnerId` |
 | Staged staff contact | `rosterContacts.by_kind_and_email` |
 | Recent uploads | `importBatches` creation-time order; `importBatches.by_status` for open batches |
+| Replay-safe row accounting per batch | `importBatchRows.by_batchId_and_row` (row number → content digest, outcome) |
 
-`importBatches`, `rosterContacts` and the `grades.by_name` index are additive, with no backfill. Staged contacts are not identity, role or guardian data and grant no access; see [IMPORTS.md](IMPORTS.md). Reset clears both with the other application tables.
+`importBatches`, `importBatchRows`, `rosterContacts` and the `grades.by_name` index are additive, with no backfill. Staged contacts are not identity, role or guardian data and grant no access; see [IMPORTS.md](IMPORTS.md). Reset clears both with the other application tables.

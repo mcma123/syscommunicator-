@@ -28,6 +28,10 @@ Import in order: classes → learners → guardians/staff. Missing grades are cr
   Preview writes nothing. Commit writes accepted rows, audits every write and updates the batch counters
   in the same transaction; rejected rows write nothing. A commit that sends more rows than the batch
   declared rolls back.
+- Within a batch each spreadsheet row is recorded once in `importBatchRows` with a SHA-256 digest of its
+  kind and cells. Re-sending an identical row (for example a retried chunk) reports its earlier outcome
+  and changes no counters; re-sending a row number with different content refuses the whole chunk.
+  Row numbers must be whole numbers from 2. Completion therefore means every declared row arrived once.
 - Re-importing the same file is idempotent. Blank optional cells (including `primary_contact` and `class_names`) never erase stored values; new guardian contacts default to not primary and new staff contacts to no classes. Existing
   learners keep their status; a class that already exists under another grade is rejected.
 - `importBatches` records each upload (Open → Completed via `imports.complete`, which refuses until every declared row has been processed). `imports.batches` lists the
