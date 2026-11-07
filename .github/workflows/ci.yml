@@ -22,3 +22,4 @@ jobs:
       - run: npm run typecheck:backend
       - run: npm run lint
       - run: npm run lint --workspace @school-connect/expo
+      - run: npm run export:expo

@@ -1,0 +1,39 @@
+name: Dependency audit
+on:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - apps/*/package.json
+      - packages/*/package.json
+      - scripts/audit-gate.mjs
+      - scripts/audit-gate.test.mjs
+      - .github/audit-exceptions.json
+      - .github/workflows/dependency-audit.yml
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: npm install --global npm@11
+      - run: node --test scripts/audit-gate.test.mjs
+      # npm exits 1 when it finds advisories; that is a valid report for the gate. The gate itself
+      # fails on npm/tool errors (error object, missing or malformed report).
+      - name: Audit lockfile (all workspaces, dev dependencies included)
+        run: npm audit --package-lock-only --ignore-scripts --json > npm-audit.json || true
+      - name: Gate high/critical advisories against expiring exceptions
+        run: node scripts/audit-gate.mjs npm-audit.json .github/audit-exceptions.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: npm-audit
+          path: npm-audit.json
+          if-no-files-found: error

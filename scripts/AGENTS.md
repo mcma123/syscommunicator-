@@ -2,7 +2,7 @@
 
 ## Purpose
 
-- Own local workspace setup, phone development launchers, and Expo account command helpers.
+- Own local workspace setup, phone development launchers, Expo account command helpers and the CI dependency advisory gate.
 
 ## Ownership
 
@@ -11,6 +11,7 @@
 - `prepare-receipt-assets.mjs` reproducibly embeds public/logo.png and installed Open Sans Regular/Bold with source hashes and font license into backend convex/receiptAssets.ts. Run after changing the crest or font package; never fetch fonts at receipt generation time.
 - `prepare-expo-assets.ps1` creates padded native icon canvases from the original crest on Windows.
 - `backend-auth.mjs` owns dev-only signing-key setup, private demo account provisioning and real-session API smoke checks including guardian/class/publication/Finance/signed-out authorization. It uses the fixture target guard, pipes secrets through stdin, and stores generated passwords only in ignored `.env.auth.local`. Temporary deployment password values are removed after provisioning.
+- `audit-gate.mjs` gates an `npm audit --json` report against `.github/audit-exceptions.json` for the dependency-audit workflow (contract in `.github/AGENTS.md`); `audit-gate.test.mjs` owns its node:test regressions. It reads files only and never contacts the registry.
 - `backend-fixtures.mjs` owns guarded seed/reset/verification commands, running Convex from `packages/backend`; `backend-fixtures.test.mjs` owns command guard regression tests.
 
 ## Local Contracts
@@ -33,6 +34,7 @@
 
 - `npm run expo:whoami` validates token authentication; `npm run expo:info` validates the linked project.
 - Check that `.env` is ignored and exported public configuration contains no token.
+- `node --test scripts/audit-gate.test.mjs` checks advisory gating, exception matching/expiry and malformed-report failures.
 - `node --test scripts/backend-fixtures.test.mjs` checks accepted/rejected fixture command targets and argument/credential overrides.
 - `npm run verify:auth:dev` checks the identified dev deployment with private credentials; it changes auth sessions only and never sends email.
 - Verify `dev:mobile` displays a terminal QR whose decoded payload is the direct exp:// tunnel URL, and that the public Android manifest/bundle can be downloaded.

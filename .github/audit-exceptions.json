@@ -1,0 +1,21 @@
+{
+  "note": "Temporary CI tolerances for known high/critical advisories, not production risk acceptance. Each record binds one advisory to one vulnerable package and expires; re-triage before expiry. See SECURITY.md SEC-06.",
+  "exceptions": [
+    {
+      "advisory": "https://github.com/advisories/GHSA-qr28-fpjm-wq7f",
+      "package": "decode-uri-component",
+      "rationale": "Reached through expo-router -> query-string@7 URL query parsing on the Expo client (possible UI-thread DoS from a crafted deep link). Patched versions are ESM-only and incompatible with query-string 7; the fix arrives with Expo SDK 58, which awaits a user decision and device testing.",
+      "owner": "dev-build@starter (School Connect builder seat)",
+      "followUp": "SECURITY.md SEC-06; Expo SDK 58 upgrade decision",
+      "expires": "2026-12-07"
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+      "package": "zod",
+      "rationale": "zod 3.25.76 is not imported by application source; it is used transitively by @hookform/resolvers, convex-helpers (via @convex-dev/aggregate) and lint tooling. Fixed only in zod 4, which those consumers do not support yet. Reachability of oversized constrained collections not established.",
+      "owner": "dev-build@starter (School Connect builder seat)",
+      "followUp": "SECURITY.md SEC-06; zod 4 compatibility review",
+      "expires": "2026-12-07"
+    }
+  ]
+}
