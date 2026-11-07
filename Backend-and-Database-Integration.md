@@ -254,13 +254,17 @@ Verification: 70 backend, 36 frontend and 3 CLI tests pass, including actual Wor
 ## Phase 11 — Data import and go-live data
 Goal: load the school's real records safely.
 
-- [ ] Define CSV templates for learners, classes, guardians and staff.
-- [ ] Build an Administrator import flow that validates rows, previews them, reports errors per row and writes in batches.
-- [ ] Rule out duplicates by matching on school learner number and guardian email.
+- [x] Define CSV templates for learners, classes, guardians and staff.
+- [ ] Build an Administrator import flow that validates rows, previews them, reports errors per row and writes in batches. *(Implemented and isolated-tested on web; awaiting a browser journey against a deployment and authenticated Convex codegen.)*
+- [x] Rule out duplicates by matching on school learner number and guardian email.
 - [ ] Before inviting parents, get POPIA-compliant consent and privacy notice acknowledgement.
 - [ ] Do a test import into a preview deployment, have the school sign it off, then import to production.
 
 **Exit criteria:** production holds the real school roster, and the school has signed it off.
+
+Status: `@school-connect/core/imports` owns templates, RFC 4180 parsing, row validation, formula-prefix refusal and in-file duplicates; `convex/imports.ts` adds Administrator-only preview and audited 50-row commits that re-validate every row, match learners by number and guardians by email plus learner, never erase stored values from blank cells, cap grades at 50 and count each batch row once by content digest (replays cannot inflate completion). Guardians and staff are staged in `rosterContacts` only: no accounts, roles, links, invitations or email. Activation awaits the school's POPIA decision. See [import contracts](packages/backend/IMPORTS.md).
+
+Verification: 46 frontend, 82 backend and 3 CLI tests pass under Node 24/npm 11; TypeScript, lint, web build and Expo export pass. QA and security reviewed each change and the combined integration. Not yet done: authenticated codegen (`_generated/api.d.ts` carries the two lines codegen adds), dev deployment, browser import journey, preview rehearsal, school sign-off and any real-data import.
 
 ---
 
@@ -271,10 +275,12 @@ Goal: prove the backend is correct and secure.
 - [ ] Write authorization tests, including the negative cases from Phase 4.
 - [ ] Update the existing Vitest suites (`src/test/*`) to use Convex test fixtures in place of the mock repository.
 - [ ] Add end-to-end checks for the key journeys: excursion (notice → consent → payment → receipt), enquiry, report release.
-- [ ] Run `typecheck:web`, `typecheck:expo`, `typecheck:backend`, `npm test`, `npm run lint` and `export:expo` in CI.
+- [ ] Run `typecheck:web`, `typecheck:expo`, `typecheck:backend`, `npm test`, `npm run lint` and `export:expo` in CI. *(CI runs tests, all three typechecks, root lint and Expo lint; `export:expo` is not yet in CI and the workflow has not run on GitHub since this change.)*
 - [ ] Run the `convex-reviewer` and `convex-launch-readiness` audits.
 
 **Exit criteria:** CI passes and there are no unresolved high-severity findings.
+
+Status: root lint is clean after excluding local agent tooling folders and formatting-only fixes. Compatible dependency updates (Vite 8.3.6, Vitest 4.1.12, node-forge 1.4.3, seroval 1.7.10) reduce `npm audit` from 23 to 18 entries (6 to 4 high); remaining advisories (decode-uri-component via Expo Router, zod 3, glob, minimatch, uuid) need major upgrades and are tracked in [SECURITY.md](SECURITY.md). End-to-end journeys and the Convex audits are not done; the excursion journey depends on Phase 9.
 
 ---
 
@@ -291,6 +297,8 @@ Goal: production is configured, monitored and recoverable.
 - [ ] Run a pilot with one grade, collect feedback, then roll out to the whole school.
 
 **Exit criteria:** both clients run against production Convex, monitoring and backups are verified, and the school has signed off.
+
+Status: [OPERATIONS.md](OPERATIONS.md) prepares the production, backup/restore, monitoring and pilot runbook and lists the missing inputs. Nothing has been executed; no production deployment exists. Payment-dependent launch checks remain pending with Phase 9.
 
 ---
 
