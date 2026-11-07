@@ -264,7 +264,7 @@ Goal: load the school's real records safely.
 
 Status: `@school-connect/core/imports` owns templates, RFC 4180 parsing, row validation, formula-prefix refusal and in-file duplicates; `convex/imports.ts` adds Administrator-only preview and audited 50-row commits that re-validate every row, match learners by number and guardians by email plus learner, never erase stored values from blank cells, cap grades at 50 and count each batch row once by content digest (replays cannot inflate completion). Guardians and staff are staged in `rosterContacts` only: no accounts, roles, links, invitations or email. Activation awaits the school's POPIA decision. See [import contracts](packages/backend/IMPORTS.md).
 
-Verification: builder runs under Node 24/npm 11 pass 46 frontend, 82 backend and 3 CLI tests, TypeScript, lint, web build and Expo export. QA and security reviewed each change and the combined integration, independently rerunning tests, lint and build under Node 22. Not yet done: authenticated codegen (`_generated/api.d.ts` carries the two lines codegen adds), dev deployment, browser import journey, preview rehearsal, school sign-off and any real-data import.
+Verification: builder runs under Node 24/npm 11 pass 46 frontend, 82 backend and 3 CLI tests, TypeScript, lint, web build and Expo export. QA and security reviewed each change and the combined integration, independently rerunning tests, lint and build under Node 22. Convex codegen against an anonymous local backend reproduced the committed `_generated/` byte for byte. Not yet done: cloud dev deployment, browser import journey, preview rehearsal, school sign-off and any real-data import.
 
 ---
 
@@ -274,8 +274,8 @@ Goal: prove the backend is correct and secure.
 - [ ] Write `convex-test` unit tests for each module's queries and mutations.
 - [ ] Write authorization tests, including the negative cases from Phase 4.
 - [ ] Update the existing Vitest suites (`src/test/*`) to use Convex test fixtures in place of the mock repository.
-- [ ] Add end-to-end checks for the key journeys: excursion (notice → consent → payment → receipt), enquiry, report release.
-- [ ] Run `typecheck:web`, `typecheck:expo`, `typecheck:backend`, `npm test`, `npm run lint` and `export:expo` in CI. *(CI runs tests, all three typechecks, root lint and Expo lint; `export:expo` is not yet in CI and the workflow has not run on GitHub since this change.)*
+- [ ] Add end-to-end checks for the key journeys: excursion (notice → consent → payment → receipt), enquiry, report release. *(Enquiry and report-release journeys run through the public client facade in isolated backend tests (`convex/journeys.test.ts`); browser end-to-end runs need a deployment, and the excursion journey waits for Phase 9.)*
+- [ ] Run `typecheck:web`, `typecheck:expo`, `typecheck:backend`, `npm test`, `npm run lint` and `export:expo` in CI. *(All are configured in `.github/workflows/ci.yml`, plus a dependency advisory gate; not ticked until the workflows have run on GitHub, which needs a push.)*
 - [ ] Run the `convex-reviewer` and `convex-launch-readiness` audits.
 
 **Exit criteria:** CI passes and there are no unresolved high-severity findings.
