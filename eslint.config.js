@@ -6,7 +6,20 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi", ".firecrawl/**", "apps/**", "packages/backend/**"] },
+  {
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      ".firecrawl/**",
+      "apps/**",
+      "packages/backend/**",
+      // Local agent tooling (untracked plugin/runtime bundles), not project source.
+      ".claude/**",
+      ".codex/**",
+      ".openrig/**",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
