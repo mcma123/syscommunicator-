@@ -264,7 +264,7 @@ Goal: load the school's real records safely.
 
 Status: `@school-connect/core/imports` owns templates, RFC 4180 parsing, row validation, formula-prefix refusal and in-file duplicates; `convex/imports.ts` adds Administrator-only preview and audited 50-row commits that re-validate every row, match learners by number and guardians by email plus learner, never erase stored values from blank cells, cap grades at 50 and count each batch row once by content digest (replays cannot inflate completion). Guardians and staff are staged in `rosterContacts` only: no accounts, roles, links, invitations or email. Activation awaits the school's POPIA decision. See [import contracts](packages/backend/IMPORTS.md).
 
-Verification: 46 frontend, 82 backend and 3 CLI tests pass under Node 24/npm 11; TypeScript, lint, web build and Expo export pass. QA and security reviewed each change and the combined integration. Not yet done: authenticated codegen (`_generated/api.d.ts` carries the two lines codegen adds), dev deployment, browser import journey, preview rehearsal, school sign-off and any real-data import.
+Verification: builder runs under Node 24/npm 11 pass 46 frontend, 82 backend and 3 CLI tests, TypeScript, lint, web build and Expo export. QA and security reviewed each change and the combined integration, independently rerunning tests, lint and build under Node 22. Not yet done: authenticated codegen (`_generated/api.d.ts` carries the two lines codegen adds), dev deployment, browser import journey, preview rehearsal, school sign-off and any real-data import.
 
 ---
 
@@ -280,7 +280,7 @@ Goal: prove the backend is correct and secure.
 
 **Exit criteria:** CI passes and there are no unresolved high-severity findings.
 
-Status: root lint is clean after excluding local agent tooling folders and formatting-only fixes. Compatible dependency updates (Vite 8.3.6, Vitest 4.1.12, node-forge 1.4.3, seroval 1.7.10) reduce `npm audit` from 23 to 18 entries (6 to 4 high); remaining advisories (decode-uri-component via Expo Router, zod 3, glob, minimatch, uuid) need major upgrades and are tracked in [SECURITY.md](SECURITY.md). End-to-end journeys and the Convex audits are not done; the excursion journey depends on Phase 9.
+Status: root lint is clean after excluding local agent tooling folders and formatting-only fixes. Compatible dependency updates (Vite 8.3.6, Vitest 4.1.12, node-forge 1.4.3, seroval 1.7.10) reduce `npm audit` from 23 to 18 entries (6 to 4 high) in builder fresh-cache runs; security independently confirmed the final 18 (a default npm cache reported 61 meta-vulnerability entries with the same five advisory packages). Remaining advisories (decode-uri-component via Expo Router, zod 3, glob, minimatch, uuid) require compatibility and reachability review; npm proposes only major-version fixes for some of them. They are tracked in [SECURITY.md](SECURITY.md). End-to-end journeys and the Convex audits are not done; the excursion journey depends on Phase 9.
 
 ---
 
