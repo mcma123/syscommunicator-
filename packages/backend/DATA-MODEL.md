@@ -155,6 +155,7 @@ Upload reservations store server-derived user/session, validated upload specific
 
 | Read / write | Index |
 | --- | --- |
+| Grade for an imported class (exact name; bounded case-insensitive fallback, imports cap grades at 50) | `grades.by_name`, `grades.by_sortOrder` |
 | Class for an imported learner/staff row | `classes.by_year_and_name` |
 | Existing learner by school number | `learners.by_learnerNumber` (numbers stored upper-case by import) |
 | Existing account / guardian link | `users.email`, `guardianLinks.by_guardianId_and_learnerId`, `staffRoles.by_userId` |
@@ -162,4 +163,4 @@ Upload reservations store server-derived user/session, validated upload specific
 | Staged staff contact | `rosterContacts.by_kind_and_email` |
 | Recent uploads | `importBatches` creation-time order; `importBatches.by_status` for open batches |
 
-`importBatches` and `rosterContacts` are additive tables with no backfill. Staged contacts are not identity, role or guardian data and grant no access; see [IMPORTS.md](IMPORTS.md). Reset clears both with the other application tables.
+`importBatches`, `rosterContacts` and the `grades.by_name` index are additive, with no backfill. Staged contacts are not identity, role or guardian data and grant no access; see [IMPORTS.md](IMPORTS.md). Reset clears both with the other application tables.

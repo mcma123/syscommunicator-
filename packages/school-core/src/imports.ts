@@ -68,7 +68,8 @@ export interface GuardianRow {
   lastName: string;
   phone?: string | undefined;
   relationship: GuardianRelationship;
-  isPrimaryContact: boolean;
+  /** Undefined when the cell is blank: never overwrites a stored value. */
+  isPrimaryContact?: boolean | undefined;
 }
 export interface StaffRow {
   email: string;
@@ -76,7 +77,8 @@ export interface StaffRow {
   lastName: string;
   phone?: string | undefined;
   roles: StaffRole[];
-  classNames: string[];
+  /** Undefined when the cell is blank: never overwrites stored classes. */
+  classNames?: string[] | undefined;
   year?: number | undefined;
 }
 export type ImportRowFor<K extends ImportKind> = K extends "classes"
@@ -111,6 +113,15 @@ export function importTemplateCsv(kind: ImportKind): string {
 
 /** RFC 4180 parser: quoted fields, escaped quotes, embedded newlines, CRLF/LF, optional BOM. */
 export function parseCsv(text: string): string[][] {
+  return parseCsvRecords(text).map((r) => r.cells);
+}
+
+/**
+ * Like parseCsv, but keeps each record's 1-based spreadsheet row number. Blank
+ * rows are skipped without renumbering later rows; a quoted multi-line cell
+ * stays one row.
+ */
+export function parseCsvRecords(text: string): { row: number; cells: string[] }[] {
   const input = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   const records: string[][] = [];
   let record: string[] = [];
@@ -142,7 +153,9 @@ export function parseCsv(text: string): string[][] {
     record.push(field);
     records.push(record);
   }
-  return records.filter((r) => r.some((cell) => cell.trim() !== ""));
+  return records
+    .map((cells, index) => ({ row: index + 1, cells }))
+    .filter((r) => r.cells.some((cell) => cell.trim() !== ""));
 }
 
 const FORMULA_FIELDS = new Set([
@@ -185,9 +198,10 @@ function parseDate(value: string): string | null {
     ? value
     : null;
 }
-function parseBoolean(value: string): boolean | null {
+function parseBoolean(value: string): boolean | undefined | null {
   const v = value.toLowerCase();
-  if (["", "no", "n", "false", "0"].includes(v)) return false;
+  if (v === "") return undefined;
+  if (["no", "n", "false", "0"].includes(v)) return false;
   if (["yes", "y", "true", "1"].includes(v)) return true;
   return null;
 }
@@ -297,7 +311,7 @@ export function validateImportRow<K extends ImportKind>(
         lastName: get("last_name"),
         phone: phone(),
         relationship: relationship ?? undefined,
-        isPrimaryContact: primary ?? false,
+        isPrimaryContact: primary ?? undefined,
       };
       break;
     }
@@ -313,11 +327,12 @@ export function validateImportRow<K extends ImportKind>(
           });
         else if (!roles.includes(role)) roles.push(role);
       }
-      const classNames = [...new Set(get("class_names").split(";").map(clean).filter(Boolean))];
-      if (classNames.length > 20)
+      const listed = [...new Set(get("class_names").split(";").map(clean).filter(Boolean))];
+      const classNames = listed.length > 0 ? listed : undefined;
+      if (listed.length > 20)
         errors.push({ row, field: "class_names", message: "List at most 20 classes." });
       const staffYear = year();
-      if (classNames.length > 0 && staffYear === undefined && get("year") === "")
+      if (listed.length > 0 && staffYear === undefined && get("year") === "")
         errors.push({ row, field: "year", message: "Enter the year for the listed classes." });
       data = {
         email: email("email"),
@@ -340,9 +355,9 @@ export function validateImportRow<K extends ImportKind>(
  * within the file (the second and later occurrences are rejected).
  */
 export function parseImportCsv<K extends ImportKind>(kind: K, text: string): ImportParseResult<K> {
-  let records: string[][];
+  let records: { row: number; cells: string[] }[];
   try {
-    records = parseCsv(text);
+    records = parseCsvRecords(text);
   } catch (error) {
     return {
       kind,
@@ -353,7 +368,7 @@ export function parseImportCsv<K extends ImportKind>(kind: K, text: string): Imp
   }
   if (records.length === 0)
     return { kind, rows: [], errors: [{ row: 1, message: "The file is empty." }], totalRows: 0 };
-  const header = records[0]!.map((h) => clean(h).toLowerCase());
+  const header = records[0]!.cells.map((h) => clean(h).toLowerCase());
   const template = IMPORT_TEMPLATES[kind];
   const missing = template.filter((name) => !header.includes(name));
   const unknown = header.filter((name) => !template.includes(name));
@@ -367,7 +382,7 @@ export function parseImportCsv<K extends ImportKind>(kind: K, text: string): Imp
       rows: [],
       errors: [
         {
-          row: 1,
+          row: records[0]!.row,
           message: `The header does not match the ${kind} template (${parts.join("; ")}).`,
         },
       ],
@@ -385,8 +400,7 @@ export function parseImportCsv<K extends ImportKind>(kind: K, text: string): Imp
   const rows: ImportValidRow<K>[] = [];
   const errors: ImportRowError[] = [];
   const seen = new Map<string, number>();
-  body.forEach((record, index) => {
-    const row = index + 2;
+  body.forEach(({ row, cells: record }) => {
     if (record.length > header.length) {
       errors.push({ row, message: "This row has more cells than the header." });
       return;

@@ -135,7 +135,9 @@ export default defineSchema({
   grades: defineTable({
     name: v.string(),
     sortOrder: v.number(),
-  }).index("by_sortOrder", ["sortOrder"]),
+  })
+    .index("by_sortOrder", ["sortOrder"])
+    .index("by_name", ["name"]),
 
   classes: defineTable({
     gradeId: v.id("grades"),

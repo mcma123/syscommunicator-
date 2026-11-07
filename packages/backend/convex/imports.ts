@@ -73,9 +73,25 @@ function gradeSortOrder(name: string) {
   return match ? Number(match[1]) : 100;
 }
 
+/**
+ * Exact names use the index; case variants fall back to a scan that is complete
+ * because imports never create more than GRADE_LIMIT grades (see planClass).
+ */
 async function findGrade(ctx: QueryCtx, name: string) {
-  const grades = await ctx.db.query("grades").withIndex("by_sortOrder").take(GRADE_LIMIT);
+  const exact = await ctx.db
+    .query("grades")
+    .withIndex("by_name", (q) => q.eq("name", name))
+    .first();
+  if (exact) return exact;
+  const grades = await ctx.db
+    .query("grades")
+    .withIndex("by_sortOrder")
+    .take(GRADE_LIMIT + 1);
   return grades.find((g) => g.name.toLowerCase() === name.toLowerCase()) ?? null;
+}
+async function gradeCapacityLeft(ctx: QueryCtx) {
+  const grades = await ctx.db.query("grades").withIndex("by_sortOrder").take(GRADE_LIMIT);
+  return grades.length < GRADE_LIMIT;
 }
 async function findClass(ctx: QueryCtx, year: number, name: string) {
   return ctx.db
@@ -104,6 +120,8 @@ async function planClass(ctx: QueryCtx, row: ClassRow): Promise<Plan> {
       return rejected(`Class ${row.className} (${row.year}) already belongs to another grade.`);
     return { outcome: "unchanged", messages: [] };
   }
+  if (!grade && !(await gradeCapacityLeft(ctx)))
+    return rejected(`The school already has ${GRADE_LIMIT} grades. Use an existing grade name.`);
   return {
     outcome: "create",
     messages: grade ? [] : [`Grade "${row.grade}" will be created.`],
@@ -212,6 +230,7 @@ async function planGuardian(ctx: QueryCtx, row: GuardianRow): Promise<Plan> {
           email: row.email,
           learnerId: learner._id,
           ...fields,
+          isPrimaryContact: fields.isPrimaryContact ?? false,
           importBatchId,
           updatedAt: Date.now(),
         });
@@ -236,14 +255,13 @@ async function planGuardian(ctx: QueryCtx, row: GuardianRow): Promise<Plan> {
 }
 
 async function planStaff(ctx: QueryCtx, row: StaffRow): Promise<Plan> {
-  const classIds: Id<"classes">[] = [];
-  for (const name of row.classNames) {
+  // Blank class_names leaves stored classes untouched; listed names replace them.
+  let classIds: Id<"classes">[] | undefined;
+  for (const name of row.classNames ?? []) {
     const classroom = row.year === undefined ? null : await findClass(ctx, row.year, name);
     if (!classroom) return rejected(`Class ${name} (${row.year ?? "no year"}) does not exist.`);
-    classIds.push(classroom._id);
+    (classIds ??= []).push(classroom._id);
   }
-  if (classIds.length > 0 && !row.roles.includes("Teacher"))
-    return rejected("Only Teacher contacts can list classes.");
   const user = await findUser(ctx, row.email);
   if (user) {
     const roles = await ctx.db
@@ -267,6 +285,8 @@ async function planStaff(ctx: QueryCtx, row: StaffRow): Promise<Plan> {
     .query("rosterContacts")
     .withIndex("by_kind_and_email", (q) => q.eq("kind", "Staff").eq("email", row.email))
     .unique();
+  if ((classIds ?? existing?.classIds ?? []).length > 0 && !row.roles.includes("Teacher"))
+    return rejected("Only Teacher contacts can list classes.");
   if (!existing)
     return {
       outcome: "create",
@@ -276,6 +296,7 @@ async function planStaff(ctx: QueryCtx, row: StaffRow): Promise<Plan> {
           kind: "Staff",
           email: row.email,
           ...fields,
+          classIds: classIds ?? [],
           importBatchId,
           updatedAt: Date.now(),
         });
@@ -419,6 +440,9 @@ export const complete = authedMutation({
     const batch = await ctx.db.get("importBatches", args.batchId);
     if (!batch) invalid("Import batch not found.");
     if (batch.status !== "Open") invalid("This import batch is already complete.");
+    const processed = batch.created + batch.updated + batch.unchanged + batch.rejected;
+    if (processed !== batch.totalRows)
+      invalid(`This import is incomplete: ${processed} of ${batch.totalRows} rows processed.`);
     await ctx.db.patch("importBatches", batch._id, { status: "Completed", updatedAt: Date.now() });
     await ctx.audit(
       "import.batch.completed",

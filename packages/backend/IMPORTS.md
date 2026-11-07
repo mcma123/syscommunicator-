@@ -15,22 +15,22 @@ web **People → Import roster**. Headers must match exactly (any order, case-in
 | guardians | **learner_number**, **email**, **first_name**, **last_name**, phone, **relationship**, primary_contact (yes/no) | email + learner number |
 | staff | **email**, **first_name**, **last_name**, phone, **roles** (`;`-separated), class_names (`;`-separated), year | email |
 
-Import in order: classes → learners → guardians/staff. Missing grades are created by the classes import.
+Import in order: classes → learners → guardians/staff. Missing grades are created by the classes import, up to 50 grades in total; grade names match case-insensitively.
 
 ## Rules
 
 - Files: at most 1 MB on web and 2,000 data rows; cells at most 120 characters; RFC 4180 quoting.
 - Free-text cells may not start with `=`, `+`, `-` or `@` (spreadsheet formula injection on later export).
 - In-file duplicates of a natural key are rejected (the first occurrence wins); rows are reported by
-  spreadsheet line number with field-level messages.
+  spreadsheet row number (blank rows are skipped without renumbering) with field-level messages.
 - `imports.preview` (query) and `imports.commit` (mutation) take at most 50 rows each, re-validate every
   row with the same school-core function and report `create`, `update`, `unchanged` or `rejected`.
   Preview writes nothing. Commit writes accepted rows, audits every write and updates the batch counters
   in the same transaction; rejected rows write nothing. A commit that sends more rows than the batch
   declared rolls back.
-- Re-importing the same file is idempotent. Blank optional cells never erase stored values. Existing
+- Re-importing the same file is idempotent. Blank optional cells (including `primary_contact` and `class_names`) never erase stored values; new guardian contacts default to not primary and new staff contacts to no classes. Existing
   learners keep their status; a class that already exists under another grade is rejected.
-- `importBatches` records each upload (Open → Completed via `imports.complete`). `imports.batches` lists the
+- `importBatches` records each upload (Open → Completed via `imports.complete`, which refuses until every declared row has been processed). `imports.batches` lists the
   20 most recent. All four endpoints require an active Administrator with the People module enabled.
 
 ## Staged contacts — no access is granted

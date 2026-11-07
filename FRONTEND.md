@@ -40,7 +40,7 @@ Official d6 materials informed the module structure and workflows; this is not a
 - Payments: per-learner charges and actual stored history/status/receipt references; checkout is disabled.
 - Forms: authorized consent requests, outstanding-only filter and scoped response details; submissions remain deferred.
 - Contact: own enquiries and paginated conversations; assigned teachers and whole-school staff get their authorized view, with internal notes hidden from families.
-- Staff: groups/classes and class rosters, register marks, conduct, reports, people, school settings/flags and chronological audit. Teacher scope uses assignments, never guardian linkage alone. Web retains Administrator email invitation UI, pending email configuration.
+- Staff: groups/classes and class rosters, register marks, conduct, reports, people, school settings/flags and chronological audit. Teacher scope uses assignments, never guardian linkage alone. Web retains Administrator email invitation UI, pending email configuration. Web People → Import roster lets Administrators download CSV templates, check classes/learners/guardians/staff files against school records and import them in audited chunks; guardians and staff are staged only, with no accounts, access or invitations (web only; not yet exercised in a browser against a deployment).
 - More/profile: permitted navigation and live identity/session controls. Sign-in retains verification, recovery, invitation acceptance and magic-link confirmation.
 
 ## Data ownership and remaining work

@@ -112,6 +112,27 @@ describe("roster import CSV", () => {
     ]);
   });
 
+  it("leaves blank optional booleans and lists undefined so imports never erase stored values", () => {
+    const guardian = parseImportCsv(
+      "guardians",
+      `${importTemplateCsv("guardians").trim()}\nWG-1,a@example.org,A,B,,Mother,`,
+    );
+    expect(guardian.rows[0]!.data.isPrimaryContact).toBeUndefined();
+    const staff = parseImportCsv(
+      "staff",
+      `${importTemplateCsv("staff").trim()}\nt@example.org,T,S,,Teacher,,`,
+    );
+    expect(staff.rows[0]!.data.classNames).toBeUndefined();
+  });
+
+  it("reports spreadsheet row numbers across blank rows and multi-line cells", () => {
+    const result = parseImportCsv(
+      "classes",
+      'grade,class_name,year\n\n"Grade\n4",4A,invalid\nGrade 4,4B,bad',
+    );
+    expect(result.errors.map((e) => e.row)).toEqual([3, 4]);
+  });
+
   it("caps file size", () => {
     const rows = Array.from({ length: IMPORT_MAX_ROWS + 1 }, (_, i) => `Grade 1,1A${i},2026`);
     const result = parseImportCsv(
