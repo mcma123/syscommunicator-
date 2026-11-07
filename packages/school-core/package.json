@@ -9,6 +9,7 @@
     "./permissions": "./src/permissions.ts",
     "./live": "./src/live.ts",
     "./calendar": "./src/calendar.ts",
-    "./workflows": "./src/workflows.ts"
+    "./workflows": "./src/workflows.ts",
+    "./imports": "./src/imports.ts"
   }
 }

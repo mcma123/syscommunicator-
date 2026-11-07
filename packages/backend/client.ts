@@ -14,7 +14,8 @@ import {
   type PaginationResult,
 } from "convex/server";
 import type { Doc, Id } from "./convex/_generated/dataModel";
-import type { StaffRole } from "@school-connect/core/domain";
+import type { ImportBatchStatus, StaffRole } from "@school-connect/core/domain";
+import type { ImportKind } from "@school-connect/core/imports";
 
 /** Public client contract. Keeps internal server implementation out of client TS programs. */
 export interface CurrentIdentity {
@@ -97,7 +98,49 @@ export interface NotificationConfiguration {
   pushConfigured: boolean;
   registeredDevices: number;
 }
+export type ImportRowInput = { row: number; cells: Record<string, string> };
+export type ImportRowResult = {
+  row: number;
+  outcome: "create" | "update" | "unchanged" | "rejected";
+  messages: string[];
+};
+export type ImportBatchSummary = {
+  _id: Id<"importBatches">;
+  _creationTime: number;
+  kind: ImportKind;
+  fileName: string;
+  status: ImportBatchStatus;
+  totalRows: number;
+  created: number;
+  updated: number;
+  unchanged: number;
+  rejected: number;
+};
 export const api = {
+  imports: {
+    preview: makeFunctionReference<
+      "query",
+      { kind: ImportKind; rows: ImportRowInput[] },
+      ImportRowResult[]
+    >("imports:preview"),
+    commit: makeFunctionReference<
+      "mutation",
+      {
+        kind: ImportKind;
+        fileName: string;
+        totalRows: number;
+        batchId?: Id<"importBatches">;
+        rows: ImportRowInput[];
+      },
+      { batchId: Id<"importBatches">; results: ImportRowResult[] }
+    >("imports:commit"),
+    complete: makeFunctionReference<"mutation", { batchId: Id<"importBatches"> }, null>(
+      "imports:complete",
+    ),
+    batches: makeFunctionReference<"query", Record<string, never>, ImportBatchSummary[]>(
+      "imports:batches",
+    ),
+  },
   notifications: {
     registerDevice: makeFunctionReference<
       "mutation",

@@ -28,6 +28,7 @@ import { SchoolShell, navigation, staffNavigation } from "./shell";
 import { Heading, ChildPicker, Empty, RecordCard } from "./components";
 import { useRecords, useDetail, useDashboard, useReceipt, useSchool } from "./store";
 import { AccountManagement, PeopleInvitations } from "./account-management";
+import { RosterImport } from "./roster-import";
 const titles: Record<SchoolModule, string> = {
   home: "Your school, connected",
   messages: "School updates",
@@ -429,6 +430,7 @@ export function RecordBrowser({
 export function SchoolPortal({ module }: { module: SchoolModule }) {
   const { account, accessRoles } = useSchool();
   const [source, setSource] = useState<ReadModule>(module);
+  const [importing, setImporting] = useState(false);
   const directory = [...navigation, ...staffNavigation].filter(
     (n) => canAccessModule(accessRoles, n.id, account?.disabledModules) && n.id !== "home",
   );
@@ -495,8 +497,11 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
               ).map((m) => (
                 <Button
                   key={m}
-                  variant={source === m ? "default" : "outline"}
-                  onClick={() => setSource(m)}
+                  variant={source === m && !importing ? "default" : "outline"}
+                  onClick={() => {
+                    setSource(m);
+                    setImporting(false);
+                  }}
                 >
                   {m === "people"
                     ? "Accounts"
@@ -511,17 +516,31 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
                             : "Groups"}
                 </Button>
               ))}
+              {module === "people" && account?.roles.includes("Administrator") && (
+                <Button
+                  variant={importing ? "default" : "outline"}
+                  onClick={() => setImporting(true)}
+                >
+                  Import roster
+                </Button>
+              )}
             </div>
           )}
-          <Boundary key={`${module}:${source}`}>
-            <RecordBrowser
-              module={
-                module === "groups" || module === "payments" || module === "people"
-                  ? source
-                  : module
-              }
-            />
-          </Boundary>
+          {module === "people" && importing ? (
+            <Boundary key="people:import">
+              <RosterImport />
+            </Boundary>
+          ) : (
+            <Boundary key={`${module}:${source}`}>
+              <RecordBrowser
+                module={
+                  module === "groups" || module === "payments" || module === "people"
+                    ? source
+                    : module
+                }
+              />
+            </Boundary>
+          )}
         </>
       )}
     </SchoolShell>

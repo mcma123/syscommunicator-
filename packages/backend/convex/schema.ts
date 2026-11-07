@@ -20,6 +20,8 @@ import {
   enquiryStatus,
   eventStatus,
   guardianRelationship,
+  importBatchStatus,
+  importKind,
   invitationKind,
   invitationStatus,
   learnerStatus,
@@ -31,6 +33,7 @@ import {
   registerStatus,
   reportStatus,
   resourceCategory,
+  rosterContactKind,
   staffRole,
   userStatus,
 } from "./validators";
@@ -464,6 +467,42 @@ export default defineSchema({
     .index("by_tokenHash", ["tokenHash"])
     .index("by_email_and_status", ["email", "status"])
     .index("by_status_and_expiresAt", ["status", "expiresAt"]),
+
+  // ── Phase 11 roster import ──────────────────────────────────────────────
+  // One Administrator upload of one CSV kind, committed in bounded chunks.
+  importBatches: defineTable({
+    kind: importKind,
+    fileName: v.string(),
+    status: importBatchStatus,
+    createdBy: v.id("users"),
+    totalRows: v.number(),
+    created: v.number(),
+    updated: v.number(),
+    unchanged: v.number(),
+    rejected: v.number(),
+    updatedAt: v.number(),
+  }).index("by_status", ["status"]),
+  // Imported guardians/staff awaiting activation. A contact grants no sign-in,
+  // role or learner access: authPolicy only links users rows and invitations.
+  rosterContacts: defineTable({
+    kind: rosterContactKind,
+    email: v.string(),
+    firstName: v.string(),
+    lastName: v.string(),
+    phone: v.optional(v.string()),
+    // Guardian contacts: exactly one learner and relationship.
+    learnerId: v.optional(v.id("learners")),
+    relationship: v.optional(guardianRelationship),
+    isPrimaryContact: v.optional(v.boolean()),
+    // Staff contacts: requested roles and teaching classes (bounded by import rules).
+    staffRoles: v.optional(v.array(staffRole)),
+    classIds: v.optional(v.array(v.id("classes"))),
+    importBatchId: v.id("importBatches"),
+    updatedAt: v.number(),
+  })
+    .index("by_kind_and_email", ["kind", "email"])
+    .index("by_kind_and_email_and_learnerId", ["kind", "email", "learnerId"])
+    .index("by_learnerId", ["learnerId"]),
 
   pushTokens: defineTable({
     userId: v.id("users"),

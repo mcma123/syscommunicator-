@@ -150,3 +150,16 @@ Upload reservations store server-derived user/session, validated upload specific
 - `notificationDeliveries` stores deduplication key, recipient, source kind/revision and notice/consent reference, channel/device, state/run, provider acceptance/confirmation and next receipt check. `by_key` deduplicates; `by_userId` and `by_noticeId` paginate private histories; `by_noticeId_and_userId` supports per-family access; `by_channel_and_state_and_checkAt` bounds provider polling. Device IDs are soft historical references after removal; provider IDs/tokens are never public.
 - `noticeReceipts.deliveredAt` retains in-app availability meaning. Optional `notificationDeliveredAt` records actual provider confirmation. Read and acknowledged timestamps stay independent.
 - No real payment success, payment reminders or receipt emails are introduced by Phase 10. See NOTIFICATIONS.md for authority, scheduling, retry and activation contracts.
+
+## Phase 11 roster import
+
+| Read / write | Index |
+| --- | --- |
+| Class for an imported learner/staff row | `classes.by_year_and_name` |
+| Existing learner by school number | `learners.by_learnerNumber` (numbers stored upper-case by import) |
+| Existing account / guardian link | `users.email`, `guardianLinks.by_guardianId_and_learnerId`, `staffRoles.by_userId` |
+| Staged guardian contact | `rosterContacts.by_kind_and_email_and_learnerId`; per-learner bound via `rosterContacts.by_learnerId` |
+| Staged staff contact | `rosterContacts.by_kind_and_email` |
+| Recent uploads | `importBatches` creation-time order; `importBatches.by_status` for open batches |
+
+`importBatches` and `rosterContacts` are additive tables with no backfill. Staged contacts are not identity, role or guardian data and grant no access; see [IMPORTS.md](IMPORTS.md). Reset clears both with the other application tables.

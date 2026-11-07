@@ -104,3 +104,10 @@ export const NOTIFICATION_STATES = [
   "Blocked",
   "Skipped",
 ] as const;
+
+// Phase 11 roster import. Staged contacts never grant access on their own;
+// activation into accounts is a separate, later Administrator step.
+export const ROSTER_CONTACT_KINDS = ["Guardian", "Staff"] as const;
+export type RosterContactKind = (typeof ROSTER_CONTACT_KINDS)[number];
+export const IMPORT_BATCH_STATUSES = ["Open", "Completed"] as const;
+export type ImportBatchStatus = (typeof IMPORT_BATCH_STATUSES)[number];

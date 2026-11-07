@@ -17,6 +17,12 @@ const makeTest = () => {
 };
 // Compilation proves the public client facade stays compatible with generated function types.
 const clientContract: typeof publicApi = {
+  imports: {
+    preview: api.imports.preview,
+    commit: api.imports.commit,
+    complete: api.imports.complete,
+    batches: api.imports.batches,
+  },
   notifications: {
     registerDevice: api.notifications.registerDevice,
     unregisterDevice: api.notifications.unregisterDevice,

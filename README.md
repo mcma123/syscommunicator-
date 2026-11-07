@@ -1,6 +1,6 @@
 # Wynberg Girls Junior Connect
 
-A school communication monorepo for Wynberg Girls Junior School, inspired by d6 module workflows. The existing TanStack web app stays at the root; `apps/expo` provides an Android, iOS, and Expo web school frontend; `packages/backend` is the single Convex backend and database for both clients (dev deployment linked, schema and internal fixture functions deployed; fictional seed data and dev authentication available); `packages/school-core` shares domain contracts and mock data. The apps use the school's red and gold colours, supplied crest, and the tagline **Honor Before Honours**, while retaining Open Sans.
+A school communication monorepo for Wynberg Girls Junior School, inspired by d6 module workflows. The existing TanStack web app stays at the root; `apps/expo` provides an Android, iOS, and Expo web school frontend; `packages/backend` is the single Convex backend and database for both clients (dev deployment linked, schema and internal fixture functions deployed; fictional seed data and dev authentication available); `packages/school-core` shares domain contracts, pure rules and test-only mock data. The apps use the school's red and gold colours, supplied crest, and the tagline **Honor Before Honours**, while retaining Open Sans.
 
 The full app/store name is **Wynberg Girls Junior Connect**, the phone icon label is **WGJS Connect**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. Live development reads and authenticated sessions are connected. Native store submissions and production backend provisioning remain future work.
 
@@ -202,7 +202,7 @@ Phase 4 adds shared module permissions, session-derived server actors, scoped no
 - [Production Expo web frontend](https://wgjs-connect.expo.app).
 - [Android/iOS production update](https://expo.dev/accounts/mcmarsh/projects/wynberg-girls-junior-connect/updates/8b64bb04-f548-4f7f-856c-3dc080190f7b), runtime 1.0.1, production branch/channel/environment, application source commit 069d656.
 - [Deployment snapshot](https://wgjs-connect--w5c5p4fsu6.expo.app).
-- The hosted frontend uses mock data. Native updates require a compatible installed runtime 1.0.1 build; publishing does not create an APK/IPA or submit store listings.
+- This hosted release (source commit 069d656) predates the Convex data layer and still shows mock data; republishing it against production Convex is Phase 13. Native updates require a compatible installed runtime 1.0.1 build; publishing does not create an APK/IPA or submit store listings.
 
 ## Published previews
 

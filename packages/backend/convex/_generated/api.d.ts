@@ -18,6 +18,7 @@ import type * as dashboard from "../dashboard.js";
 import type * as developmentAuth from "../developmentAuth.js";
 import type * as files from "../files.js";
 import type * as http from "../http.js";
+import type * as imports from "../imports.js";
 import type * as learners from "../learners.js";
 import type * as lib_audiences from "../lib/audiences.js";
 import type * as lib_audit from "../lib/audit.js";
@@ -67,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   developmentAuth: typeof developmentAuth;
   files: typeof files;
   http: typeof http;
+  imports: typeof imports;
   learners: typeof learners;
   "lib/audiences": typeof lib_audiences;
   "lib/audit": typeof lib_audit;

@@ -12,6 +12,7 @@
 - `store.tsx` owns identity/onboarding, selected learner, feedback and client hook adapters. `useNotifications`, `useWorkflows`, `useRecords`, `useDetail` and `useDashboard` delegate to shared backend React hooks; `useModule` retains bounded preview compatibility and `useReceipt` delegates to the audited receipt mutation. `shell.tsx`, `portal.tsx`, and `components.tsx` own module presentation.
 - `workflow-panel.tsx` renders server-provided school actions, confirmation, persistent success feedback across form transitions, validation/pending/offline state and PDF file selection/download; components use the store adapter, not provider calls.
 - `notification-panel.tsx` renders own/staff-scoped paginated delivery history, honest acceptance/provider-confirmation labels, configuration feedback and confirmed retry requests through the store adapter. It never exposes device tokens or provider IDs.
+- `roster-import.tsx` renders the Administrator People → Import roster flow: template download, local parse, server preview in chunks, confirmed chunked commit and recent batches through the `useRosterImport` store adapter. It states that guardians/staff are staged only.
 - Routes live in `src/routes/`; reusable domain contracts remain in `packages/school-core/`.
 
 ## Local Contracts

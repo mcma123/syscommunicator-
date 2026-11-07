@@ -9,6 +9,7 @@ import {
   ENQUIRY_STATUSES,
   EVENT_STATUSES,
   GUARDIAN_RELATIONSHIPS,
+  IMPORT_BATCH_STATUSES,
   INVITATION_KINDS,
   INVITATION_STATUSES,
   LEARNER_STATUSES,
@@ -20,9 +21,11 @@ import {
   REGISTER_STATUSES,
   REPORT_STATUSES,
   RESOURCE_CATEGORIES,
+  ROSTER_CONTACT_KINDS,
   STAFF_ROLES,
   USER_STATUSES,
 } from "@school-connect/core/domain";
+import { IMPORT_KINDS } from "@school-connect/core/imports";
 
 /** Builds a `v.union` of literals from a shared `as const` tuple in school-core. */
 export function literals<T extends string>(
@@ -40,6 +43,9 @@ export const staffRole = literals(STAFF_ROLES);
 export const userStatus = literals(USER_STATUSES);
 export const guardianRelationship = literals(GUARDIAN_RELATIONSHIPS);
 export const learnerStatus = literals(LEARNER_STATUSES);
+export const importKind = literals(IMPORT_KINDS);
+export const importBatchStatus = literals(IMPORT_BATCH_STATUSES);
+export const rosterContactKind = literals(ROSTER_CONTACT_KINDS);
 export const noticeCategory = literals(NOTICE_CATEGORIES);
 export const noticeStatus = literals(NOTICE_STATUSES);
 export const eventStatus = literals(EVENT_STATUSES);

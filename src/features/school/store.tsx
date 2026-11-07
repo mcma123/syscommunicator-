@@ -11,7 +11,7 @@ import {
 import { canAccessModule, type SchoolModule } from "@school-connect/core/permissions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useAction, useConvex, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@school-connect/backend/client";
 import type { FunctionArgs, FunctionReturnType } from "convex/server";
 import { accessRolesFor, type Role } from "../../../packages/school-core/src";
@@ -104,6 +104,23 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
       {children}
     </Context.Provider>
   );
+}
+/** Administrator roster import (Phase 11). Preview is a one-shot read so stale chunks never re-render. */
+export function useRosterImport() {
+  const { account } = useSchool();
+  const enabled = account?.status === "Active" && account.roles.includes("Administrator");
+  const convex = useConvex();
+  const commit = useMutation(api.imports.commit);
+  const complete = useMutation(api.imports.complete);
+  const batches = useQuery(api.imports.batches, enabled ? {} : "skip");
+  return {
+    enabled,
+    preview: (args: FunctionArgs<typeof api.imports.preview>) =>
+      convex.query(api.imports.preview, args),
+    commit,
+    complete,
+    batches,
+  };
 }
 export function useSchool() {
   const store = useContext(Context);

@@ -9,6 +9,7 @@
 - `src/index.ts` owns Role, Notice, Child, SchoolEvent, Enquiry, SchoolState, SchoolRepository, schoolConfig, fixtures, and helper functions.
 - `src/domain.ts` owns the shared enum tuples (roles, statuses, categories, departments, audience kinds, notification channels/kinds/states) and their types; `src/index.ts` re-exports them.
 - `src/workflows.ts` owns provider-independent workflow action names, form fields, byte files and temporary download outcomes; exported as `@school-connect/core/workflows`. Server validators and both clients share these names.
+- `src/imports.ts` owns roster CSV templates, RFC 4180 parsing, row validation/normalization, formula-prefix refusal and in-file natural-key duplicate detection, exported as `@school-connect/core/imports`. The web preview and the backend commit share it; the backend remains the authority.
 - `src/live.ts` owns provider-independent module/detail/dashboard and filter presentation contracts, exported as `@school-connect/core/live`; it imports no fixture data.
 - `src/calendar.ts` owns pure Johannesburg month/day calculations and RFC 5545 event export, including UTC/all-day times, escaping and UTF-8 line folding; exported as `@school-connect/core/calendar`.
 - `src/permissions.ts` owns the shared module matrix, disabled-module gating and union of explicit staff/guardian grants; `@school-connect/core/permissions` exposes it without importing fixtures.
@@ -35,6 +36,7 @@
 
 - From the root, `npm run build` checks the package as consumed by the app; `node node_modules/typescript/bin/tsc --noEmit` checks types imported by the frontend.
 - `src/test/calendar.test.ts` verifies date boundaries, spanning events, all-day exclusive ends and ICS formatting.
+- `src/test/imports.test.ts` verifies CSV quoting, templates, header/field errors, normalization, duplicates, formula prefixes and size caps.
 - `src/test/permissions.test.ts` verifies denied modules, Finance restrictions and explicit combined grants.
 - `npm test` includes `src/test/school-repository.test.ts` for native-safe cloning, nested fixture isolation, snapshot identity, notification, and unsubscribe behavior.
 
