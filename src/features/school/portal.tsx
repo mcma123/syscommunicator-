@@ -34,6 +34,10 @@ import {
   NoticeList,
   PaymentsSummary,
   PaymentsTable,
+  FormsList,
+  ResourceList,
+  EnquiryList,
+  SchoolOffice,
 } from "./module-views";
 import { useRecords, useDetail, useReceipt, useSchool } from "./store";
 import { HomeDashboard } from "./home";
@@ -61,11 +65,14 @@ const titles: Record<SchoolModule, string> = {
 };
 
 const parentTitles: Partial<Record<SchoolModule, string>> = {
+  contact: "Let's stay in touch",
   messages: "Your school updates",
   children: "My children",
   payments: "School payments",
 };
 const staffTitles: Partial<Record<SchoolModule, string>> = {
+  contact: "School enquiry inbox",
+  forms: "Forms & consent responses",
   messages: "School messages",
   children: "Your learners",
   payments: "Charges & payments",
@@ -75,12 +82,18 @@ const parentDescriptions: Partial<Record<SchoolModule, string>> = {
   calendar: "Make room for the moments that matter.",
   children: "Every milestone, all in one place.",
   payments: "School fees and activities, without the paperwork.",
+  forms: "A few small things to keep their school day moving.",
+  resources: "Newsletters, school documents and useful information.",
+  contact: "The right people, just a message away.",
 };
 const staffDescriptions: Partial<Record<SchoolModule, string>> = {
   messages: "Review and share messages with your school community.",
   calendar: "Plan and share the moments that matter.",
   children: "Profiles, reports and attendance for the learners you support.",
   payments: "Track charges, payment status and history.",
+  forms: "Follow up on consent requests and family responses.",
+  resources: "Publish and manage documents for your school community.",
+  contact: "Reply to family enquiries and keep conversations moving.",
 };
 
 function Failure({ retry }: { retry: () => void }) {
@@ -281,12 +294,24 @@ export function RecordBrowser({
   const records = result.data.records;
   const dayRows = monthView && day ? records.filter((r) => eventDays(r, month).includes(day)) : [];
   const styled =
-    !compact && ["messages", "calendar", "children", "payments", "paymentHistory"].includes(module);
-  const categories = module === "resources" ? RESOURCE_CATEGORIES : [];
+    !compact &&
+    [
+      "messages",
+      "calendar",
+      "children",
+      "payments",
+      "paymentHistory",
+      "forms",
+      "resources",
+      "contact",
+    ].includes(module);
   const list = () => {
     if (!styled)
       return records.map((r) => <RecordCard key={r.id} record={r} onOpen={() => open(r.id)} />);
     if (module === "messages") return <NoticeList records={records} onOpen={open} />;
+    if (module === "forms") return <FormsList records={records} onOpen={open} />;
+    if (module === "resources") return <ResourceList records={records} onOpen={open} />;
+    if (module === "contact") return <EnquiryList records={records} onOpen={open} />;
     if (module === "children") return <LearnerGrid records={records} onOpen={open} />;
     if (module === "payments" || module === "paymentHistory")
       return (
@@ -335,26 +360,19 @@ export function RecordBrowser({
                       ? "Search learners..."
                       : module === "payments" || module === "paymentHistory"
                         ? "Search charges..."
-                        : "Search records..."
+                        : module === "forms"
+                          ? "Search forms..."
+                          : module === "resources"
+                            ? "Search resources..."
+                            : module === "contact"
+                              ? "Search enquiries..."
+                              : "Search records..."
               }
               maxLength={200}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          {categories.length > 0 && (
-            <select
-              aria-label="Category"
-              className="field"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">All categories</option>
-              {categories.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          )}
           {module === "forms" && (
             <label className="toggle-chip">
               <input
@@ -394,9 +412,9 @@ export function RecordBrowser({
           )}
         </div>
       )}
-      {module === "messages" && !compact && (
-        <div className="feed-tabs" role="tablist" aria-label="Update categories">
-          {["", ...NOTICE_CATEGORIES].map((c) => (
+      {(module === "messages" || module === "resources") && !compact && (
+        <div className="feed-tabs" role="tablist" aria-label="Categories">
+          {["", ...(module === "messages" ? NOTICE_CATEGORIES : RESOURCE_CATEGORIES)].map((c) => (
             <Button
               key={c || "all"}
               role="tab"
@@ -405,7 +423,7 @@ export function RecordBrowser({
               variant={category === c ? "secondary" : "ghost"}
               onClick={() => setCategory(c)}
             >
-              {c || "All updates"}
+              {c || (module === "messages" ? "All updates" : "All resources")}
             </Button>
           ))}
         </div>
@@ -435,7 +453,15 @@ export function RecordBrowser({
                 ? "Nothing on the calendar"
                 : module === "payments"
                   ? "No charges to show"
-                  : undefined
+                  : module === "forms"
+                    ? outstanding
+                      ? "You're all caught up"
+                      : "No forms right now"
+                    : module === "resources"
+                      ? "No resources yet"
+                      : module === "contact"
+                        ? "No enquiries yet"
+                        : undefined
           }
           text={
             result.canLoadMore
@@ -567,6 +593,11 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
         </>
       ) : (
         <>
+          {module === "contact" && (
+            <Boundary>
+              <SchoolOffice />
+            </Boundary>
+          )}
           <WorkflowPanel module={module} />
           {module === "payments" && (
             <Boundary>

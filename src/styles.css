@@ -194,6 +194,21 @@ button.event-row:last-child{border-bottom:0;}
 .payments-summary{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0;}
 .payments-note{border-radius:7px;margin-bottom:20px;justify-content:flex-start;}
 @media(max-width:650px){.toolbar .search-field{max-width:none;min-width:0;flex-basis:100%;}.segmented{margin-left:0;}.learner-grid{grid-template-columns:1fr;}.payments-summary{grid-template-columns:1fr;}.calendar-cell .calendar-chip{font-size:0;padding:0;height:5px;border-left:0;background:var(--primary);opacity:.85;}.calendar-cell .calendar-day{width:22px;height:22px;font-size:10px;}.month-nav h2{min-width:0;flex:1;font-size:15px;}}
+/* Forms, resources and contact */
+.group-count{display:inline-grid;place-items:center;min-width:20px;height:18px;padding:0 6px;border-radius:9px;background:var(--muted);color:var(--muted-foreground);font-size:10px;font-weight:700;}
+.form-card.is-pending{border-left:3px solid var(--school-gold);}
+.notice-date.overdue{color:var(--primary);font-weight:650;}
+.form-card .notice-footer .notice-author{font-size:10px;} .notice-footer button.notice-cta{height:30px;padding:0 14px;gap:6px;}
+.resource-list{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:0 20px;box-shadow:var(--shadow);}
+.resource-list .resource-row{gap:16px;padding:18px 0;} .resource-list .resource-row .summary-icon{flex-shrink:0;}
+.resource-list .resource-row h3{font-size:13px;font-weight:700;} .resource-description{font-size:11px!important;color:var(--muted-foreground);margin-top:4px!important;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.resource-list .resource-row > .tag{margin-left:auto;flex-shrink:0;} .resource-list .resource-row > .tag + button{margin-left:0;}
+.resource-list .resource-row > button{flex-shrink:0;}
+.office-card{display:flex;align-items:center;gap:16px;padding:20px 22px;margin-bottom:22px;background:linear-gradient(120deg,var(--card),color-mix(in oklab,var(--secondary) 60%,var(--card)));border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);}
+.office-card .summary-icon{flex-shrink:0;} .office-copy{min-width:0;flex:1;} .office-copy h2{font-size:15px;font-weight:700;} .office-copy p{font-size:11px;color:var(--muted-foreground);margin-top:5px;line-height:1.7;}
+.office-contacts{display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
+.office-contact{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);font-size:11px;font-weight:600;color:var(--foreground);text-decoration:none;} a.office-contact:hover{border-color:var(--primary);color:var(--primary);} .office-contact svg{color:var(--primary);} .office-contact.is-missing{color:var(--muted-foreground);font-weight:500;border-style:dashed;}
+@media(max-width:650px){.office-card{flex-wrap:wrap;}.office-contacts{width:100%;}.resource-list{padding:0 14px;}.resource-list .resource-row{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:14px;row-gap:10px;align-items:start;}.resource-list .resource-row > .tag,.resource-list .resource-row > button{grid-column:2;justify-self:start;margin-left:0;}}
 /* Theme toggle and dark-theme refinements for styles that use fixed colours. */
 .theme-toggle svg{transition:transform .35s cubic-bezier(.4,0,.2,1);} .theme-toggle:hover svg{transform:rotate(-18deg);} .dark .theme-toggle{color:var(--school-gold);}
 ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal;}

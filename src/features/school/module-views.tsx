@@ -10,6 +10,14 @@ import {
   ReceiptText,
   Wallet,
   CalendarClock,
+  ArrowRight,
+  Building2,
+  ClipboardList,
+  File,
+  ImageIcon,
+  Mail,
+  MessagesSquare,
+  Phone,
 } from "lucide-react";
 import type { ModuleRecord } from "@school-connect/core/live";
 import { eventDays, monthCells, schoolDate } from "@school-connect/core/calendar";
@@ -358,5 +366,238 @@ export function PaymentsSummary() {
         information.
       </p>
     </>
+  );
+}
+
+const isOverdue = (r: ModuleRecord) => !!r.pending && r.at !== null && r.at < Date.now();
+
+function FormCard({
+  form,
+  onOpen,
+  staff,
+}: {
+  form: ModuleRecord;
+  onOpen: OpenItem;
+  staff: boolean;
+}) {
+  const overdue = isOverdue(form);
+  return (
+    <article className={`notice-card form-card ${form.pending ? "is-pending" : ""}`}>
+      <div className="notice-top">
+        <div className="notice-badges">
+          <span className="tag neutral">
+            <ClipboardList size={10} />
+            {form.subtitle || "Form"}
+          </span>
+          <StatusTag status={form.status} />
+          {overdue && !staff && <span className="tag">Past due</span>}
+        </div>
+        {form.at !== null && (
+          <span className={`notice-date ${overdue ? "overdue" : ""}`}>
+            Due {formatDate(form.at, { day: "numeric", month: "short", year: "numeric" })}
+          </span>
+        )}
+      </div>
+      <h3>{form.title}</h3>
+      {form.body && <p className="body-excerpt">{form.body}</p>}
+      <div className="notice-footer">
+        <span className="notice-author">
+          {form.pending
+            ? staff
+              ? "Responses still outstanding"
+              : "Your response is needed"
+            : "Response received. Thank you."}
+        </span>
+        <Button
+          variant={form.pending && !staff ? "default" : "link"}
+          size={form.pending && !staff ? "sm" : "default"}
+          className={form.pending && !staff ? "notice-cta" : undefined}
+          onClick={() => onOpen(form.id)}
+        >
+          {staff ? "View responses" : form.pending ? "Complete form" : "View response"}
+          <ArrowRight size={12} />
+        </Button>
+      </div>
+    </article>
+  );
+}
+
+export function FormsList({ records, onOpen }: { records: ModuleRecord[]; onOpen: OpenItem }) {
+  const { role } = useSchool();
+  const staff = role !== "Parent";
+  const pending = records.filter((r) => r.pending);
+  const done = records.filter((r) => !r.pending);
+  const group = (title: string, items: ModuleRecord[], hint: string) =>
+    items.length > 0 && (
+      <section className="agenda-group">
+        <h2 className="agenda-month">
+          {title}
+          <span className="group-count">{items.length}</span>
+        </h2>
+        <p className="home-caption">{hint}</p>
+        {items.map((f) => (
+          <FormCard key={f.id} form={f} onOpen={onOpen} staff={staff} />
+        ))}
+      </section>
+    );
+  return (
+    <>
+      {group(
+        staff ? "Open requests" : "To complete",
+        pending,
+        staff ? "Families have not all responded yet." : "These need a response from you.",
+      )}
+      {group(
+        staff ? "Fully responded" : "Completed",
+        done,
+        staff ? "Every family in scope has responded." : "Forms you have already submitted.",
+      )}
+    </>
+  );
+}
+
+const fileSize = (raw?: string) => {
+  const bytes = Number.parseInt(raw ?? "", 10);
+  if (!Number.isFinite(bytes)) return null;
+  return bytes < 1024
+    ? `${bytes} B`
+    : bytes < 1024 * 1024
+      ? `${Math.round(bytes / 1024)} KB`
+      : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const fileKind = (type?: string, name?: string) => {
+  const source = `${type ?? ""} ${name ?? ""}`.toLowerCase();
+  if (source.includes("pdf")) return { label: "PDF", tone: "", icon: FileText };
+  if (/image|\.png|\.jpe?g|\.webp/.test(source))
+    return { label: "Image", tone: "green", icon: ImageIcon };
+  return { label: "Document", tone: "gold", icon: File };
+};
+
+export function ResourceList({ records, onOpen }: { records: ModuleRecord[]; onOpen: OpenItem }) {
+  return (
+    <div className="resource-list">
+      {records.map((r) => {
+        const value = (label: string) => r.fields?.find((f) => f.label === label)?.value;
+        const kind = fileKind(value("Type"), value("File"));
+        const size = fileSize(value("Size"));
+        return (
+          <div className="resource-row" key={r.id}>
+            <div className={`summary-icon ${kind.tone}`}>
+              <kind.icon size={20} />
+            </div>
+            <div className="min-w-0">
+              <h3>{r.title}</h3>
+              {r.body && <p className="resource-description">{r.body}</p>}
+              <p>
+                {[
+                  r.category ?? r.subtitle,
+                  kind.label,
+                  size,
+                  r.at !== null
+                    ? `Updated ${formatDate(r.at, { day: "numeric", month: "short", year: "numeric" })}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            </div>
+            {r.status && r.status !== "Published" && <StatusTag status={r.status} />}
+            <Button variant="outline" size="sm" onClick={() => onOpen(r.id)}>
+              Open
+              <ArrowRight size={12} />
+            </Button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function EnquiryList({ records, onOpen }: { records: ModuleRecord[]; onOpen: OpenItem }) {
+  return (
+    <>
+      {records.map((e) => (
+        <article className="notice-card" key={e.id}>
+          <div className="notice-top">
+            <div className="notice-badges">
+              {e.subtitle && <span className="tag">{e.subtitle}</span>}
+              <StatusTag status={e.status} />
+            </div>
+            {e.at !== null && (
+              <span className="notice-date">
+                Last message {formatDate(e.at, { day: "numeric", month: "short", year: "numeric" })}
+              </span>
+            )}
+          </div>
+          <h3>{e.title}</h3>
+          <div className="notice-footer">
+            <span className="notice-author">
+              <MessagesSquare size={12} />
+              Conversation with {e.subtitle || "the school"}
+            </span>
+            <Button variant="link" onClick={() => onOpen(e.id)}>
+              Open conversation
+              <ArrowRight size={12} />
+            </Button>
+          </div>
+        </article>
+      ))}
+    </>
+  );
+}
+
+export function SchoolOffice() {
+  const school = useRecords("home");
+  const record = school.data.records[0];
+  const value = (label: string) => {
+    const v = record?.fields?.find((f) => f.label === label)?.value;
+    return v && v !== "Not provided" ? v : null;
+  };
+  const email = value("Email");
+  const phone = value("Phone");
+  return (
+    <section className="office-card" aria-label="School office">
+      <div className="summary-icon">
+        <Building2 size={20} />
+      </div>
+      <div className="office-copy">
+        <h2>{record?.title ?? "School office"}</h2>
+        <p>
+          Questions about your child or the school? Choose School actions below to send an enquiry,
+          and the right team will reply here.
+        </p>
+      </div>
+      <div className="office-contacts">
+        {school.status === "loading" ? (
+          <span className="home-caption">Loading contact details...</span>
+        ) : (
+          <>
+            {email ? (
+              <a className="office-contact" href={`mailto:${email}`}>
+                <Mail size={15} />
+                {email}
+              </a>
+            ) : (
+              <span className="office-contact is-missing">
+                <Mail size={15} />
+                Email awaiting confirmation
+              </span>
+            )}
+            {phone ? (
+              <a className="office-contact" href={`tel:${phone.replace(/\s+/g, "")}`}>
+                <Phone size={15} />
+                {phone}
+              </a>
+            ) : (
+              <span className="office-contact is-missing">
+                <Phone size={15} />
+                Phone awaiting confirmation
+              </span>
+            )}
+          </>
+        )}
+      </div>
+    </section>
   );
 }
