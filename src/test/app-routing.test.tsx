@@ -17,4 +17,11 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+  it("matches the staff Ad Center page", () => {
+    const router = createRouter({
+      routeTree,
+      context: { queryClient: new QueryClient(), convexClient: null },
+    });
+    expect(router.matchRoutes("/ads").at(-1)?.routeId).toBe("/ads");
+  });
 });

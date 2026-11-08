@@ -10,7 +10,7 @@
 - `src/domain.ts` owns the shared enum tuples (roles, statuses, categories, departments, audience kinds, notification channels/kinds/states) and their types; `src/index.ts` re-exports them.
 - `src/workflows.ts` owns provider-independent workflow action names, form fields, byte files and temporary download outcomes; exported as `@school-connect/core/workflows`. Server validators and both clients share these names.
 - `src/imports.ts` owns roster CSV templates, RFC 4180 parsing, row validation/normalization, formula-prefix refusal and in-file natural-key duplicate detection, exported as `@school-connect/core/imports`. The web preview and the backend commit share it; the backend remains the authority.
-- `src/live.ts` owns provider-independent module/detail/dashboard and filter presentation contracts, exported as `@school-connect/core/live`; it imports no fixture data.
+- `src/live.ts` owns provider-independent module/detail/dashboard and filter presentation contracts (including optional staff preview `media` and the parent `PublicAd` shape), exported as `@school-connect/core/live`; it imports no fixture data.
 - `src/calendar.ts` owns pure Johannesburg month/day calculations and RFC 5545 event export, including UTC/all-day times, escaping and UTF-8 line folding; exported as `@school-connect/core/calendar`.
 - `src/permissions.ts` owns the shared module matrix, disabled-module gating and union of explicit staff/guardian grants; `@school-connect/core/permissions` exposes it without importing fixtures.
 - `package.json` exports the TypeScript entry as `@school-connect/core` and the enums alone as `@school-connect/core/domain` (used by the Convex backend to build validators without bundling fixtures).

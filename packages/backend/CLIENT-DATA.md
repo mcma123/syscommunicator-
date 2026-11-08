@@ -47,3 +47,6 @@ Both platforms require confirmations where described by the server, disable pend
 
 ## Notification delivery
 `useSchoolNotifications` owns stable configuration subscriptions, private/staff-scoped native pagination and audited retry requests. Each client exposes it through useNotifications; profile and authorized notice details render it. Accepted means provider request acceptance; Provider confirmed means push-service handoff or authenticated email delivery confirmation, not screen display/read. `deliveredAt` remains in-app availability; `notificationDeliveredAt` is separate transport evidence. Native device/response handling lives entirely in the Expo store/bridge and has a web no-op. NOTIFICATIONS.md owns activation and session/preference rules.
+
+## Ads
+- `useSchoolAds(enabled)` subscribes to `ads.active` with a minute-rounded `now`, so ads appear and expire on schedule without reloading. Both clients show a home spotlight carousel and an optional popup once per device per ad revision (dismissals stay on the device). Staff manage ads through the `ads` module list, detail preview and server-described forms.

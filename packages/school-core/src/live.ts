@@ -19,6 +19,21 @@ export interface ModuleRecord {
   pending?: boolean;
   requiresAcknowledgement?: boolean;
   fields?: { label: string; value: string }[];
+  /** Staff-only preview media (Ad Center); parents receive ads through PublicAd. */
+  media?: { url: string; kind: "image" | "video" };
+}
+/** A published ad visible to the signed-in viewer. Never includes storage IDs. */
+export interface PublicAd {
+  id: string;
+  title: string;
+  caption: string;
+  linkUrl: string | null;
+  linkLabel: string | null;
+  popup: boolean;
+  revision: number;
+  startsAt: number;
+  endsAt: number;
+  media: { url: string; kind: "image" | "video"; contentType: string } | null;
 }
 export interface ModulePage {
   records: ModuleRecord[];

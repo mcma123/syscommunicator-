@@ -6,6 +6,7 @@ import type {
   ReadModule,
   ReadOptions,
   DashboardState,
+  PublicAd,
 } from "@school-connect/core/live";
 import type { SchoolModule } from "@school-connect/core/permissions";
 import {
@@ -67,17 +68,18 @@ export type RecordId =
   | Id<"groups">
   | Id<"users">
   | Id<"auditLog">
+  | Id<"ads">
   | Id<"schools">;
 export type PublicFile = { fileName: string; contentType: string; size: number };
 export type PublicNotice = Omit<Doc<"notices">, "attachments"> & { attachments: PublicFile[] };
 export type PublicResource = Omit<Doc<"resources">, "file"> & { file: PublicFile };
 export type FileTarget = {
-  kind: "notice" | "resource" | "report" | "receipt";
+  kind: "notice" | "resource" | "report" | "receipt" | "ad";
   id: string;
   slot?: number;
 };
 export type UploadSpec = {
-  kind: "notice" | "resource" | "report";
+  kind: "notice" | "resource" | "report" | "ad";
   targetId?: string;
   values: Record<string, string>;
 };
@@ -239,6 +241,9 @@ export const api = {
     detail: makeFunctionReference<"query", ReadInput & { itemId: RecordId }, RecordDetail>(
       "schoolRead:detail",
     ),
+  },
+  ads: {
+    active: makeFunctionReference<"query", { now: number }, PublicAd[]>("ads:active"),
   },
   dashboard: {
     current: makeFunctionReference<

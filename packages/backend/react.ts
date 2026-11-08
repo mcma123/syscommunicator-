@@ -236,6 +236,47 @@ export function useSchoolDashboard(
   };
 }
 
+/** Running ads for the signed-in viewer; `now` ticks each minute so start/end times apply live. */
+export function useSchoolAds(enabled: boolean) {
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 60000) * 60000);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Math.floor(Date.now() / 60000) * 60000), 60000);
+    return () => clearInterval(timer);
+  }, []);
+  const requests = useMemo<RequestForQueries>(() => {
+    const q: RequestForQueries = {};
+    if (enabled) q["ads"] = { query: api.ads.active, args: { now } };
+    return q;
+  }, [enabled, now]);
+  const value = useQueries(requests)["ads"];
+  const ads =
+    value instanceof Error
+      ? []
+      : ((value as import("@school-connect/core/live").PublicAd[] | undefined) ?? []);
+  return {
+    ads,
+    status:
+      value instanceof Error
+        ? ("error" as const)
+        : value === undefined
+          ? ("loading" as const)
+          : ("ready" as const),
+  };
+}
+
+/** Content type for an upload chosen by file name; the server re-validates name, type and signature. */
+export function uploadContentType(name: string) {
+  return /\.pdf$/i.test(name)
+    ? "application/pdf"
+    : /\.png$/i.test(name)
+      ? "image/png"
+      : /\.mp4$/i.test(name)
+        ? "video/mp4"
+        : /\.webm$/i.test(name)
+          ? "video/webm"
+          : "image/jpeg";
+}
+
 export function useSchoolWorkflows(
   module: import("@school-connect/core/live").ReadModule,
   enabled: boolean,
@@ -271,19 +312,17 @@ export function useSchoolWorkflows(
     file?: import("@school-connect/core/workflows").WorkflowFile,
   ): Promise<import("@school-connect/core/workflows").WorkflowOutcome> => {
     const s = input.values;
-    if (["reportCreate", "noticeAttach", "resourceCreate"].includes(input.action)) {
+    if (["reportCreate", "noticeAttach", "resourceCreate", "adMedia"].includes(input.action)) {
       if (!file) throw new Error("Choose a file first.");
       const kind =
         input.action === "reportCreate"
           ? "report"
           : input.action === "noticeAttach"
             ? "notice"
-            : "resource";
-      const contentType = /\.pdf$/i.test(file.name)
-        ? "application/pdf"
-        : /\.png$/i.test(file.name)
-          ? "image/png"
-          : "image/jpeg";
+            : input.action === "adMedia"
+              ? "ad"
+              : "resource";
+      const contentType = uploadContentType(file.name);
       const digest = bytesToHex(sha256(new Uint8Array(file.bytes)));
       const lease = await beginUpload({
         spec: { kind, ...(input.itemId ? { targetId: input.itemId } : {}), values: s },

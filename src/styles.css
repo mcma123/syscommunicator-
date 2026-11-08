@@ -209,6 +209,40 @@ button.event-row:last-child{border-bottom:0;}
 .office-contacts{display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
 .office-contact{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);font-size:11px;font-weight:600;color:var(--foreground);text-decoration:none;} a.office-contact:hover{border-color:var(--primary);color:var(--primary);} .office-contact svg{color:var(--primary);} .office-contact.is-missing{color:var(--muted-foreground);font-weight:500;border-style:dashed;}
 @media(max-width:650px){.office-card{flex-wrap:wrap;}.office-contacts{width:100%;}.resource-list{padding:0 14px;}.resource-list .resource-row{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:14px;row-gap:10px;align-items:start;}.resource-list .resource-row > .tag,.resource-list .resource-row > button{grid-column:2;justify-self:start;margin-left:0;}}
+/* Ad Center: home spotlight banner, popup, staff cards and preview */
+.ad-banner{position:relative;border-radius:8px;overflow:hidden;margin-bottom:23px;background:var(--school-deep-red);box-shadow:var(--shadow);}
+.ad-slide{position:relative;aspect-ratio:16/5;min-height:190px;max-height:250px;width:100%;}
+.ad-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#1a1012;}
+.ad-media-empty{background:linear-gradient(135deg,var(--school-deep-red),var(--primary));}
+.ad-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;gap:6px;padding:24px 28px 26px;color:#fff;background:linear-gradient(90deg,#2a070cd9 0%,#2a070c80 45%,transparent 80%);pointer-events:none;}
+.ad-overlay > *{pointer-events:auto;max-width:min(560px,80%);}
+.ad-overlay h2{font-size:24px;font-weight:750;line-height:1.25;text-shadow:0 1px 8px #0005;}
+.ad-overlay p{font-size:12px;line-height:1.7;opacity:.92;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ad-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:700;letter-spacing:1.4px;padding:4px 8px;border-radius:4px;background:#ffffff26;color:#ffe2a3;backdrop-filter:blur(4px);}
+.ad-cta{display:inline-flex;align-items:center;gap:7px;margin-top:6px;padding:8px 14px;border-radius:6px;background:var(--school-gold);color:#3b2600;font-size:11px;font-weight:700;text-decoration:none;box-shadow:0 4px 12px #0003;transition:transform .15s,filter .15s;}
+.ad-cta:hover{filter:brightness(1.05);transform:translateY(-1px);} .ad-cta:focus-visible{outline:3px solid #fff;outline-offset:2px;}
+.ad-controls{position:absolute;right:16px;bottom:16px;display:flex;align-items:center;gap:8px;padding:5px;border-radius:20px;background:#00000059;backdrop-filter:blur(6px);}
+.ad-controls > button{display:grid;place-items:center;width:26px;height:26px;border:0;border-radius:50%;background:#ffffff26;color:#fff;} .ad-controls > button:hover{background:#ffffff47;}
+.ad-dots{display:flex;gap:5px;} .ad-dots button{width:7px;height:7px;padding:0;border:0;border-radius:4px;background:#ffffff73;transition:width .2s,background .2s;} .ad-dots button[aria-selected=true]{width:18px;background:#fff;}
+.ad-controls button:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.ad-banner.is-preview{margin:0;}
+.ad-popup{padding:0!important;gap:0!important;overflow:hidden;max-width:min(560px,calc(100vw - 32px))!important;}
+.ad-popup-media{position:relative;aspect-ratio:16/9;background:#1a1012;} .ad-popup-media .ad-media{object-fit:contain;}
+.ad-popup-body{padding:20px 24px 24px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;}
+.ad-popup-body .ad-eyebrow{background:var(--secondary);color:var(--primary);}
+.ad-popup-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;} .ad-popup-actions .ad-cta{margin-top:0;}
+.ad-preview{min-width:0;max-width:100%;border:1px solid var(--border);border-radius:8px;padding:14px;background:var(--muted);display:flex;flex-direction:column;gap:10px;}
+.ad-preview-head{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;} .ad-preview-head span{font-size:10px;color:var(--muted-foreground);display:flex;align-items:center;gap:6px;}
+.ad-preview .ad-slide{min-height:0;max-height:none;aspect-ratio:16/7;} .ad-preview .ad-overlay h2{font-size:18px;}
+.ad-note{font-size:11px;color:var(--warning);background:var(--warning-soft);padding:8px 10px;border-radius:6px;}
+.ad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+.ad-card{padding:0;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:border-color .2s;} .ad-card:hover{border-color:color-mix(in oklab,var(--primary) 35%,var(--border));}
+.ad-thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;border:0;padding:0;background:var(--muted);cursor:pointer;}
+.ad-thumb-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:11px;color:var(--muted-foreground);}
+.ad-thumb-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;filter:drop-shadow(0 2px 6px #0007);}
+.ad-card-body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;flex:1;} .ad-card-body h2{font-size:15px;font-weight:700;margin:2px 0 0;} .ad-card-body > button{align-self:flex-start;margin-top:auto;}
+.ad-meta{display:grid;gap:5px;margin:4px 0 6px;font-size:11px;} .ad-meta div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;} .ad-meta dt{color:var(--muted-foreground);} .ad-meta dd{margin:0;overflow-wrap:anywhere;}
+@media(max-width:650px){.ad-slide{aspect-ratio:4/3;max-height:none;min-height:0;}.ad-overlay{padding:18px 18px 54px;background:linear-gradient(0deg,#2a070ce6 0%,#2a070c99 45%,transparent 85%);}.ad-overlay > *{max-width:100%;}.ad-overlay h2{font-size:19px;}.ad-controls{right:50%;transform:translateX(50%);bottom:12px;}.ad-grid{grid-template-columns:1fr;}}
 /* Theme toggle and dark-theme refinements for styles that use fixed colours. */
 .theme-toggle svg{transition:transform .35s cubic-bezier(.4,0,.2,1);} .theme-toggle:hover svg{transform:rotate(-18deg);} .dark .theme-toggle{color:var(--school-gold);}
 ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal;}

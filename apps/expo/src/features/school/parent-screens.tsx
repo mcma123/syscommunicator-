@@ -1,5 +1,6 @@
 import { NotificationPanel } from "./notification-panel";
 import { WorkflowPanel } from "./workflow-panel";
+import { AdCarousel, AdPopup, AdPreview } from "./ads";
 import { SchoolDataBoundary } from "@school-connect/backend/react";
 import { NOTICE_CATEGORIES, RESOURCE_CATEGORIES } from "@school-connect/core/domain";
 import {
@@ -15,6 +16,7 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, View, Linking } from "react-native";
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
 import type { ReadModule, ReadOptions, ModuleRecord } from "@school-connect/core/live";
 import {
   canAccessModule,
@@ -58,6 +60,15 @@ function Row({
       onPress={() => (onOpen ? onOpen() : path && open(path))}
     >
       <Card>
+        {record.media?.kind === "image" && (
+          <Image
+            source={{ uri: record.media.url }}
+            style={{ width: "100%", aspectRatio: 16 / 9, borderRadius: 16 }}
+            contentFit="cover"
+            accessibilityLabel={record.title}
+          />
+        )}
+        {record.media?.kind === "video" && <Badge label="Video ad" />}
         <View style={s.row}>
           <View style={{ flex: 1 }}>
             <Text weight="bold">{record.title}</Text>
@@ -423,6 +434,7 @@ function RecordDetails({
   const current = related.find((tab) => tab.module === section) ?? related[0];
   return (
     <>
+      {module === "ads" && <AdPreview record={item} />}
       <WorkflowPanel module={module} itemId={id} learnerId={learnerId} />
       {module === "messages" && related.some((r) => r.module === "noticeReceipts") && (
         <Boundary>
@@ -558,6 +570,10 @@ export function ParentHome() {
           {school.data?.records[0]?.subtitle ?? "Honor Before Honours"}
         </Text>
       </LinearGradient>
+      <Boundary>
+        <AdCarousel />
+        <AdPopup />
+      </Boundary>
       <ChildPicker />
       <Boundary>
         <Dashboard />
@@ -685,6 +701,7 @@ export function MoreScreen() {
           ["people", "People"],
           ["settings", "Settings"],
           ["audit", "Audit log"],
+          ["ads", "Ad Center"],
         ] as const
       )
         .filter(([module]) => canAccessModule(grants, module, account?.disabledModules))

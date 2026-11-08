@@ -29,6 +29,7 @@ export function SchoolNavigator({
     "attendance",
     "groups",
     "settings",
+    "ads",
     "notice/[id]",
     "event/[id]",
     "learner/[id]",

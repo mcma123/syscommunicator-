@@ -84,6 +84,7 @@ export const tables: Partial<Record<ReadModule, TableNames>> = {
   paymentHistory: "payments",
   enquiryMessages: "enquiryMessages",
   formResponses: "consentResponses",
+  ads: "ads",
 };
 export function record(
   id: string,
@@ -106,6 +107,19 @@ export function record(
     canAcknowledge: false,
     ...extra,
   };
+}
+/** Short human audience description; bounded by the 20-entry audience limit. */
+export async function audienceLabel(ctx: QueryCtx, audiences: Doc<"ads">["audiences"]) {
+  const names: string[] = [];
+  for (const a of audiences) {
+    if (a.kind === "School") names.push("Whole school");
+    else if (a.kind === "Grade")
+      names.push((await ctx.db.get("grades", a.gradeId))?.name ?? "Grade");
+    else if (a.kind === "Class")
+      names.push(`Class ${(await ctx.db.get("classes", a.classId))?.name ?? ""}`.trim());
+    else names.push((await ctx.db.get("groups", a.groupId))?.name ?? "Group");
+  }
+  return names.join(", ");
 }
 const field = (label: string, value: string | number | null | undefined) => ({
   label,
@@ -368,6 +382,48 @@ export async function project(
       category: e.category,
       fields: [field("Location", e.location), field("Timezone", "Africa/Johannesburg")],
     });
+  }
+  if (module === "ads") {
+    const ad = row as Doc<"ads">;
+    const manager =
+      wholeSchool(actor) ||
+      (hasRole(actor, "Teacher") &&
+        ad.createdBy === actor.user._id &&
+        (await matchesAudience(ctx, actor, ad.audiences, "teacher")));
+    if (!manager) return null;
+    const url = ad.media ? await ctx.storage.getUrl(ad.media.storageId) : null;
+    const author = await ctx.db.get("users", ad.createdBy);
+    return record(
+      ad._id,
+      ad.title,
+      ad.caption ?? "",
+      await audienceLabel(ctx, ad.audiences),
+      ad.status,
+      {
+        at: ad.startsAt,
+        endsAt: ad.endsAt,
+        category: ad.popup ? "Popup" : "Banner",
+        pending: ad.status === "Review",
+        ...(url && ad.media
+          ? {
+              media: {
+                url,
+                kind: ad.media.contentType.startsWith("video/")
+                  ? ("video" as const)
+                  : ("image" as const),
+              },
+            }
+          : {}),
+        fields: [
+          field("Created by", author?.name),
+          field("Link", ad.linkUrl),
+          field("Button label", ad.linkLabel),
+          field("Popup", ad.popup ? "Yes, once per device" : "No"),
+          field("Media", ad.media ? `${ad.media.fileName} (${ad.media.contentType})` : null),
+          ...(ad.reviewNote ? [field("Review note", ad.reviewNote)] : []),
+        ],
+      },
+    );
   }
   if (module === "resources") {
     const r = row as Doc<"resources">;
@@ -882,6 +938,15 @@ export async function readPage(
     case "home":
     case "settings":
       result = await ctx.db.query("schools").paginate(options);
+      break;
+    case "ads":
+      result = wholeSchool(actor)
+        ? await ctx.db.query("ads").withIndex("by_updatedAt").order("desc").paginate(options)
+        : await ctx.db
+            .query("ads")
+            .withIndex("by_createdBy_and_updatedAt", (q) => q.eq("createdBy", actor.user._id))
+            .order("desc")
+            .paginate(options);
       break;
     default:
       return { page: [], isDone: true, continueCursor: "" };

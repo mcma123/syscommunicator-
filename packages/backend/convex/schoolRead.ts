@@ -27,6 +27,7 @@ export const targetId = v.union(
   v.id("timetablePeriods"),
   v.id("users"),
   v.id("auditLog"),
+  v.id("ads"),
 );
 export const detailValidator = v.object({
   record: recordValidator,

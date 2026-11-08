@@ -26,6 +26,9 @@ export const recordValidator = v.object({
   pending: v.optional(v.boolean()),
   requiresAcknowledgement: v.optional(v.boolean()),
   fields: v.optional(v.array(v.object({ label: v.string(), value: v.string() }))),
+  media: v.optional(
+    v.object({ url: v.string(), kind: v.union(v.literal("image"), v.literal("video")) }),
+  ),
 });
 export const pageValidator = v.object({
   records: v.array(recordValidator),

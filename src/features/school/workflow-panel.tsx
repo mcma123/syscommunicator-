@@ -19,7 +19,23 @@ const supported = [
   "settings",
   "profile",
   "children",
+  "ads",
 ];
+const MEDIA_ACCEPT = "image/png,image/jpeg,video/mp4,video/webm,.png,.jpg,.jpeg,.mp4,.webm";
+/** Client-side size check mirroring the server limits (server re-validates everything). */
+function sizeProblem(action: string, file: File) {
+  if (action === "adMedia") {
+    if (!/\.(png|jpe?g|mp4|webm)$/i.test(file.name))
+      return "Choose a PNG or JPEG image, or an MP4 or WebM video.";
+    const video = /\.(mp4|webm)$/i.test(file.name);
+    return file.size > (video ? 15728640 : 5242880)
+      ? "Images may be up to 5 MiB; videos up to 15 MiB."
+      : "";
+  }
+  return file.size > (/\.pdf$/i.test(file.name) ? 10485760 : 5242880)
+    ? "PDFs may be up to 10 MiB; images up to 5 MiB."
+    : "";
+}
 export function WorkflowPanel(props: {
   module: ReadModule;
   itemId?: string | undefined;
@@ -92,6 +108,7 @@ function Panel({
                   "conductCreate",
                   "reportCreate",
                   "resourceCreate",
+                  "adSave",
                 ].includes(current.action)
               ) {
                 setCreated(id);
@@ -229,16 +246,19 @@ function Editor({
               accept={
                 form.action === "reportCreate"
                   ? "application/pdf,.pdf"
-                  : "application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
+                  : form.action === "adMedia"
+                    ? MEDIA_ACCEPT
+                    : "application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
               }
               aria-label={field.label}
               required
               onChange={(e) => {
                 const selected = e.target.files?.[0];
                 if (selected) {
-                  if (selected.size > (/\.pdf$/i.test(selected.name) ? 10485760 : 5242880)) {
+                  const problem = sizeProblem(form.action, selected);
+                  if (problem) {
                     setFailure(true);
-                    setMessage("PDFs may be up to 10 MiB; images up to 5 MiB.");
+                    setMessage(problem);
                     setFile(undefined);
                     return;
                   }

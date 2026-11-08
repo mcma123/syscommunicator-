@@ -1,41 +1,12 @@
 import { useState, type ReactNode } from "react";
-import { ActivityIndicator, Image, Platform, View } from "react-native";
+import { ActivityIndicator, Image, View } from "react-native";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
-import * as SecureStore from "expo-secure-store";
+import { localStore } from "./local-store";
 import { colors } from "@/theme/school";
 import { SchoolText as Text } from "@/components/school-screen";
 
-const memory = new Map<string, string>();
-const storage = {
-  async getItem(key: string) {
-    try {
-      return Platform.OS === "web"
-        ? localStorage.getItem(key)
-        : await SecureStore.getItemAsync(key);
-    } catch {
-      return memory.get(key) ?? null;
-    }
-  },
-  async setItem(key: string, value: string) {
-    memory.set(key, value);
-    try {
-      if (Platform.OS === "web") localStorage.setItem(key, value);
-      else await SecureStore.setItemAsync(key, value);
-    } catch {
-      /* Keep this session in memory if secure storage is unavailable. */
-    }
-  },
-  async removeItem(key: string) {
-    memory.delete(key);
-    try {
-      if (Platform.OS === "web") localStorage.removeItem(key);
-      else await SecureStore.deleteItemAsync(key);
-    } catch {
-      /* The in-memory session has been removed. */
-    }
-  },
-};
+const storage = localStore;
 export function SchoolAuthProvider({ children }: { children: ReactNode }) {
   const [client] = useState(() =>
     process.env.EXPO_PUBLIC_CONVEX_URL

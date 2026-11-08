@@ -211,3 +211,13 @@ Phase 4 adds shared module permissions, session-derived server actors, scoped no
 - No native APK/IPA has been built for this project yet. Published EAS updates require a compatible installed development or preview build; use the local Expo Go server only with an SDK-compatible Expo Go installation.
 
 Phase 10 implements phone registration, notice push/urgent email, consent reminders, quiet hours and truthful delivery history. See [notification setup](packages/backend/NOTIFICATIONS.md). Install a new native build for runtime 1.0.3; live delivery needs EAS push credentials and a verified Resend sender. Payment integration remains deferred until the other feature work is complete.
+
+## Ad Center
+
+Teachers, Principals and Administrators open **Ad Center** (`/ads` on web, **More → Ad Center** in the app) to publish a poster, picture or short video to parents:
+
+1. **Create ad**: headline, caption, optional `https://` link and button label, show-from/until times (Johannesburg), audience and an optional *popup* switch.
+2. **Add image or video**: PNG/JPEG up to 5 MiB, or MP4/WebM up to 15 MiB. Landscape (16:9) works best; videos play muted and loop.
+3. Teachers **Submit for approval**; a Principal or Administrator **Approves and publishes** (or returns it with a note). Principals and Administrators can publish their own ads directly.
+
+Running ads appear on parents' home screens as a spotlight banner (web and Expo); popup ads open once per device until dismissed, and again after an edit. Administrators can switch the module off in School settings (`Enable ads`). Playing video in the installed phone app requires the new runtime **1.0.4** build (`expo-video`); Expo Go and Expo web work immediately.

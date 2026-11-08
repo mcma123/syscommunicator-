@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SchoolShell, navigation, staffNavigation } from "./shell";
 import { Heading, ChildPicker, Empty, RecordCard, Placeholder } from "./components";
+import { AdList, AdPreview } from "./ads";
 import {
   CalendarAgenda,
   CalendarMonth,
@@ -62,6 +63,7 @@ const titles: Record<SchoolModule, string> = {
   people: "People & invitations",
   settings: "School settings",
   audit: "Audit log",
+  ads: "Ad Center",
 };
 
 const parentTitles: Partial<Record<SchoolModule, string>> = {
@@ -91,6 +93,7 @@ const staffDescriptions: Partial<Record<SchoolModule, string>> = {
   calendar: "Plan and share the moments that matter.",
   children: "Profiles, reports and attendance for the learners you support.",
   payments: "Track charges, payment status and history.",
+  ads: "Share posters, pictures and short videos on parents' home screens.",
   forms: "Follow up on consent requests and family responses.",
   resources: "Publish and manage documents for your school community.",
   contact: "Reply to family enquiries and keep conversations moving.",
@@ -185,6 +188,7 @@ function DetailPanel({
       <DialogDescription>
         {r.subtitle} {r.status}
       </DialogDescription>
+      {module === "ads" && <AdPreview record={r} />}
       <WorkflowPanel module={module} itemId={id} learnerId={learnerId} />
       {module === "messages" && related.some((r) => r.module === "noticeReceipts") && (
         <Boundary>
@@ -304,6 +308,7 @@ export function RecordBrowser({
       "forms",
       "resources",
       "contact",
+      "ads",
     ].includes(module);
   const list = () => {
     if (!styled)
@@ -312,6 +317,7 @@ export function RecordBrowser({
     if (module === "forms") return <FormsList records={records} onOpen={open} />;
     if (module === "resources") return <ResourceList records={records} onOpen={open} />;
     if (module === "contact") return <EnquiryList records={records} onOpen={open} />;
+    if (module === "ads") return <AdList records={records} onOpen={open} />;
     if (module === "children") return <LearnerGrid records={records} onOpen={open} />;
     if (module === "payments" || module === "paymentHistory")
       return (
@@ -366,7 +372,9 @@ export function RecordBrowser({
                             ? "Search resources..."
                             : module === "contact"
                               ? "Search enquiries..."
-                              : "Search records..."
+                              : module === "ads"
+                                ? "Search ads..."
+                                : "Search records..."
               }
               maxLength={200}
               value={search}
@@ -461,7 +469,9 @@ export function RecordBrowser({
                       ? "No resources yet"
                       : module === "contact"
                         ? "No enquiries yet"
-                        : undefined
+                        : module === "ads"
+                          ? "No ads yet"
+                          : undefined
           }
           text={
             result.canLoadMore

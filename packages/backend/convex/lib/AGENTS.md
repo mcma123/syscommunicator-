@@ -20,7 +20,8 @@
 - Load each requested document before checking its guardian/class/audience relationship. Author IDs never replace ownership or audience checks.
 - All new public school functions use the authenticated builders. Auth-library exports, sanitized sign-in status/configuration endpoints, and guarded internal fixture utilities are documented exceptions.
 - Authenticated mutation builders require at least one audit entry on success; a missing entry throws and rolls back the mutation. Record additional role/guardian/class grants individually. Attendance corrections include previous/next values and a reason; submitted registers require a correction reason.
-- No unbounded collections, client-supplied caller identity, permanent storage URLs, or wall-clock reads in queries. Protected file queries may return expiring gateway URLs after grant and scope validation; FILES.md owns that exception.
+- No unbounded collections, client-supplied caller identity, permanent storage URLs, or wall-clock reads in queries. Protected file queries may return expiring gateway URLs after grant and scope validation; Ad Center media (published promotional ads in the viewer's audience, and staff ad previews) may return Convex storage URLs. FILES.md owns both exceptions.
+- `fileRules.ts` `adEditor` is the single ad write/upload scope check: whole-school staff, or the creating Teacher while the ad still targets classes they teach.
 - Pass native pagination options/results intact; filtering an unauthorized/search-mismatched page must retain its advancing cursor. Independent details repeat document scope checks and never depend on a loaded page.
 - Canonical school writers must use the audit writer so dashboard revisions invalidate atomically. Aggregate insert/delete accompanies each dashboardItems mutation in the same transaction.
 

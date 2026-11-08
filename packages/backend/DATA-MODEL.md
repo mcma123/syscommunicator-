@@ -165,3 +165,7 @@ Upload reservations store server-derived user/session, validated upload specific
 | Replay-safe row accounting per batch | `importBatchRows.by_batchId_and_row` (row number → content digest, outcome) |
 
 `importBatches`, `importBatchRows`, `rosterContacts` and the `grades.by_name` index are additive, with no backfill. Staged contacts are not identity, role or guardian data and grant no access; see [IMPORTS.md](IMPORTS.md). Reset clears both with the other application tables.
+
+## Ad Center
+- `ads`: headline, optional caption/link/button label, optional `media` attachment, status (`AD_STATUSES`: Draft, Review, Published, Archived), `startsAt`/`endsAt`, `popup`, bounded `audiences`, `createdBy`, optional `approvedBy`/`reviewNote`, `updatedAt` and `revision` (bumped on every change so edited popups show again).
+- Indexes: `by_status_and_endsAt` (parent feed: Published and not yet ended, bounded to 50 then filtered by start and audience), `by_updatedAt` (whole-school Ad Center list) and `by_createdBy_and_updatedAt` (a teacher's own ads).

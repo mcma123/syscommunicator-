@@ -24,6 +24,7 @@ import {
   Shirt,
   LogOut,
   Award,
+  Megaphone,
   Moon,
   Sun,
 } from "lucide-react";
@@ -49,6 +50,7 @@ export const staffNavigation = [
   { id: "reports", name: "Reports", path: "/reports", icon: FileText },
   { id: "people", name: "People & invitations", path: "/people", icon: Users },
   { id: "audit", name: "Audit log", path: "/audit", icon: ShieldCheck },
+  { id: "ads", name: "Ad Center", path: "/ads", icon: Megaphone },
 ] as const;
 export function SchoolShell({ module, children }: { module: string; children: ReactNode }) {
   const { role, accessRoles, account, signOut, offline, connected, notify } = useSchool();

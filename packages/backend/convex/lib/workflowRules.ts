@@ -123,7 +123,22 @@ export const FEATURE_MODULES = [
   "conduct",
   "attendance",
   "groups",
+  "ads",
 ] as const;
+/** Optional https link for ad buttons; rejects other schemes and credentials in URLs. */
+export function httpsUrl(values: Record<string, string>, key: string) {
+  const value = text(values, key, 500, true);
+  if (!value) return "";
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    invalid("Enter a full link starting with https://");
+  }
+  if (url.protocol !== "https:" || url.username || url.password || !url.hostname.includes("."))
+    invalid("Enter a full link starting with https://");
+  return url.toString();
+}
 export function keys(values: Record<string, string>, allowed: readonly string[]) {
   for (const key of Object.keys(values))
     if (!allowed.includes(key)) invalid(`Unexpected field: ${key}`);

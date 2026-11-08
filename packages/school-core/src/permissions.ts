@@ -18,6 +18,7 @@ export const SCHOOL_MODULES = [
   "people",
   "settings",
   "audit",
+  "ads",
 ] as const;
 export type SchoolModule = (typeof SCHOOL_MODULES)[number];
 export const MODULE_PERMISSIONS: Readonly<Record<Role, readonly SchoolModule[]>> = {
@@ -47,6 +48,7 @@ export const MODULE_PERMISSIONS: Readonly<Record<Role, readonly SchoolModule[]>>
     "attendance",
     "conduct",
     "reports",
+    "ads",
   ],
   Principal: [
     "home",
@@ -64,6 +66,7 @@ export const MODULE_PERMISSIONS: Readonly<Record<Role, readonly SchoolModule[]>>
     "conduct",
     "reports",
     "audit",
+    "ads",
   ],
   Finance: ["home", "payments", "more", "profile"],
   Administrator: SCHOOL_MODULES,

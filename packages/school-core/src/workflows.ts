@@ -36,6 +36,12 @@ export const WORKFLOW_ACTIONS = [
   "settingsSave",
   "profileSave",
   "invite",
+  "adSave",
+  "adMedia",
+  "adSubmit",
+  "adPublish",
+  "adReturn",
+  "adArchive",
 ] as const;
 export type WorkflowAction = (typeof WORKFLOW_ACTIONS)[number];
 export interface WorkflowField {

@@ -11,6 +11,10 @@ describe("shared module permissions", () => {
     for (const module of ["people", "settings", "audit", "payments", "unknown"])
       expect(canAccessModule("Teacher", module)).toBe(false);
     expect(canAccessModule("Teacher", "attendance")).toBe(true);
+    for (const role of ["Teacher", "Principal", "Administrator"] as const)
+      expect(canAccessModule(role, "ads")).toBe(true);
+    expect(canAccessModule("Parent", "ads")).toBe(false);
+    expect(canAccessModule("Administrator", "ads", ["ads"])).toBe(false);
     expect(canAccessModule("Administrator", "unknown")).toBe(false);
     expect(canAccessModule([], "home")).toBe(false);
   });

@@ -9,7 +9,7 @@ export const formatMoney = (cents: number) =>
 export function statusTone(status: string) {
   const s = status.toLowerCase();
   if (
-    /(paid|published|scheduled|submitted|active|released|granted|present|confirmed|complete)/.test(
+    /(paid|published|scheduled|submitted|active|released|granted|present|confirmed|complete|live)/.test(
       s,
     )
   )
@@ -17,4 +17,12 @@ export function statusTone(status: string) {
   if (/(overdue|failed|declined|absent|revoked)/.test(s)) return "";
   if (/(due|pending|awaiting|draft|review|open|outstanding|unpublished)/.test(s)) return "gold";
   return "neutral";
+}
+
+/** Live stage for staff: publication status combined with the schedule. */
+export function adStage(r: import("@school-connect/core/live").ModuleRecord, now = Date.now()) {
+  if (r.status !== "Published") return r.status === "Review" ? "Awaiting approval" : r.status;
+  if (r.at !== null && r.at > now) return "Scheduled";
+  if (r.endsAt !== undefined && r.endsAt <= now) return "Ended";
+  return "Live";
 }

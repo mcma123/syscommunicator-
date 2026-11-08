@@ -48,6 +48,7 @@ const clientContract: typeof publicApi = {
   },
   schoolRead: { page: api.schoolRead.page, detail: api.schoolRead.detail },
   dashboard: { current: api.dashboard.current, advance: api.dashboard.advance },
+  ads: { active: api.ads.active },
   schoolData: { list: api.schoolData.list },
   notices: {
     get: api.notices.get,
@@ -141,6 +142,7 @@ describe("authentication and onboarding", () => {
       "schoolData",
       "schoolRead",
       "dashboard",
+      "ads",
     ] as const) {
       expect(Object.values(publicApi[group]).map(getFunctionName).sort()).toEqual(
         Object.values(clientContract[group]).map(getFunctionName).sort(),

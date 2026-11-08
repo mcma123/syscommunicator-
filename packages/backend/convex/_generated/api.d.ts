@@ -9,6 +9,7 @@
  */
 
 import type * as access from "../access.js";
+import type * as ads from "../ads.js";
 import type * as auth from "../auth.js";
 import type * as authEmail from "../authEmail.js";
 import type * as authPolicy from "../authPolicy.js";
@@ -59,6 +60,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
+  ads: typeof ads;
   auth: typeof auth;
   authEmail: typeof authEmail;
   authPolicy: typeof authPolicy;

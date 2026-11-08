@@ -212,6 +212,75 @@ export const forms = authedQuery({
           "Generated from the verified successful payment record.",
         );
     }
+    if (module === "ads" && isAcademic) {
+      const ad = itemId ? await get(ctx, "ads", itemId) : null;
+      if (!ad || ad.status === "Draft" || (global && ad.status === "Review")) {
+        const options = await audienceOptions();
+        const audience = ad ? JSON.stringify(ad.audiences) : undefined;
+        if (audience && !options.some((o) => o.value === audience))
+          options.push({ value: audience, label: "Current audience" });
+        add(
+          "adSave",
+          ad ? "Save ad details" : "Create ad",
+          [
+            field("title", "Headline (up to 80 characters)", ad?.title),
+            field("caption", "Caption", ad?.caption, "multiline", false),
+            field("linkUrl", "Link (https://, optional)", ad?.linkUrl, "text", false),
+            field("linkLabel", "Button label (optional)", ad?.linkLabel, "text", false),
+            field(
+              "startsAt",
+              "Show from (Johannesburg)",
+              ad ? localTime(ad.startsAt) : "",
+              "datetime",
+            ),
+            field(
+              "endsAt",
+              "Show until (Johannesburg)",
+              ad ? localTime(ad.endsAt) : "",
+              "datetime",
+            ),
+            select("audience", "Audience", options, audience),
+            toggle("popup", "Also show as a popup (once per device)", ad?.popup),
+          ],
+          global
+            ? "Ads start as drafts. Add an image or video, then publish."
+            : "Ads start as drafts for your classes. Add an image or video, then submit for approval.",
+        );
+      }
+      if (ad && (ad.status === "Draft" || ad.status === "Review"))
+        add(
+          "adMedia",
+          ad.media ? "Replace image or video" : "Add image or video",
+          [field("file", "PNG or JPEG image (5 MiB) or MP4/WebM video (15 MiB)", "", "file")],
+          "Landscape (16:9) works best. Videos play muted and loop, so keep them short.",
+        );
+      if (ad?.status === "Draft" && !global)
+        add(
+          "adSubmit",
+          "Submit for approval",
+          [],
+          "A Principal or Administrator reviews the ad before parents see it.",
+          true,
+        );
+      if (ad && global && (ad.status === "Draft" || ad.status === "Review"))
+        add(
+          "adPublish",
+          ad.status === "Review" ? "Approve and publish" : "Publish ad",
+          [],
+          "Parents in the audience see this ad between its start and end times.",
+          true,
+        );
+      if (ad && global && (ad.status === "Review" || ad.status === "Published"))
+        add(
+          "adReturn",
+          "Return to draft",
+          [field("note", "Note for the author", "", "multiline", false)],
+          "Parents stop seeing the ad until it is published again.",
+          true,
+        );
+      if (ad && global && ad.status !== "Archived")
+        add("adArchive", "Archive ad", [], "Stops showing this ad to parents.", true);
+    }
     if (module === "messages" && isAcademic) {
       const n = itemId ? await get(ctx, "notices", itemId) : null;
       if (!n || (n.status === "Draft" && (global || n.authorId === actor.user._id))) {

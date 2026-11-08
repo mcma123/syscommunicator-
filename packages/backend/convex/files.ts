@@ -45,7 +45,12 @@ export const beginUpload = authedMutation({
   returns: v.object({ uploadId: v.id("fileUploads"), uploadUrl: v.string() }),
   handler: async (ctx, args) => {
     await uploadPermission(ctx, ctx.actor, args.spec);
-    validateFile(args.fileName, args.contentType, args.size, args.spec.kind === "report");
+    validateFile(
+      args.fileName,
+      args.contentType,
+      args.size,
+      args.spec.kind === "report" ? "report" : args.spec.kind === "ad" ? "ad" : "other",
+    );
     if (!/^[a-f0-9]{64}$/.test(args.sha256)) invalid("Invalid file digest.");
     const sessionId = await getAuthSessionId(ctx);
     if (!sessionId) denied();
@@ -203,6 +208,22 @@ export const saveUpload = internalMutation({
         revision: (n.revision ?? 0) + 1,
         updatedAt: Date.now(),
       });
+    } else if (u.spec.kind === "ad") {
+      const ad = await get(ctx, "ads", u.spec.targetId);
+      target = { kind: "ad", id: ad._id };
+      // Replaced media is detached; hourly cleanup deletes it after a day.
+      if (ad.media) {
+        const previous = await ctx.db
+          .query("managedFiles")
+          .withIndex("by_storageId", (q) => q.eq("storageId", ad.media!.storageId))
+          .unique();
+        if (previous) await ctx.db.patch("managedFiles", previous._id, { detachedAt: Date.now() });
+      }
+      await ctx.db.patch("ads", ad._id, {
+        media: file,
+        revision: ad.revision + 1,
+        updatedAt: Date.now(),
+      });
     } else {
       const id = await ctx.db.insert("resources", {
         title: text(u.spec.values, "title"),
@@ -222,7 +243,13 @@ export const saveUpload = internalMutation({
       ctx,
       actor,
       "file.attached",
-      u.spec.kind === "notice" ? "notices" : u.spec.kind === "report" ? "reports" : "resources",
+      u.spec.kind === "notice"
+        ? "notices"
+        : u.spec.kind === "report"
+          ? "reports"
+          : u.spec.kind === "ad"
+            ? "ads"
+            : "resources",
       target.id,
     );
     return { id: target.id, created: true };

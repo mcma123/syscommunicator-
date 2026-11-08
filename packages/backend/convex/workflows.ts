@@ -45,7 +45,9 @@ import {
   audiences,
   keys,
   FEATURE_MODULES,
+  httpsUrl,
 } from "./lib/workflowRules";
+import { adEditor } from "./lib/fileRules";
 const input = {
   action: literals(WORKFLOW_ACTIONS),
   itemId: v.optional(targetId),
@@ -182,6 +184,113 @@ export const submit = authedMutation({
   handler: async (ctx, { action, itemId, values: s }) => {
     const actor = ctx.actor,
       now = Date.now();
+    if (
+      action === "adSave" ||
+      action === "adSubmit" ||
+      action === "adPublish" ||
+      action === "adReturn" ||
+      action === "adArchive"
+    ) {
+      requireModule(actor, "ads");
+      academic(actor);
+      if (action === "adSave") {
+        keys(s, [
+          "title",
+          "caption",
+          "linkUrl",
+          "linkLabel",
+          "startsAt",
+          "endsAt",
+          "audience",
+          "popup",
+        ]);
+        const startsAt = instant(s, "startsAt"),
+          endsAt = instant(s, "endsAt");
+        if (endsAt <= startsAt) invalid("The ad must end after it starts.");
+        if (endsAt - startsAt > 366 * 86400000) invalid("An ad can run for up to one year.");
+        const linkUrl = httpsUrl(s, "linkUrl"),
+          linkLabel = text(s, "linkLabel", 40, true),
+          caption = text(s, "caption", 500, true);
+        if (linkLabel && !linkUrl) invalid("Add a link for the button label.");
+        const data = {
+          title: text(s, "title", 80),
+          caption: caption || undefined,
+          linkUrl: linkUrl || undefined,
+          linkLabel: linkLabel || undefined,
+          startsAt,
+          endsAt,
+          popup: toggle(s, "popup"),
+          audiences: await audiences(ctx, actor, text(s, "audience", 6000)),
+          updatedAt: now,
+        };
+        if (itemId) {
+          const ad = await get(ctx, "ads", itemId);
+          await adEditor(ctx, actor, ad);
+          if (ad.status !== "Draft" && !(wholeSchool(actor) && ad.status === "Review"))
+            invalid("Return this ad to draft before editing it.");
+          await ctx.db.patch("ads", ad._id, { ...data, revision: ad.revision + 1 });
+          await ctx.audit("ad.edited", "ads", ad._id);
+          return ad._id;
+        }
+        const created = await ctx.db.insert("ads", {
+          ...data,
+          status: "Draft",
+          createdBy: actor.user._id,
+          revision: 0,
+        });
+        await ctx.audit("ad.created", "ads", created);
+        return created;
+      }
+      const ad = await get(ctx, "ads", itemId);
+      await adEditor(ctx, actor, ad);
+      keys(s, action === "adReturn" ? ["note"] : []);
+      const revision = ad.revision + 1;
+      if (action === "adSubmit") {
+        if (ad.status !== "Draft") invalid("Only a draft ad can be submitted.");
+        if (!ad.media) invalid("Add an image or video before submitting.");
+        await ctx.db.patch("ads", ad._id, {
+          status: "Review",
+          reviewNote: undefined,
+          revision,
+          updatedAt: now,
+        });
+        await ctx.audit("ad.submitted", "ads", ad._id);
+        return ad._id;
+      }
+      // Approval, return and archive belong to Principals and Administrators.
+      if (!wholeSchool(actor)) denied();
+      if (action === "adPublish") {
+        if (ad.status !== "Draft" && ad.status !== "Review")
+          invalid("Only a draft or submitted ad can be published.");
+        if (!ad.media) invalid("Add an image or video before publishing.");
+        if (ad.endsAt <= now) invalid("This ad has already ended. Update its dates first.");
+        await audiences(ctx, actor, JSON.stringify(ad.audiences));
+        await ctx.db.patch("ads", ad._id, {
+          status: "Published",
+          approvedBy: actor.user._id,
+          reviewNote: undefined,
+          revision,
+          updatedAt: now,
+        });
+        await ctx.audit("ad.published", "ads", ad._id);
+      } else if (action === "adReturn") {
+        if (ad.status !== "Review" && ad.status !== "Published")
+          invalid("Only a submitted or published ad can return to draft.");
+        const note = text(s, "note", 300, true);
+        await ctx.db.patch("ads", ad._id, {
+          status: "Draft",
+          reviewNote: note || undefined,
+          revision,
+          updatedAt: now,
+        });
+        await ctx.audit("ad.returned", "ads", ad._id);
+      } else {
+        if (ad.status === "Archived") invalid("This ad is already archived.");
+        await ctx.db.patch("ads", ad._id, { status: "Archived", revision, updatedAt: now });
+        await ctx.audit("ad.archived", "ads", ad._id);
+      }
+      return ad._id;
+    }
     if (action.startsWith("notice")) {
       requireModule(actor, "messages");
       academic(actor);

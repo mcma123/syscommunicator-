@@ -5,7 +5,7 @@ import type { WorkflowForm, WorkflowFile } from "@school-connect/core/workflows"
 import { workflowError } from "@school-connect/backend/react";
 import { useWorkflows, useSchool } from "./store";
 import { Card, Button, Chips, Field, Feedback, Text } from "./ui";
-import { pickReport, openReport, openDownload } from "./report-files";
+import { pickReport, pickMedia, openReport, openDownload } from "./report-files";
 const supported = [
   "resources",
   "paymentHistory",
@@ -21,6 +21,7 @@ const supported = [
   "settings",
   "profile",
   "children",
+  "ads",
 ];
 export function WorkflowPanel(props: { module: ReadModule; itemId?: string; learnerId?: string }) {
   return supported.includes(props.module) ? (
@@ -86,6 +87,7 @@ function Panel({
                   "conductCreate",
                   "reportCreate",
                   "resourceCreate",
+                  "adSave",
                 ].includes(current.action)
               ) {
                 setCreated(id);
@@ -160,6 +162,24 @@ function Editor({
                 }
               />
               {!field.options?.length && <Text>No available choices</Text>}
+            </>
+          ) : field.type === "file" && form.action === "adMedia" ? (
+            <>
+              <Button
+                secondary
+                title="Choose image or video"
+                onPress={() => {
+                  void pickMedia()
+                    .then(setFile)
+                    .catch((e: unknown) => {
+                      setFailed(true);
+                      setMessage(
+                        e instanceof Error ? e.message : "Could not open this file. Try again.",
+                      );
+                    });
+                }}
+              />
+              {file && <Text>{file.name}</Text>}
             </>
           ) : field.type === "file" ? (
             <>

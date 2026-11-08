@@ -41,6 +41,12 @@ export type ResourceCategory = (typeof RESOURCE_CATEGORIES)[number];
 export const PUBLISH_STATUSES = ["Draft", "Published", "Archived"] as const;
 export type PublishStatus = (typeof PUBLISH_STATUSES)[number];
 
+/** Ad Center: teachers submit for Review; Principal/Administrator publish. */
+export const AD_STATUSES = ["Draft", "Review", "Published", "Archived"] as const;
+export type AdStatus = (typeof AD_STATUSES)[number];
+export const AD_MEDIA_KINDS = ["image", "video"] as const;
+export type AdMediaKind = (typeof AD_MEDIA_KINDS)[number];
+
 export const REPORT_STATUSES = ["Draft", "Reviewed", "Released"] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 

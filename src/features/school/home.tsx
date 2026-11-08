@@ -21,6 +21,7 @@ import campus from "@/assets/school-campus.jpg";
 import { useDashboard, useRecords, useSchool } from "./store";
 import { EventRow, NoticeCard, Placeholder } from "./components";
 import { formatDate } from "./format";
+import { AdBanner, AdPopup } from "./ads";
 
 export type OpenRecord = (module: ReadModule, id: string) => void;
 
@@ -356,6 +357,12 @@ export function HomeDashboard({ onOpen }: { onOpen: OpenRecord }) {
     <>
       <Section>
         <CampusBanner />
+      </Section>
+      <Section>
+        <AdBanner />
+      </Section>
+      <Section>
+        <AdPopup />
       </Section>
       <Section>
         <SummaryCards />

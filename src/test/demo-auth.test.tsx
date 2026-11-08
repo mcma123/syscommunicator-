@@ -160,6 +160,7 @@ describe("real account state", () => {
       "people",
       "audit",
       "settings",
+      "ads",
     ]) {
       expect(canAccessModule("Parent", module)).toBe(false);
       expect(canAccessModule("Teacher", module)).toBe(

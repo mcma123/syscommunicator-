@@ -16,6 +16,7 @@ export const modules = [
   { id: "people", title: "People & invitations", description: "Families and staff" },
   { id: "settings", title: "School settings", description: "School identity and modules" },
   { id: "audit", title: "Audit log", description: "School activity records" },
+  { id: "ads", title: "Ad Center", description: "Posters, pictures and videos for parents" },
 ] as const;
 
 export type ModuleId = (typeof modules)[number]["id"];

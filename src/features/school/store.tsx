@@ -6,6 +6,7 @@ import {
   useSchoolRecords,
   useSchoolDetail,
   useSchoolDashboard,
+  useSchoolAds,
   useNoticeReceipt,
 } from "@school-connect/backend/react";
 import { canAccessModule, type SchoolModule } from "@school-connect/core/permissions";
@@ -177,6 +178,15 @@ export function useDetail(
     } as import("@school-connect/backend/client").ReadInput,
     id,
     account?.status === "Active",
+  );
+}
+/** Running ads for the signed-in account; hidden when the school turns the module off. */
+export function useAds() {
+  const { account, accessRoles } = useSchool();
+  return useSchoolAds(
+    account?.status === "Active" &&
+      canAccessModule(accessRoles, "home", account.disabledModules) &&
+      !account.disabledModules?.includes("ads"),
   );
 }
 export function useDashboard() {

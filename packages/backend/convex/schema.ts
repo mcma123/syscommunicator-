@@ -9,6 +9,7 @@ import { literals } from "./validators";
 import { authTables } from "@convex-dev/auth/server";
 import { fileTarget, uploadSpec } from "./lib/fileValidators";
 import {
+  adStatus,
   attachment,
   attendanceStatus,
   audience,
@@ -299,6 +300,28 @@ export default defineSchema({
     publishedBy: v.id("users"),
     updatedAt: v.number(),
   }).index("by_status_and_category", ["status", "category"]),
+
+  // Ad Center: staff-published promotional media shown on parent home screens.
+  ads: defineTable({
+    title: v.string(),
+    caption: v.optional(v.string()),
+    linkUrl: v.optional(v.string()),
+    linkLabel: v.optional(v.string()),
+    media: v.optional(attachment),
+    status: adStatus,
+    startsAt: v.number(),
+    endsAt: v.number(),
+    popup: v.boolean(),
+    audiences: v.array(audience),
+    createdBy: v.id("users"),
+    approvedBy: v.optional(v.id("users")),
+    reviewNote: v.optional(v.string()),
+    updatedAt: v.number(),
+    revision: v.number(),
+  })
+    .index("by_status_and_endsAt", ["status", "endsAt"])
+    .index("by_updatedAt", ["updatedAt"])
+    .index("by_createdBy_and_updatedAt", ["createdBy", "updatedAt"]),
 
   enquiries: defineTable({
     subject: v.string(),
