@@ -11,26 +11,35 @@ type SlideAd = Pick<PublicAd, "title" | "caption" | "linkUrl" | "linkLabel"> & {
   media: { url: string; kind: "image" | "video" } | null;
 };
 
-const DISMISSED_KEY = "wgjs-ads-dismissed";
+const DISMISSED_KEY = "wgjs-ads-popup-seen";
 const reducedMotion = () =>
   typeof window !== "undefined" &&
   (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
 
-function readDismissed(): string[] {
+/**
+ * Popup ads already seen during this sign-in session. Stored with the session's start time,
+ * so every new login (a new session) shows the popup again while reloads do not.
+ */
+function readSeen(session: number): string[] {
   try {
-    const raw = window.localStorage.getItem(DISMISSED_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(DISMISSED_KEY) ?? "null");
+    if (!parsed || typeof parsed !== "object") return [];
+    const { session: stored, keys } = parsed as { session?: unknown; keys?: unknown };
+    return stored === session && Array.isArray(keys)
+      ? keys.filter((k): k is string => typeof k === "string")
+      : [];
   } catch {
     return [];
   }
 }
-function remember(key: string) {
+function rememberSeen(session: number, keys: string[]) {
   try {
-    const next = [key, ...readDismissed().filter((k) => k !== key)].slice(0, 50);
-    window.localStorage.setItem(DISMISSED_KEY, JSON.stringify(next));
+    window.localStorage.setItem(
+      DISMISSED_KEY,
+      JSON.stringify({ session, keys: keys.slice(0, 100) }),
+    );
   } catch {
-    // Blocked storage: the popup simply may show again on a later visit.
+    // Blocked storage: the popup may show again on a later visit in this login.
   }
 }
 
@@ -174,57 +183,61 @@ export function AdBanner() {
   );
 }
 
-/** Shows the first unseen popup ad once per device and ad revision. */
+/** Seen-key for a popup ad; an edit (new revision) shows it again. */
+const keyOf = (a: Pick<PublicAd, "id" | "revision">) => `${a.id}:${a.revision}`;
+
+/**
+ * After every login, one popup steps through all running ads marked "popup" (and each ad's
+ * pictures/videos). Closing it marks them seen for this login only.
+ */
 export function AdPopup() {
-  const { ads } = useAds();
-  const [dismissed, setDismissed] = useState<string[] | null>(null);
-  useEffect(() => setDismissed(readDismissed()), []);
-  const ad = useMemo(
+  const { ads, sessionStartedAt } = useAds();
+  const [seen, setSeen] = useState<{ session: number; keys: string[] } | null>(null);
+  const known = sessionStartedAt !== undefined && seen?.session === sessionStartedAt;
+  if (sessionStartedAt !== undefined && !known)
+    setSeen({ session: sessionStartedAt, keys: readSeen(sessionStartedAt) });
+  const queue = useMemo(
     () =>
-      dismissed === null
-        ? undefined
-        : ads.find((a) => a.popup && !dismissed.includes(`${a.id}:${a.revision}`)),
-    [ads, dismissed],
+      known ? ads.filter((a) => a.popup && a.items.length && !seen!.keys.includes(keyOf(a))) : [],
+    [ads, known, seen],
   );
-  const [itemIndex, setItemIndex] = useState(0);
-  if (!ad) return null;
-  const item = ad.items[Math.min(itemIndex, ad.items.length - 1)] ?? null;
+  const slides = useMemo(
+    () => queue.flatMap((ad, adIndex) => ad.items.map((item) => ({ ad, adIndex, item }))),
+    [queue],
+  );
+  const [index, setIndex] = useState(0);
+  const slide = slides[Math.min(index, slides.length - 1)];
+  if (!slide || sessionStartedAt === undefined) return null;
+  const { ad, adIndex, item } = slide;
   const close = () => {
-    const key = `${ad.id}:${ad.revision}`;
-    remember(key);
-    setDismissed((d) => [...(d ?? []), key]);
-    setItemIndex(0);
+    const keys = [...(seen?.keys ?? []), ...queue.map(keyOf)];
+    rememberSeen(sessionStartedAt, keys);
+    setSeen({ session: sessionStartedAt, keys });
+    setIndex(0);
   };
+  const go = (step: number) => setIndex((i) => (i + step + slides.length) % slides.length);
   return (
     <Dialog open onOpenChange={(open) => !open && close()}>
       <DialogContent className="ad-popup p-0 gap-0 sm:max-w-[560px]">
         <div className="ad-popup-media">
-          <AdMedia key={item?.url} media={item} title={ad.title} controls />
-          {ad.items.length > 1 && (
+          <AdMedia key={`${ad.id}:${item.url}`} media={item} title={ad.title} controls />
+          {slides.length > 1 && (
             <div className="ad-controls">
-              <button
-                type="button"
-                aria-label="Previous picture or video"
-                onClick={() => setItemIndex((i) => (i - 1 + ad.items.length) % ad.items.length)}
-              >
+              <button type="button" aria-label="Previous slide" onClick={() => go(-1)}>
                 <ChevronLeft size={16} />
               </button>
               <div className="ad-dots">
-                {ad.items.map((it, i) => (
+                {slides.map((s, i) => (
                   <button
-                    key={it.url}
+                    key={`${s.ad.id}:${s.item.url}`}
                     type="button"
-                    aria-label={`Item ${i + 1} of ${ad.items.length}`}
-                    aria-selected={i === itemIndex}
-                    onClick={() => setItemIndex(i)}
+                    aria-label={`${s.ad.title}, ${i + 1} of ${slides.length}`}
+                    aria-selected={i === index}
+                    onClick={() => setIndex(i)}
                   />
                 ))}
               </div>
-              <button
-                type="button"
-                aria-label="Next picture or video"
-                onClick={() => setItemIndex((i) => (i + 1) % ad.items.length)}
-              >
+              <button type="button" aria-label="Next slide" onClick={() => go(1)}>
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -233,14 +246,21 @@ export function AdPopup() {
         <div className="ad-popup-body">
           <span className="ad-eyebrow">
             <Megaphone size={11} /> FROM YOUR SCHOOL
+            {queue.length > 1 && ` · ${adIndex + 1} OF ${queue.length}`}
           </span>
           <DialogTitle>{ad.title}</DialogTitle>
           <DialogDescription>{ad.caption || "A message from your school."}</DialogDescription>
           <div className="ad-popup-actions">
             <AdLink ad={ad} className="ad-cta" />
+            {slides.length > 1 && index < slides.length - 1 ? (
+              <Button variant="outline" onClick={() => go(1)}>
+                Next
+                <ChevronRight size={14} />
+              </Button>
+            ) : null}
             <Button variant="outline" onClick={close}>
               <X size={14} />
-              Got it
+              {slides.length > 1 && index < slides.length - 1 ? "Skip all" : "Got it"}
             </Button>
           </div>
         </div>

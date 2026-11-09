@@ -245,16 +245,23 @@ export function useSchoolAds(enabled: boolean) {
   }, []);
   const requests = useMemo<RequestForQueries>(() => {
     const q: RequestForQueries = {};
-    if (enabled) q["ads"] = { query: api.ads.active, args: { now } };
+    if (enabled) {
+      q["ads"] = { query: api.ads.active, args: { now } };
+      q["session"] = { query: api.ads.session, args: {} };
+    }
     return q;
   }, [enabled, now]);
-  const value = useQueries(requests)["ads"];
+  const results = useQueries(requests);
+  const value = results["ads"];
+  const session = results["session"];
   const ads =
     value instanceof Error
       ? []
       : ((value as import("@school-connect/core/live").PublicAd[] | undefined) ?? []);
   return {
     ads,
+    /** Start of the current sign-in session: a per-login marker for popup dismissal. */
+    sessionStartedAt: typeof session === "number" ? session : undefined,
     status:
       value instanceof Error
         ? ("error" as const)

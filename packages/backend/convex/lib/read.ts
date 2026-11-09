@@ -411,7 +411,7 @@ export async function project(
           field("Created by", author?.name),
           field("Link", ad.linkUrl),
           field("Button label", ad.linkLabel),
-          field("Popup", ad.popup ? "Yes, once per device" : "No"),
+          field("Popup", ad.popup ? "Yes, after every login" : "No"),
           field("Media items", String(items.length)),
           ...(ad.reviewNote ? [field("Review note", ad.reviewNote)] : []),
         ],

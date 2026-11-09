@@ -257,9 +257,7 @@ describe("Ad Center with Cloudflare R2 media", () => {
       s.upload(s.principal.client, adId, mp4(4096, "free"), "video/mp4", "fake.mp4"),
     ).rejects.toThrow(/contents/);
     expect([...bucket.keys()]).toEqual([]);
-    expect(await s.principal.client.query(api.ads.media, { adId: adId as Id<"ads"> })).toEqual(
-      [],
-    );
+    expect(await s.principal.client.query(api.ads.media, { adId: adId as Id<"ads"> })).toEqual([]);
 
     // The pending MOV reservation counts toward the limit until it expires.
     for (let i = 0; i < 9; i++)
@@ -344,6 +342,20 @@ describe("Ad Center with Cloudflare R2 media", () => {
     await s.t.action(internal.ads.cleanupMedia, {});
     expect(bucket.size).toBe(0);
     expect(await s.t.run((ctx) => ctx.db.get("adMedia", mediaId))).toBeNull();
+  });
+
+  it("gives each login its own session marker for popups", async () => {
+    const s = await setup();
+    const first = await s.parent.client.query(api.ads.session, {});
+    const user = s.parent.user;
+    const again = await s.t.run((ctx) =>
+      ctx.db.insert("authSessions", { userId: user._id, expirationTime: Date.now() + 86400000 }),
+    );
+    const second = await s.t
+      .withIdentity({ subject: `${user._id}|${again}` })
+      .query(api.ads.session, {});
+    expect(typeof first).toBe("number");
+    expect(second).not.toBe(first);
   });
 
   it("validates links and dates", async () => {

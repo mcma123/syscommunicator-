@@ -20,7 +20,7 @@ import { localStore } from "./local-store";
 type SlideAd = Pick<PublicAd, "title" | "caption" | "linkUrl" | "linkLabel"> & {
   media: { url: string; kind: "image" | "video" } | null;
 };
-const DISMISSED_KEY = "wgjs-ads-dismissed";
+const SEEN_KEY = "wgjs-ads-popup-seen";
 
 function AdVideo({ url, fit }: { url: string; fit: "cover" | "contain" }) {
   const player = useVideoPlayer(url, (p) => {
@@ -155,74 +155,86 @@ export function AdCarousel() {
   );
 }
 
-/** Shows the first unseen popup ad once per device and ad revision. */
+/** Seen-key for a popup ad; an edit (new revision) shows it again. */
+const keyOf = (a: { id: string; revision: number }) => `${a.id}:${a.revision}`;
+
+/**
+ * After every login, one popup steps through all running ads marked "popup" (and each ad's
+ * pictures/videos). Closing it marks them seen for this sign-in session only, so the next
+ * login shows them again.
+ */
 export function AdPopup() {
-  const { ads } = useAds();
-  const [dismissed, setDismissed] = useState<string[] | null>(null);
+  const { ads, sessionStartedAt } = useAds();
+  const [seen, setSeen] = useState<{ session: number; keys: string[] } | null>(null);
   useEffect(() => {
-    void localStore.getItem(DISMISSED_KEY).then((raw) => {
+    if (sessionStartedAt === undefined) return;
+    let live = true;
+    void localStore.getItem(SEEN_KEY).then((raw) => {
+      let keys: string[] = [];
       try {
-        const parsed: unknown = raw ? JSON.parse(raw) : [];
-        setDismissed(
-          Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [],
-        );
+        const parsed = JSON.parse(raw ?? "null") as { session?: unknown; keys?: unknown } | null;
+        if (parsed?.session === sessionStartedAt && Array.isArray(parsed.keys))
+          keys = parsed.keys.filter((k): k is string => typeof k === "string");
       } catch {
-        setDismissed([]);
+        keys = [];
       }
+      if (live) setSeen({ session: sessionStartedAt, keys });
     });
-  }, []);
-  const ad = useMemo(
+    return () => {
+      live = false;
+    };
+  }, [sessionStartedAt]);
+  const known = sessionStartedAt !== undefined && seen?.session === sessionStartedAt;
+  const queue = useMemo(
     () =>
-      dismissed === null
-        ? undefined
-        : ads.find((a) => a.popup && !dismissed.includes(`${a.id}:${a.revision}`)),
-    [ads, dismissed],
+      known ? ads.filter((a) => a.popup && a.items.length && !seen!.keys.includes(keyOf(a))) : [],
+    [ads, known, seen],
   );
-  const [itemIndex, setItemIndex] = useState(0);
-  if (!ad) return null;
-  const item = ad.items[Math.min(itemIndex, ad.items.length - 1)] ?? null;
+  const slides = useMemo(
+    () => queue.flatMap((ad, adIndex) => ad.items.map((item) => ({ ad, adIndex, item }))),
+    [queue],
+  );
+  const [index, setIndex] = useState(0);
+  const slide = slides[Math.min(index, slides.length - 1)];
+  if (!slide || sessionStartedAt === undefined) return null;
+  const { ad, adIndex, item } = slide;
+  const last = index >= slides.length - 1;
   const close = () => {
-    setItemIndex(0);
-    const key = `${ad.id}:${ad.revision}`;
-    const next = [key, ...(dismissed ?? []).filter((k) => k !== key)].slice(0, 50);
-    setDismissed(next);
-    void localStore.setItem(DISMISSED_KEY, JSON.stringify(next));
+    const keys = [...(seen?.keys ?? []), ...queue.map(keyOf)].slice(0, 100);
+    setSeen({ session: sessionStartedAt, keys });
+    setIndex(0);
+    void localStore.setItem(SEEN_KEY, JSON.stringify({ session: sessionStartedAt, keys }));
   };
   return (
     <Modal transparent visible animationType="none" onRequestClose={close}>
       <View style={styles.backdrop}>
         <View style={styles.popup} accessibilityViewIsModal>
           <View style={styles.popupMedia}>
-            <AdMedia key={item?.url} ad={{ ...ad, media: item }} fit="contain" />
+            <AdMedia key={`${ad.id}:${item.url}`} ad={{ ...ad, media: item }} fit="contain" />
           </View>
-          {ad.items.length > 1 && (
-            <View style={styles.popupSteps}>
-              <Button
-                secondary
-                title="Previous"
-                onPress={() => setItemIndex((i) => (i - 1 + ad.items.length) % ad.items.length)}
-              />
-              <Text style={{ color: colors.muted }}>
-                {itemIndex + 1} of {ad.items.length}
-              </Text>
-              <Button
-                secondary
-                title="Next"
-                onPress={() => setItemIndex((i) => (i + 1) % ad.items.length)}
-              />
-            </View>
-          )}
           <View style={{ padding: 20, gap: 8 }}>
             <Text weight="bold" style={{ color: colors.primary, fontSize: 11 }}>
               FROM YOUR SCHOOL
+              {queue.length > 1 ? ` · ${adIndex + 1} OF ${queue.length}` : ""}
             </Text>
             <Text weight="bold" style={{ fontSize: 20 }}>
               {ad.title}
             </Text>
             {ad.caption ? <Text style={{ color: colors.muted }}>{ad.caption}</Text> : null}
+            {slides.length > 1 && (
+              <View style={styles.dots}>
+                {slides.map((s, i) => (
+                  <View
+                    key={`${s.ad.id}:${s.item.url}`}
+                    style={[styles.dot, i === index && styles.dotActive]}
+                  />
+                ))}
+              </View>
+            )}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 6 }}>
               <AdButton ad={ad} />
-              <Button secondary title="Got it" onPress={close} />
+              {!last && <Button title="Next" onPress={() => setIndex((i) => i + 1)} />}
+              <Button secondary title={last ? "Got it" : "Skip all"} onPress={close} />
             </View>
           </View>
         </View>
@@ -328,12 +340,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   popupMedia: { aspectRatio: 16 / 9, backgroundColor: "#1a1012" },
-  popupSteps: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
 });

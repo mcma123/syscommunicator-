@@ -189,7 +189,7 @@ export function AdComposer({
         onChange={(label) => set("audience", audience.find((o) => o.label === label)?.value ?? "")}
       />
       <View style={styles.switchRow}>
-        <Text style={{ flex: 1 }}>Also show as a popup (once per device)</Text>
+        <Text style={{ flex: 1 }}>Also show as a popup after every login</Text>
         <Switch
           accessibilityLabel="Also show as a popup"
           value={values["popup"] === "true"}

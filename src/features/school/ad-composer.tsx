@@ -326,7 +326,7 @@ export function AdComposer({
               checked={values["popup"] === "true"}
               onChange={(e) => set("popup", String(e.target.checked))}
             />
-            Also show as a popup (once per device)
+            Also show as a popup after every login
           </label>
           <label className="toggle-chip composer-toggle">
             <input

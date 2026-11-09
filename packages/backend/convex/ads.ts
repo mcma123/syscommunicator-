@@ -77,6 +77,21 @@ export const active = authedQuery({
   },
 });
 
+/**
+ * When the current sign-in session started. Clients use it as a per-login marker so popup
+ * ads show again after every new login (refreshing tokens keeps the same session).
+ */
+export const session = authedQuery({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const sessionId = await getAuthSessionId(ctx);
+    const current = sessionId ? await ctx.db.get("authSessions", sessionId) : null;
+    if (!current) denied();
+    return current._creationTime;
+  },
+});
+
 /** Media of one ad for its editors (composer thumbnails, remove and reorder). */
 export const media = authedQuery({
   args: { adId: v.id("ads") },

@@ -245,6 +245,7 @@ export const api = {
   },
   ads: {
     active: makeFunctionReference<"query", { now: number }, PublicAd[]>("ads:active"),
+    session: makeFunctionReference<"query", Record<string, never>, number>("ads:session"),
     media: makeFunctionReference<"query", { adId: Id<"ads"> }, AdMediaItem[]>("ads:media"),
     prepareUpload: makeFunctionReference<
       "action",

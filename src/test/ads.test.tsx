@@ -7,6 +7,7 @@ import { adStage } from "../features/school/format";
 
 const state = vi.hoisted(() => ({
   ads: [] as PublicAd[],
+  session: 1000 as number | undefined,
   submit: vi.fn(),
   upload: vi.fn(),
 }));
@@ -16,7 +17,7 @@ vi.mock("../features/school/store", async () => {
   );
   return {
     adContentType: backend.adContentType,
-    useAds: () => ({ ads: state.ads, status: "ready" }),
+    useAds: () => ({ ads: state.ads, status: "ready", sessionStartedAt: state.session }),
     useSchool: () => ({ offline: false, notify: vi.fn() }),
     useAdMedia: () => ({ items: [], status: "ready" }),
     useAdUploader: () => ({ upload: state.upload, remove: vi.fn(), move: vi.fn() }),
@@ -73,6 +74,7 @@ const file = (name: string, size: number, type = "") => {
 beforeEach(() => {
   window.localStorage.clear();
   state.ads = [];
+  state.session = 1000;
   state.submit.mockReset().mockResolvedValue({ id: "ad-new" });
   state.upload.mockReset().mockResolvedValue("media-1");
   URL.createObjectURL = vi.fn(() => "blob:preview");
@@ -116,7 +118,8 @@ describe("Ad Center banner and popup", () => {
     expect(screen.getByRole("heading", { name: "Ad b" })).toBeInTheDocument();
   });
 
-  it("pops up once per ad revision and steps through its items", () => {
+  it("shows every popup ad in one popup after each login, not again until the next", () => {
+    state.session = 1000;
     state.ads = [
       ad("p", {
         popup: true,
@@ -125,21 +128,40 @@ describe("Ad Center banner and popup", () => {
           { url: "https://media.example/p2.png", kind: "image", contentType: "image/png" },
         ],
       }),
+      ad("q", { popup: true }),
+      ad("banner-only"),
     ];
     const first = render(<AdPopup />);
     const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("Ad p");
+    expect(dialog).toHaveTextContent("1 OF 2");
     expect(dialog.querySelector("img")).toHaveAttribute("src", "https://media.example/p1.png");
-    fireEvent.click(screen.getByRole("button", { name: "Next picture or video" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /^Next$/ })[0]!);
     expect(dialog.querySelector("img")).toHaveAttribute("src", "https://media.example/p2.png");
+    fireEvent.click(screen.getAllByRole("button", { name: /^Next$/ })[0]!);
+    expect(screen.getByRole("dialog")).toHaveTextContent("Ad q");
+    expect(screen.getByRole("dialog")).toHaveTextContent("2 OF 2");
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("Ad banner-only");
     fireEvent.click(screen.getByRole("button", { name: "Got it" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     first.unmount();
-    render(<AdPopup />);
+
+    // A reload within the same login keeps it closed.
+    const reload = render(<AdPopup />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    cleanup();
-    state.ads = [{ ...state.ads[0]!, revision: 2 }];
+    reload.unmount();
+
+    // Signing out and in again starts a new session: the popup returns.
+    state.session = 2000;
+    const relogin = render(<AdPopup />);
+    expect(screen.getByRole("dialog")).toHaveTextContent("Ad p");
+    fireEvent.click(screen.getByRole("button", { name: "Skip all" }));
+    relogin.unmount();
+
+    // An edited ad (new revision) shows again in the same login.
+    state.ads = [{ ...state.ads[1]!, revision: 2 }];
     render(<AdPopup />);
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveTextContent("Ad q");
   });
 
   it("labels the staff stage from status and schedule", () => {

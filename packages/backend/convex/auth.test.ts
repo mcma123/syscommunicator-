@@ -50,6 +50,7 @@ const clientContract: typeof publicApi = {
   dashboard: { current: api.dashboard.current, advance: api.dashboard.advance },
   ads: {
     active: api.ads.active,
+    session: api.ads.session,
     media: api.ads.media,
     prepareUpload: api.ads.prepareUpload,
     finishUpload: api.ads.finishUpload,

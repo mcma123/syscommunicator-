@@ -240,7 +240,7 @@ export const forms = authedQuery({
               "datetime",
             ),
             select("audience", "Audience", options, audience),
-            toggle("popup", "Also show as a popup (once per device)", ad?.popup),
+            toggle("popup", "Also show as a popup after every login", ad?.popup),
           ],
           global
             ? "Ads start as drafts. Add pictures or videos, then publish."
