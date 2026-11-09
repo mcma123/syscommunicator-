@@ -55,26 +55,76 @@ export function AdMedia({
   /** Defaults to showing controls only when the video cannot autoplay. */
   controls?: boolean;
 }) {
+  // Remount per URL so each picture/video starts with its own loading shimmer.
   if (!media) return <div className="ad-media ad-media-empty" aria-hidden />;
-  if (media.kind === "video") {
-    const play = autoPlay && !reducedMotion();
-    return (
-      <video
-        className="ad-media"
-        // Without autoplay, seek a fraction in so browsers paint the first frame as a thumbnail.
-        src={play ? media.url : `${media.url}#t=0.1`}
-        muted
-        loop
-        playsInline
-        autoPlay={play}
-        controls={controls ?? !play}
-        preload="metadata"
-        aria-label={title}
-      />
-    );
-  }
   return (
-    <img className="ad-media" src={media.url} alt={title} loading={autoPlay ? "lazy" : "eager"} />
+    <LoadingMedia
+      key={media.url}
+      media={media}
+      title={title}
+      autoPlay={autoPlay}
+      controls={controls}
+    />
+  );
+}
+
+/** Shows a shimmer until the picture or video can display, and a calm message if it fails. */
+function LoadingMedia({
+  media,
+  title,
+  autoPlay,
+  controls,
+}: {
+  media: NonNullable<SlideAd["media"]>;
+  title: string;
+  autoPlay: boolean;
+  controls: boolean | undefined;
+}) {
+  const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+  const done = () => setState("ready");
+  const failed = () => setState("failed");
+  const play = media.kind === "video" && autoPlay && !reducedMotion();
+  return (
+    <>
+      {state !== "ready" && (
+        <div
+          className={`ad-media ad-media-loading ${state === "failed" ? "is-failed" : ""}`}
+          role={state === "failed" ? "img" : "status"}
+          aria-label={state === "failed" ? `${title} could not be loaded` : `Loading ${title}`}
+        >
+          {state === "failed" ? <span>Picture unavailable right now</span> : null}
+        </div>
+      )}
+      {media.kind === "video" ? (
+        <video
+          className={`ad-media ${state === "ready" ? "is-ready" : "is-pending"}`}
+          // Without autoplay, seek a fraction in so browsers paint the first frame as a thumbnail.
+          src={play ? media.url : `${media.url}#t=0.1`}
+          muted
+          loop
+          playsInline
+          autoPlay={play}
+          controls={controls ?? !play}
+          preload="metadata"
+          aria-label={title}
+          onLoadedData={done}
+          onError={failed}
+        />
+      ) : (
+        <img
+          className={`ad-media ${state === "ready" ? "is-ready" : "is-pending"}`}
+          src={media.url}
+          alt={title}
+          loading={autoPlay ? "lazy" : "eager"}
+          onLoad={done}
+          onError={failed}
+          ref={(img) => {
+            // Cached images can finish before React attaches onLoad.
+            if (img?.complete && img.naturalWidth > 0 && state === "loading") done();
+          }}
+        />
+      )}
+    </>
   );
 }
 

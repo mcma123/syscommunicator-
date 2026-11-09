@@ -279,6 +279,11 @@ button.event-row:last-child{border-bottom:0;}
 .ad-popup-media .ad-controls{bottom:10px;}
 .spin{animation:spin 1s linear infinite;} @keyframes spin{to{transform:rotate(360deg);}}
 @media(max-width:650px){.ad-launcher{flex-direction:column;align-items:stretch;}.ad-composer{padding:16px;}.ad-composer-foot button{width:100%;}}
+/* Ad media loading shimmer */
+.ad-media.is-pending{opacity:0;} .ad-media.is-ready{opacity:1;transition:opacity .35s ease;}
+.ad-media-loading{z-index:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(100deg,#2a1418 20%,#4a2328 40%,#2a1418 60%);background-size:220% 100%;animation:ad-shimmer 1.3s ease-in-out infinite;color:#ffffffb3;font-size:12px;}
+.ad-media-loading.is-failed{animation:none;background:linear-gradient(135deg,var(--school-deep-red),var(--primary));}
+@keyframes ad-shimmer{from{background-position:120% 0;}to{background-position:-120% 0;}}
 /* Theme toggle and dark-theme refinements for styles that use fixed colours. */
 .theme-toggle svg{transition:transform .35s cubic-bezier(.4,0,.2,1);} .theme-toggle:hover svg{transform:rotate(-18deg);} .dark .theme-toggle{color:var(--school-gold);}
 ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal;}

@@ -164,6 +164,25 @@ describe("Ad Center banner and popup", () => {
     expect(screen.getByRole("dialog")).toHaveTextContent("Ad q");
   });
 
+  it("shows a loading shimmer until media loads, and a calm message if it fails", () => {
+    state.ads = [
+      ad("s"),
+      ad("f", {
+        items: [{ url: "https://media.example/f.png", kind: "image", contentType: "image/png" }],
+      }),
+    ];
+    const { container } = render(<AdBanner />);
+    expect(screen.getByRole("status", { name: "Loading Ad s" })).toBeInTheDocument();
+    fireEvent.load(container.querySelector("img")!);
+    expect(screen.queryByRole("status", { name: "Loading Ad s" })).not.toBeInTheDocument();
+    expect(container.querySelector("img")).toHaveClass("is-ready");
+    fireEvent.click(screen.getByRole("button", { name: "Next ad" }));
+    fireEvent.error(container.querySelector("img")!);
+    expect(screen.getByRole("img", { name: "Ad f could not be loaded" })).toHaveTextContent(
+      "Picture unavailable right now",
+    );
+  });
+
   it("labels the staff stage from status and schedule", () => {
     const base = {
       id: "x",

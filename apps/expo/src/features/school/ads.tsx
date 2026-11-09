@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Linking,
   Modal,
   Pressable,
@@ -22,19 +23,31 @@ type SlideAd = Pick<PublicAd, "title" | "caption" | "linkUrl" | "linkLabel"> & {
 };
 const SEEN_KEY = "wgjs-ads-popup-seen";
 
-function AdVideo({ url, fit }: { url: string; fit: "cover" | "contain" }) {
+function AdVideo({
+  url,
+  fit,
+  onState,
+}: {
+  url: string;
+  fit: "cover" | "contain";
+  onState: (state: "ready" | "failed") => void;
+}) {
   const player = useVideoPlayer(url, (p) => {
     p.muted = true;
     p.loop = true;
   });
   // Start once the source is ready; web browsers ignore play() before the media loads.
   useEffect(() => {
-    if (player.status === "readyToPlay") player.play();
-    const sub = player.addListener("statusChange", ({ status }) => {
-      if (status === "readyToPlay") player.play();
-    });
+    const react = (status: string) => {
+      if (status === "readyToPlay") {
+        player.play();
+        onState("ready");
+      } else if (status === "error") onState("failed");
+    };
+    react(player.status);
+    const sub = player.addListener("statusChange", ({ status }) => react(status));
     return () => sub.remove();
-  }, [player]);
+  }, [player, onState]);
   return (
     <View style={StyleSheet.absoluteFill}>
       <VideoView
@@ -50,15 +63,51 @@ function AdVideo({ url, fit }: { url: string; fit: "cover" | "contain" }) {
 
 function AdMedia({ ad, fit = "cover" }: { ad: SlideAd; fit?: "cover" | "contain" }) {
   if (!ad.media) return <View style={[StyleSheet.absoluteFill, styles.empty]} />;
-  return ad.media.kind === "video" ? (
-    <AdVideo url={ad.media.url} fit={fit} />
-  ) : (
-    <Image
-      source={{ uri: ad.media.url }}
-      style={StyleSheet.absoluteFill}
-      contentFit={fit}
-      accessibilityLabel={ad.title}
-    />
+  // Remount per URL so each picture/video starts with its own loading state.
+  return <LoadingMedia key={ad.media.url} ad={ad} media={ad.media} fit={fit} />;
+}
+
+/** Shows a loading indicator until the picture or video can display, and a message on failure. */
+function LoadingMedia({
+  ad,
+  media,
+  fit,
+}: {
+  ad: SlideAd;
+  media: NonNullable<SlideAd["media"]>;
+  fit: "cover" | "contain";
+}) {
+  const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+  const onState = useCallback((next: "ready" | "failed") => setState(next), []);
+  return (
+    <>
+      {media.kind === "video" ? (
+        <AdVideo url={media.url} fit={fit} onState={onState} />
+      ) : (
+        <Image
+          source={{ uri: media.url }}
+          style={StyleSheet.absoluteFill}
+          contentFit={fit}
+          accessibilityLabel={ad.title}
+          onLoad={() => onState("ready")}
+          onError={() => onState("failed")}
+        />
+      )}
+      {state !== "ready" && (
+        <View
+          style={[StyleSheet.absoluteFill, styles.loading]}
+          accessibilityLabel={
+            state === "failed" ? `${ad.title} could not be loaded` : `Loading ${ad.title}`
+          }
+        >
+          {state === "failed" ? (
+            <Text style={styles.loadingText}>Picture unavailable right now</Text>
+          ) : (
+            <ActivityIndicator color="#ffe2a3" />
+          )}
+        </View>
+      )}
+    </>
   );
 }
 
@@ -287,6 +336,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.deepRed,
   },
   empty: { backgroundColor: colors.deepRed },
+  loading: { alignItems: "center", justifyContent: "center", backgroundColor: "#2a1418" },
+  loadingText: { color: "rgba(255,255,255,0.75)", fontSize: 13 },
   overlay: {
     position: "absolute",
     left: 0,
