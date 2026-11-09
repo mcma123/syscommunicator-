@@ -51,3 +51,6 @@ Both platforms require confirmations where described by the server, disable pend
 ## Ads
 - `useSchoolAds(enabled)` subscribes to `ads.active` with a minute-rounded `now`; each ad carries ordered `items` (signed gateway links). Both clients flatten items into home spotlight slides and show one popup after every login that steps through all popup ads (seen state is keyed to the sign-in session from `ads.session`, so a new login shows it again).
 - Staff use `useAdMedia(adId)` for editor thumbnails and `useAdMediaUploader()` for reserve → direct R2 PUT (XHR progress on web, fetch with a file Blob natively) → verify, plus remove/reorder. `adContentType(name)` maps file names to the allowed media types.
+
+## Staff learner folders
+- `classes` records carry the grade name (`category` and a `Grade` field), `Grade order`, `Class teacher` and an active `Learners` count (bounded at 200+). Teachers receive only classes they teach; Principals/Administrators receive all. Clients group them into grade folders and open a class through `classLearners` (`parentId` = class).

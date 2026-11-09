@@ -13,12 +13,13 @@ import {
 } from "@school-connect/core/calendar";
 import { shareEvent } from "./calendar-export";
 import { schoolConfig } from "@school-connect/core";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, View, Linking } from "react-native";
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import type { ReadModule, ReadOptions, ModuleRecord } from "@school-connect/core/live";
+import { countLabel, groupClasses } from "@school-connect/core/live";
 import {
   canAccessModule,
   accessRolesFor,
@@ -173,8 +174,82 @@ export function ModuleList({
     </Screen>
   );
 }
+/** Staff Learners: grade folders → class folders → learners (teachers see their own classes). */
+function LearnerFolders() {
+  const [mode, setMode] = useState("Browse by grade");
+  const [grade, setGrade] = useState<string>();
+  const [classId, setClassId] = useState<string>();
+  const result = useRecords("classes");
+  const { canLoadMore, loadingMore, loadMore } = result;
+  useEffect(() => {
+    if (canLoadMore && !loadingMore) loadMore();
+  }, [canLoadMore, loadingMore, loadMore]);
+  const grades = useMemo(() => groupClasses(result.data.records), [result.data.records]);
+  const currentGrade = grades.find((g) => g.name === grade);
+  const currentClass = currentGrade?.classes.find((c) => c.id === classId);
+  return (
+    <>
+      <Chips items={["Browse by grade", "Search all learners"]} value={mode} onChange={setMode} />
+      {mode === "Search all learners" ? (
+        <RecordList module="children" detail="learner" />
+      ) : (
+        <>
+          {currentGrade && (
+            <Button
+              secondary
+              icon="arrow-back"
+              title={currentClass ? `Back to ${currentGrade.name}` : "Back to all grades"}
+              onPress={() => (currentClass ? setClassId(undefined) : setGrade(undefined))}
+            />
+          )}
+          <Heading title={currentClass?.label ?? currentGrade?.name ?? "All grades"} />
+          {result.status === "loading" && !grades.length ? (
+            <ActivityIndicator accessibilityLabel="Loading classes" color={colors.primary} />
+          ) : !grades.length ? (
+            <Empty title="No classes yet" body="Your classes will appear here." />
+          ) : currentClass ? (
+            <RecordList
+              key={currentClass.id}
+              module="classLearners"
+              options={{ parentId: currentClass.id }}
+              detail="learner"
+            />
+          ) : currentGrade ? (
+            currentGrade.classes.map((c) => (
+              <LinkRow
+                key={c.id}
+                title={c.label}
+                subtitle={`${countLabel(c.learners, "learner")}${c.teacher ? ` · ${c.teacher}` : ""}`}
+                icon="folder-open-outline"
+                onPress={() => setClassId(c.id)}
+              />
+            ))
+          ) : (
+            grades.map((g) => (
+              <LinkRow
+                key={g.name}
+                title={g.name}
+                subtitle={`${g.classes.length === 1 ? "1 class" : `${g.classes.length} classes`} · ${countLabel(g.learners, "learner")}`}
+                icon="folder-outline"
+                onPress={() => setGrade(g.name)}
+              />
+            ))
+          )}
+        </>
+      )}
+    </>
+  );
+}
 function ModuleContent({ module, detail }: { module: SchoolModule; detail?: string }) {
   const [source, setSource] = useState<ReadModule>(module);
+  const { account } = useSchool();
+  if (module === "children" && (account?.roles.length ?? 0) > 0)
+    return (
+      <>
+        <WorkflowPanel module={module} />
+        <LearnerFolders />
+      </>
+    );
   return (
     <>
       {(module === "groups" || module === "payments" || module === "people") && (
@@ -630,7 +705,11 @@ export function EventScreen() {
   return <Detail module="calendar" title="School event" />;
 }
 export function ChildrenScreen() {
-  return <ModuleList module="children" title="Your children" detail="learner" />;
+  const { account } = useSchool();
+  const staff = (account?.roles.length ?? 0) > 0;
+  return (
+    <ModuleList module="children" title={staff ? "Learners" : "Your children"} detail="learner" />
+  );
 }
 export function LearnerScreen() {
   return <Detail module="children" title="Learner" />;

@@ -90,3 +90,57 @@ export interface DashboardState {
   upcomingEvents: number | null;
   amountDueCents: number | null;
 }
+
+/** Staff Learners folders: group class records (grade, order, teacher, learner count) by grade. */
+export type ClassFolder = {
+  id: string;
+  name: string;
+  label: string;
+  grade: string;
+  gradeOrder: number;
+  teacher: string | null;
+  learners: string;
+};
+export type GradeFolder = { name: string; order: number; classes: ClassFolder[]; learners: number };
+
+const recordField = (r: ModuleRecord, label: string) => {
+  const v = r.fields?.find((f) => f.label === label)?.value;
+  return v && v !== "Not provided" ? v : null;
+};
+/** "1A" in "Grade 1" reads as "Grade 1A"; other names keep their grade for context. */
+export function classLabel(grade: string, name: string) {
+  if (/^grade\b/i.test(name)) return name;
+  if (/^\d/.test(name)) return `Grade ${name}`;
+  return `${grade} · ${name}`;
+}
+export function groupClasses(records: ModuleRecord[]): GradeFolder[] {
+  const grades = new Map<string, GradeFolder>();
+  for (const r of records) {
+    const grade = recordField(r, "Grade") ?? r.category ?? "Unassigned grade";
+    const folder: ClassFolder = {
+      id: r.id,
+      name: r.title,
+      label: classLabel(grade, r.title),
+      grade,
+      gradeOrder: Number(recordField(r, "Grade order") ?? 999),
+      teacher: recordField(r, "Class teacher"),
+      learners: recordField(r, "Learners") ?? "0",
+    };
+    const g = grades.get(grade) ?? {
+      name: grade,
+      order: folder.gradeOrder,
+      classes: [],
+      learners: 0,
+    };
+    g.classes.push(folder);
+    g.learners += Number.parseInt(folder.learners, 10) || 0;
+    grades.set(grade, g);
+  }
+  return [...grades.values()]
+    .map((g) => ({ ...g, classes: g.classes.sort((a, b) => a.name.localeCompare(b.name)) }))
+    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+}
+/** "1 learner", "5 learners". */
+export function countLabel(count: number | string, word: string) {
+  return `${count} ${word}${String(count) === "1" ? "" : "s"}`;
+}

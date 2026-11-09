@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { SchoolShell, navigation, staffNavigation } from "./shell";
 import { Heading, ChildPicker, Empty, RecordCard, Placeholder } from "./components";
 import { AdList, AdPreview } from "./ads";
+import { LearnerFolders } from "./learner-folders";
 import { AdComposer, AdComposerLauncher } from "./ad-composer";
 import {
   CalendarAgenda,
@@ -320,6 +321,7 @@ export function RecordBrowser({
       "resources",
       "contact",
       "ads",
+      "classLearners",
     ].includes(module);
   const list = () => {
     if (!styled)
@@ -329,7 +331,8 @@ export function RecordBrowser({
     if (module === "resources") return <ResourceList records={records} onOpen={open} />;
     if (module === "contact") return <EnquiryList records={records} onOpen={open} />;
     if (module === "ads") return <AdList records={records} onOpen={open} />;
-    if (module === "children") return <LearnerGrid records={records} onOpen={open} />;
+    if (module === "children" || module === "classLearners")
+      return <LearnerGrid records={records} onOpen={open} />;
     if (module === "payments" || module === "paymentHistory")
       return (
         <PaymentsTable records={records} history={module === "paymentHistory"} onOpen={open} />
@@ -373,7 +376,7 @@ export function RecordBrowser({
                   ? "Search updates..."
                   : module === "calendar"
                     ? "Search events..."
-                    : module === "children"
+                    : module === "children" || module === "classLearners"
                       ? "Search learners..."
                       : module === "payments" || module === "paymentHistory"
                         ? "Search charges..."
@@ -676,6 +679,19 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
             <Boundary key="people:import">
               <RosterImport />
             </Boundary>
+          ) : module === "children" && staff ? (
+            <LearnerFolders
+              renderClass={(classId) => (
+                <Boundary key={`class:${classId}`}>
+                  <RecordBrowser module="classLearners" options={{ parentId: classId }} />
+                </Boundary>
+              )}
+              renderSearch={() => (
+                <Boundary key="children:all">
+                  <RecordBrowser module="children" />
+                </Boundary>
+              )}
+            />
           ) : (
             <Boundary key={`${module}:${source}`}>
               <RecordBrowser

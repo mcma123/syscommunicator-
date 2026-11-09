@@ -631,7 +631,22 @@ export async function project(
   if (module === "classes") {
     const c = row as Doc<"classes">;
     if (!wholeSchool(actor) && !actor.teachingClasses.some((own) => own._id === c._id)) return null;
-    return record(c._id, c.name, "", "Class", String(c.year));
+    // Grade folder data for the staff Learners browser (bounded learner count).
+    const grade = await ctx.db.get("grades", c.gradeId);
+    const teacher = c.homeroomTeacherId ? await ctx.db.get("users", c.homeroomTeacherId) : null;
+    const learners = await ctx.db
+      .query("learners")
+      .withIndex("by_classId_and_status", (q) => q.eq("classId", c._id).eq("status", "Active"))
+      .take(201);
+    return record(c._id, c.name, "", "Class", String(c.year), {
+      category: grade?.name ?? "Unassigned grade",
+      fields: [
+        field("Grade", grade?.name),
+        field("Grade order", grade?.sortOrder ?? 999),
+        field("Class teacher", teacher?.name),
+        field("Learners", learners.length > 200 ? "200+" : learners.length),
+      ],
+    });
   }
   if (module === "groups") {
     const g = row as Doc<"groups">;
