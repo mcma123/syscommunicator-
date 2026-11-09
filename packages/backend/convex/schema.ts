@@ -9,6 +9,8 @@ import { literals } from "./validators";
 import { authTables } from "@convex-dev/auth/server";
 import { fileTarget, uploadSpec } from "./lib/fileValidators";
 import {
+  adMediaKind,
+  adMediaStatus,
   adStatus,
   attachment,
   attendanceStatus,
@@ -322,6 +324,26 @@ export default defineSchema({
     .index("by_status_and_endsAt", ["status", "endsAt"])
     .index("by_updatedAt", ["updatedAt"])
     .index("by_createdBy_and_updatedAt", ["createdBy", "updatedAt"]),
+
+  // Ad Center media stored in the private Cloudflare R2 bucket (key = object key).
+  adMedia: defineTable({
+    adId: v.id("ads"),
+    key: v.string(),
+    kind: adMediaKind,
+    contentType: v.string(),
+    size: v.number(),
+    fileName: v.string(),
+    order: v.number(),
+    status: adMediaStatus,
+    uploadedBy: v.id("users"),
+    sessionId: v.id("authSessions"),
+    expiresAt: v.number(),
+    detachedAt: v.optional(v.number()),
+  })
+    .index("by_adId_and_order", ["adId", "order"])
+    .index("by_key", ["key"])
+    .index("by_status_and_expiresAt", ["status", "expiresAt"])
+    .index("by_detachedAt", ["detachedAt"]),
 
   enquiries: defineTable({
     subject: v.string(),

@@ -45,6 +45,8 @@ export type PublishStatus = (typeof PUBLISH_STATUSES)[number];
 export const AD_STATUSES = ["Draft", "Review", "Published", "Archived"] as const;
 export type AdStatus = (typeof AD_STATUSES)[number];
 export const AD_MEDIA_KINDS = ["image", "video"] as const;
+export const AD_MEDIA_STATUSES = ["Pending", "Ready"] as const;
+export type AdMediaStatus = (typeof AD_MEDIA_STATUSES)[number];
 export type AdMediaKind = (typeof AD_MEDIA_KINDS)[number];
 
 export const REPORT_STATUSES = ["Draft", "Reviewed", "Released"] as const;

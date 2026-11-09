@@ -18,6 +18,12 @@ const app = defineApp({
     DEV_AUTH_PASSWORD_PRINCIPAL: v.optional(v.string()),
     DEV_AUTH_PASSWORD_FINANCE: v.optional(v.string()),
     DEV_AUTH_PASSWORD_ADMIN: v.optional(v.string()),
+    // Cloudflare R2 (Ad Center media). Deployment-only secrets; never in clients.
+    R2_ENDPOINT: v.optional(v.string()),
+    R2_BUCKET: v.optional(v.string()),
+    R2_ACCESS_KEY_ID: v.optional(v.string()),
+    R2_SECRET_ACCESS_KEY: v.optional(v.string()),
+    AD_MEDIA_SIGNING_KEY: v.optional(v.string()),
   },
 });
 

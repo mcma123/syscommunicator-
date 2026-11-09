@@ -277,6 +277,96 @@ export function uploadContentType(name: string) {
           : "image/jpeg";
 }
 
+/** Ad Center media for one ad (editors only). */
+export function useAdMedia(adId: string | undefined) {
+  const requests = useMemo<RequestForQueries>(() => {
+    const q: RequestForQueries = {};
+    if (adId) q["media"] = { query: api.ads.media, args: { adId: adId as Id<"ads"> } };
+    return q;
+  }, [adId]);
+  const value = useQueries(requests)["media"];
+  return {
+    items:
+      value instanceof Error
+        ? []
+        : ((value as import("@school-connect/core/live").AdMediaItem[] | undefined) ?? []),
+    status:
+      value instanceof Error
+        ? ("error" as const)
+        : value === undefined
+          ? ("loading" as const)
+          : ("ready" as const),
+  };
+}
+
+/** A file chosen for an ad, as bytes (native) or a browser File/Blob (web, with progress). */
+export type AdUploadFile = { name: string; type: string; size: number; body: Blob | ArrayBuffer };
+
+function putWithProgress(url: string, file: AdUploadFile, onProgress?: (fraction: number) => void) {
+  if (typeof XMLHttpRequest === "undefined" || !onProgress)
+    return fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file.body,
+    }).then((r) => {
+      if (!r.ok) throw new Error("Upload to storage failed. Please try again.");
+    });
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(e.loaded / e.total);
+    };
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error("Upload to storage failed. Please try again."));
+    xhr.onerror = () => reject(new Error("Upload to storage failed. Check your connection."));
+    xhr.send(file.body);
+  });
+}
+
+/** Upload/remove/reorder Ad Center media: reserve → direct PUT to R2 → server verification. */
+export function useAdMediaUploader() {
+  const prepare = useAction(api.ads.prepareUpload),
+    finish = useAction(api.ads.finishUpload),
+    remove = useMutation(api.ads.removeMedia),
+    move = useMutation(api.ads.moveMedia);
+  return {
+    upload: async (adId: string, file: AdUploadFile, onProgress?: (fraction: number) => void) => {
+      const { mediaId, uploadUrl } = await prepare({
+        adId: adId as Id<"ads">,
+        fileName: file.name,
+        contentType: file.type,
+        size: file.size,
+      });
+      await putWithProgress(uploadUrl, file, onProgress);
+      return finish({ mediaId });
+    },
+    remove: (mediaId: string) => remove({ mediaId: mediaId as Id<"adMedia"> }),
+    move: (mediaId: string, direction: -1 | 1) =>
+      move({ mediaId: mediaId as Id<"adMedia">, direction }),
+  };
+}
+
+/** Content type for an ad file chosen by name (the server re-validates name, type and signature). */
+export function adContentType(name: string) {
+  return /\.png$/i.test(name)
+    ? "image/png"
+    : /\.jpe?g$/i.test(name)
+      ? "image/jpeg"
+      : /\.webp$/i.test(name)
+        ? "image/webp"
+        : /\.mp4$/i.test(name)
+          ? "video/mp4"
+          : /\.webm$/i.test(name)
+            ? "video/webm"
+            : /\.mov$/i.test(name)
+              ? "video/quicktime"
+              : "";
+}
+
 export function useSchoolWorkflows(
   module: import("@school-connect/core/live").ReadModule,
   enabled: boolean,
@@ -312,16 +402,14 @@ export function useSchoolWorkflows(
     file?: import("@school-connect/core/workflows").WorkflowFile,
   ): Promise<import("@school-connect/core/workflows").WorkflowOutcome> => {
     const s = input.values;
-    if (["reportCreate", "noticeAttach", "resourceCreate", "adMedia"].includes(input.action)) {
+    if (["reportCreate", "noticeAttach", "resourceCreate"].includes(input.action)) {
       if (!file) throw new Error("Choose a file first.");
       const kind =
         input.action === "reportCreate"
           ? "report"
           : input.action === "noticeAttach"
             ? "notice"
-            : input.action === "adMedia"
-              ? "ad"
-              : "resource";
+            : "resource";
       const contentType = uploadContentType(file.name);
       const digest = bytesToHex(sha256(new Uint8Array(file.bytes)));
       const lease = await beginUpload({

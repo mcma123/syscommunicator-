@@ -18,8 +18,11 @@ import {
   useSchoolDetail,
   useSchoolDashboard,
   useSchoolAds,
+  useAdMedia as useSchoolAdMedia,
+  useAdMediaUploader,
   useNoticeReceipt,
 } from "@school-connect/backend/react";
+export { adContentType, type AdUploadFile } from "@school-connect/backend/react";
 
 interface SchoolStore {
   account: NonNullable<FunctionReturnType<typeof api.users.current>> | null;
@@ -175,6 +178,14 @@ export function useAds() {
       canAccessModule(grants, "home", account.disabledModules) &&
       !account.disabledModules?.includes("ads"),
   );
+}
+/** Ad Center: an ad's uploaded pictures/videos (editors only). */
+export function useAdMedia(adId: string | undefined) {
+  return useSchoolAdMedia(adId);
+}
+/** Ad Center: direct-to-R2 uploads, remove and reorder. */
+export function useAdUploader() {
+  return useAdMediaUploader();
 }
 export function useDashboard() {
   const { account, child } = useSchool();

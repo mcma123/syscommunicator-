@@ -81,6 +81,12 @@ back with explicit approval.
 2. Activate pilot guardians only after the POPIA consent/notice process is approved.
 3. Collect feedback for an agreed period, fix, then roll out school-wide with school sign-off.
 
+## Ad Center media storage (Cloudflare R2)
+- Bucket: `wynburg` (private, WEUR). Convex env vars (set per deployment with `npx convex env set NAME=value` from `packages/backend`, never in client env, Dokploy or git): `R2_ENDPOINT` (account S3 endpoint without the bucket), `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (an R2 API token limited to Object Read & Write on this bucket) and `AD_MEDIA_SIGNING_KEY` (32+ random bytes, hex).
+- Bucket CORS must allow `PUT, GET, HEAD` with `content-type` and `range` headers from every web origin that uploads: local `http://localhost:8080`, `http://localhost:3000`, `http://localhost:8081`, the production web domain and the Expo web host. Update it (Cloudflare dashboard → R2 → bucket → Settings → CORS, or the R2 CORS API) whenever a domain changes.
+- **Rotation:** create a new R2 API token, set the new `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`, confirm an upload works, then delete the old token. Rotating `AD_MEDIA_SIGNING_KEY` only invalidates cached media links (clients receive fresh ones automatically).
+- Production launch (Phase 13) needs the same variables on the production Convex deployment and its domain in the CORS list.
+
 ## Launch exit check
 
 Both clients run against production Convex; a restore drill has passed; monitoring is in place; the school

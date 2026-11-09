@@ -10,17 +10,7 @@ import { fileTarget, uploadSpec } from "./fileValidators";
 export { fileTarget, uploadSpec } from "./fileValidators";
 export const MAX_PDF = 10 * 1024 * 1024;
 export const MAX_IMAGE = 5 * 1024 * 1024;
-/** Ad videos stay small: finalization holds the bytes in action memory about twice. */
-export const MAX_VIDEO = 15 * 1024 * 1024;
-export const AD_MEDIA_TYPES = ["image/png", "image/jpeg", "video/mp4", "video/webm"] as const;
-export const isVideo = (contentType: string) => contentType.startsWith("video/");
-type FileKind = "report" | "ad" | "other";
-export function validateFile(
-  name: string,
-  contentType: string,
-  size: number,
-  kind: FileKind = "other",
-) {
+export function validateFile(name: string, contentType: string, size: number, report = false) {
   if (!name.trim() || name.length > 150 || /[\x00-\x1f/\\]/.test(name))
     invalid("Choose a file with a safe name, up to 150 characters.");
   const ext =
@@ -30,28 +20,15 @@ export function validateFile(
         ? /\.png$/i
         : contentType === "image/jpeg"
           ? /\.jpe?g$/i
-          : contentType === "video/mp4"
-            ? /\.mp4$/i
-            : contentType === "video/webm"
-              ? /\.webm$/i
-              : null;
-  if (kind === "ad") {
-    if (!ext?.test(name) || !(AD_MEDIA_TYPES as readonly string[]).includes(contentType))
-      invalid("Choose a PNG or JPEG image, or an MP4 or WebM video.");
-  } else if (
-    !ext?.test(name) ||
-    isVideo(contentType) ||
-    (kind === "report" && contentType !== "application/pdf")
-  )
+          : null;
+  if (!ext?.test(name) || (report && contentType !== "application/pdf"))
     invalid("Choose a PDF, PNG or JPEG (reports require PDF).");
-  const max =
-    contentType === "application/pdf" ? MAX_PDF : isVideo(contentType) ? MAX_VIDEO : MAX_IMAGE;
-  if (!Number.isSafeInteger(size) || size < 5 || size > max)
-    invalid(
-      kind === "ad"
-        ? "Images may be up to 5 MiB; videos up to 15 MiB."
-        : "PDFs may be up to 10 MiB; images up to 5 MiB.",
-    );
+  if (
+    !Number.isSafeInteger(size) ||
+    size < 5 ||
+    size > (contentType === "application/pdf" ? MAX_PDF : MAX_IMAGE)
+  )
+    invalid("PDFs may be up to 10 MiB; images up to 5 MiB.");
 }
 export function validateSignature(bytes: Uint8Array, type: string) {
   const ok =
@@ -61,10 +38,33 @@ export function validateSignature(bytes: Uint8Array, type: string) {
         ? [137, 80, 78, 71, 13, 10, 26, 10].every((b, i) => bytes[i] === b)
         : type === "image/jpeg"
           ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
-          : type === "video/mp4"
-            ? new TextDecoder().decode(bytes.slice(4, 8)) === "ftyp"
-            : type === "video/webm" && [0x1a, 0x45, 0xdf, 0xa3].every((b, i) => bytes[i] === b);
+          : type === "image/webp"
+            ? new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" &&
+              new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP"
+            : type === "video/mp4" || type === "video/quicktime"
+              ? new TextDecoder().decode(bytes.slice(4, 8)) === "ftyp"
+              : type === "video/webm" && [0x1a, 0x45, 0xdf, 0xa3].every((b, i) => bytes[i] === b);
   if (!ok) invalid("The file contents do not match its declared type.");
+}
+/** Ad Center media (Cloudflare R2): pictures up to 10 MiB, videos up to 50 MiB, 10 per ad. */
+export const AD_MEDIA_RULES = {
+  "image/png": { ext: /\.png$/i, max: 10 * 1024 * 1024, kind: "image", suffix: "png" },
+  "image/jpeg": { ext: /\.jpe?g$/i, max: 10 * 1024 * 1024, kind: "image", suffix: "jpg" },
+  "image/webp": { ext: /\.webp$/i, max: 10 * 1024 * 1024, kind: "image", suffix: "webp" },
+  "video/mp4": { ext: /\.mp4$/i, max: 50 * 1024 * 1024, kind: "video", suffix: "mp4" },
+  "video/webm": { ext: /\.webm$/i, max: 50 * 1024 * 1024, kind: "video", suffix: "webm" },
+  "video/quicktime": { ext: /\.mov$/i, max: 50 * 1024 * 1024, kind: "video", suffix: "mov" },
+} as const;
+export const MAX_AD_ITEMS = 10;
+export function validateAdMedia(name: string, contentType: string, size: number) {
+  if (!name.trim() || name.length > 150 || /[\x00-\x1f/\\]/.test(name))
+    invalid("Choose a file with a safe name, up to 150 characters.");
+  const rule = AD_MEDIA_RULES[contentType as keyof typeof AD_MEDIA_RULES];
+  if (!rule || !rule.ext.test(name))
+    invalid("Choose a PNG, JPEG or WebP picture, or an MP4, WebM or MOV video.");
+  if (!Number.isSafeInteger(size) || size < 16 || size > rule.max)
+    invalid("Pictures may be up to 10 MB and videos up to 50 MB.");
+  return rule;
 }
 export async function uploadPermission(
   ctx: QueryCtx,
@@ -92,11 +92,8 @@ export async function uploadPermission(
     if (checkCapacity && n.attachments.length >= 10)
       invalid("A notice can have up to 10 attachments.");
   } else if (spec.kind === "ad") {
-    keys(spec.values, ["file"]);
-    const ad = await get(ctx, "ads", spec.targetId);
-    await adEditor(ctx, actor, ad);
-    if (ad.status !== "Draft" && ad.status !== "Review")
-      invalid("Return this ad to draft before replacing its media.");
+    // Ad media now uploads directly to Cloudflare R2 (ads.prepareUpload).
+    invalid("Ad pictures and videos upload through the Ad Center composer.");
   } else {
     keys(spec.values, ["title", "description", "category", "audience", "file"]);
     requireModule(actor, "resources");

@@ -1,5 +1,7 @@
 import { v, type VLiteral, type VUnion } from "convex/values";
 import {
+  AD_MEDIA_KINDS,
+  AD_MEDIA_STATUSES,
   AD_STATUSES,
   ATTENDANCE_STATUSES,
   CHARGE_STATUSES,
@@ -53,6 +55,8 @@ export const eventStatus = literals(EVENT_STATUSES);
 export const resourceCategory = literals(RESOURCE_CATEGORIES);
 export const publishStatus = literals(PUBLISH_STATUSES);
 export const adStatus = literals(AD_STATUSES);
+export const adMediaStatus = literals(AD_MEDIA_STATUSES);
+export const adMediaKind = literals(AD_MEDIA_KINDS);
 export const reportStatus = literals(REPORT_STATUSES);
 export const registerStatus = literals(REGISTER_STATUSES);
 export const attendanceStatus = literals(ATTENDANCE_STATUSES);

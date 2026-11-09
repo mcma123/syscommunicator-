@@ -48,6 +48,10 @@ import {
   httpsUrl,
 } from "./lib/workflowRules";
 import { adEditor } from "./lib/fileRules";
+import { readyMedia } from "./lib/adMedia";
+async function hasMedia(ctx: MutationCtx, ad: Doc<"ads">) {
+  return !!ad.media || (await readyMedia(ctx, ad._id)).length > 0;
+}
 const input = {
   action: literals(WORKFLOW_ACTIONS),
   itemId: v.optional(targetId),
@@ -247,7 +251,7 @@ export const submit = authedMutation({
       const revision = ad.revision + 1;
       if (action === "adSubmit") {
         if (ad.status !== "Draft") invalid("Only a draft ad can be submitted.");
-        if (!ad.media) invalid("Add an image or video before submitting.");
+        if (!(await hasMedia(ctx, ad))) invalid("Add a picture or video before submitting.");
         await ctx.db.patch("ads", ad._id, {
           status: "Review",
           reviewNote: undefined,
@@ -262,7 +266,7 @@ export const submit = authedMutation({
       if (action === "adPublish") {
         if (ad.status !== "Draft" && ad.status !== "Review")
           invalid("Only a draft or submitted ad can be published.");
-        if (!ad.media) invalid("Add an image or video before publishing.");
+        if (!(await hasMedia(ctx, ad))) invalid("Add a picture or video before publishing.");
         if (ad.endsAt <= now) invalid("This ad has already ended. Update its dates first.");
         await audiences(ctx, actor, JSON.stringify(ad.audiences));
         await ctx.db.patch("ads", ad._id, {

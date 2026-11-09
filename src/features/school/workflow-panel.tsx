@@ -21,17 +21,8 @@ const supported = [
   "children",
   "ads",
 ];
-const MEDIA_ACCEPT = "image/png,image/jpeg,video/mp4,video/webm,.png,.jpg,.jpeg,.mp4,.webm";
 /** Client-side size check mirroring the server limits (server re-validates everything). */
-function sizeProblem(action: string, file: File) {
-  if (action === "adMedia") {
-    if (!/\.(png|jpe?g|mp4|webm)$/i.test(file.name))
-      return "Choose a PNG or JPEG image, or an MP4 or WebM video.";
-    const video = /\.(mp4|webm)$/i.test(file.name);
-    return file.size > (video ? 15728640 : 5242880)
-      ? "Images may be up to 5 MiB; videos up to 15 MiB."
-      : "";
-  }
+function sizeProblem(file: File) {
   return file.size > (/\.pdf$/i.test(file.name) ? 10485760 : 5242880)
     ? "PDFs may be up to 10 MiB; images up to 5 MiB."
     : "";
@@ -40,6 +31,8 @@ export function WorkflowPanel(props: {
   module: ReadModule;
   itemId?: string | undefined;
   learnerId?: string | undefined;
+  /** Actions rendered elsewhere (e.g. the Ad Center composer handles adSave). */
+  hide?: readonly string[];
 }) {
   return supported.includes(props.module) ? (
     <Panel key={`${props.module}:${props.itemId ?? ""}:${props.learnerId ?? ""}`} {...props} />
@@ -49,10 +42,12 @@ function Panel({
   module,
   itemId,
   learnerId,
+  hide = [],
 }: {
   module: ReadModule;
   itemId?: string | undefined;
   learnerId?: string | undefined;
+  hide?: readonly string[];
 }) {
   const [created, setCreated] = useState<string>();
   const [success, setSuccess] = useState("");
@@ -63,9 +58,10 @@ function Panel({
     return (
       <p role="alert">School actions are unavailable for this selection. Reload to try again.</p>
     );
-  if (!result.forms.length) return null;
+  const forms = result.forms.filter((f) => !hide.includes(f.action));
+  if (!forms.length) return null;
   const key = (f: WorkflowForm) => `${f.action}:${f.targetId ?? ""}`;
-  const current = result.forms.find((f) => key(f) === selected) ?? result.forms[0]!;
+  const current = forms.find((f) => key(f) === selected) ?? forms[0]!;
   return (
     <section className="record-card my-4">
       <Button variant="outline" onClick={() => setOpen((v) => !v)}>
@@ -81,7 +77,7 @@ function Panel({
               value={key(current)}
               onChange={(e) => setSelected(e.target.value)}
             >
-              {result.forms.map((f) => (
+              {forms.map((f) => (
                 <option key={key(f)} value={key(f)}>
                   {f.title}
                 </option>
@@ -108,7 +104,6 @@ function Panel({
                   "conductCreate",
                   "reportCreate",
                   "resourceCreate",
-                  "adSave",
                 ].includes(current.action)
               ) {
                 setCreated(id);
@@ -246,16 +241,14 @@ function Editor({
               accept={
                 form.action === "reportCreate"
                   ? "application/pdf,.pdf"
-                  : form.action === "adMedia"
-                    ? MEDIA_ACCEPT
-                    : "application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
+                  : "application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
               }
               aria-label={field.label}
               required
               onChange={(e) => {
                 const selected = e.target.files?.[0];
                 if (selected) {
-                  const problem = sizeProblem(form.action, selected);
+                  const problem = sizeProblem(selected);
                   if (problem) {
                     setFailure(true);
                     setMessage(problem);

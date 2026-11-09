@@ -69,7 +69,13 @@ export function AdMedia({
   );
 }
 
-function AdLink({ ad, className }: { ad: SlideAd; className?: string }) {
+function AdLink({
+  ad,
+  className,
+}: {
+  ad: Pick<SlideAd, "linkUrl" | "linkLabel">;
+  className?: string;
+}) {
   if (!ad.linkUrl) return null;
   return (
     <a className={className} href={ad.linkUrl} target="_blank" rel="noopener noreferrer">
@@ -95,22 +101,34 @@ export function AdSlide({ ad, active = true }: { ad: SlideAd; active?: boolean }
   );
 }
 
+/** Every picture/video of every running ad, in order, as banner slides. */
+function slidesOf(ads: PublicAd[]) {
+  return ads.flatMap((ad) =>
+    ad.items.map((item, i) => ({
+      key: `${ad.id}:${i}`,
+      ad: { ...ad, media: item } as SlideAd & { id: string },
+      label: ad.items.length > 1 ? `${ad.title} (${i + 1} of ${ad.items.length})` : ad.title,
+    })),
+  );
+}
+
 /** Home carousel of running ads; renders nothing when there are none. */
 export function AdBanner() {
   const { ads } = useAds();
+  const slides = useMemo(() => slidesOf(ads), [ads]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const count = ads.length;
-  const current = ads[Math.min(index, Math.max(count - 1, 0))];
+  const count = slides.length;
+  const current = slides[Math.min(index, Math.max(count - 1, 0))];
   useEffect(() => {
     if (index >= count && count) setIndex(0);
   }, [count, index]);
   useEffect(() => {
     if (count < 2 || paused || reducedMotion()) return;
-    const delay = current?.media?.kind === "video" ? 14000 : 8000;
+    const delay = current?.ad.media?.kind === "video" ? 14000 : 8000;
     const timer = setTimeout(() => setIndex((i) => (i + 1) % count), delay);
     return () => clearTimeout(timer);
-  }, [count, paused, index, current?.media?.kind]);
+  }, [count, paused, index, current?.ad.media?.kind]);
   if (!current) return null;
   const go = (step: number) => setIndex((i) => (i + step + count) % count);
   return (
@@ -128,7 +146,7 @@ export function AdBanner() {
         aria-roledescription="slide"
         aria-label={`${index + 1} of ${count}`}
       >
-        <AdSlide key={current.id} ad={current} />
+        <AdSlide key={current.key} ad={current.ad} />
       </div>
       {count > 1 && (
         <div className="ad-controls">
@@ -136,13 +154,13 @@ export function AdBanner() {
             <ChevronLeft size={16} />
           </button>
           <div className="ad-dots" role="tablist" aria-label="Choose ad">
-            {ads.map((ad, i) => (
+            {slides.map((slide, i) => (
               <button
-                key={ad.id}
+                key={slide.key}
                 type="button"
                 role="tab"
                 aria-selected={i === index}
-                aria-label={ad.title}
+                aria-label={slide.label}
                 onClick={() => setIndex(i)}
               />
             ))}
@@ -168,17 +186,49 @@ export function AdPopup() {
         : ads.find((a) => a.popup && !dismissed.includes(`${a.id}:${a.revision}`)),
     [ads, dismissed],
   );
+  const [itemIndex, setItemIndex] = useState(0);
   if (!ad) return null;
+  const item = ad.items[Math.min(itemIndex, ad.items.length - 1)] ?? null;
   const close = () => {
     const key = `${ad.id}:${ad.revision}`;
     remember(key);
     setDismissed((d) => [...(d ?? []), key]);
+    setItemIndex(0);
   };
   return (
     <Dialog open onOpenChange={(open) => !open && close()}>
       <DialogContent className="ad-popup p-0 gap-0 sm:max-w-[560px]">
         <div className="ad-popup-media">
-          <AdMedia media={ad.media} title={ad.title} controls />
+          <AdMedia key={item?.url} media={item} title={ad.title} controls />
+          {ad.items.length > 1 && (
+            <div className="ad-controls">
+              <button
+                type="button"
+                aria-label="Previous picture or video"
+                onClick={() => setItemIndex((i) => (i - 1 + ad.items.length) % ad.items.length)}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <div className="ad-dots">
+                {ad.items.map((it, i) => (
+                  <button
+                    key={it.url}
+                    type="button"
+                    aria-label={`Item ${i + 1} of ${ad.items.length}`}
+                    aria-selected={i === itemIndex}
+                    onClick={() => setItemIndex(i)}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                aria-label="Next picture or video"
+                onClick={() => setItemIndex((i) => (i + 1) % ad.items.length)}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
         <div className="ad-popup-body">
           <span className="ad-eyebrow">
@@ -240,7 +290,7 @@ export function AdPreview({ record }: { record: ModuleRecord }) {
           <AdSlide ad={ad} />
         </div>
       ) : (
-        <p className="home-quiet">Add an image or video below to see the banner preview.</p>
+        <p className="home-quiet">Add pictures or videos below to see the banner preview.</p>
       )}
       {value(record, "Review note") && (
         <p className="ad-note">Review note: {value(record, "Review note")}</p>
@@ -278,6 +328,9 @@ export function AdList({
                 </span>
               )}
               {r.media?.kind === "video" && <PlayCircle className="ad-thumb-play" size={34} />}
+              {Number(value(r, "Media items") ?? 0) > 1 && (
+                <span className="ad-thumb-count">+{Number(value(r, "Media items")) - 1}</span>
+              )}
             </button>
             <div className="ad-card-body">
               <div className="notice-badges">

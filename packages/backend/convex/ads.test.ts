@@ -6,28 +6,64 @@ import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { localTime } from "./lib/workflowRules";
-import type { UploadSpec } from "../client";
 
 const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts", "!./convex.config.ts"]);
 const HOUR = 3600000;
-const MIB = 1024 * 1024;
-beforeEach(() => {
-  vi.stubEnv("ENABLE_DEMO_ACCOUNTS", "true");
-  vi.stubEnv("CONVEX_SITE_URL", "https://diligent-bass-226.convex.site");
-});
-afterEach(() => vi.unstubAllEnvs());
+const MB = 1024 * 1024;
+const R2 = "https://account.r2.cloudflarestorage.com";
+
+/** In-memory stand-in for the private R2 bucket, reached through the stubbed global fetch. */
+const bucket = new Map<string, { bytes: Uint8Array; type: string }>();
+const keyOf = (url: string) =>
+  decodeURIComponent(new URL(url).pathname.replace(/^\/wynburg\//, ""));
+async function fakeFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (!url.startsWith(R2)) throw new Error(`Unexpected fetch ${url}`);
+  const key = keyOf(url);
+  const method = (init.method ?? "GET").toUpperCase();
+  const object = bucket.get(key);
+  if (method === "DELETE") {
+    bucket.delete(key);
+    return new Response(null, { status: 204 });
+  }
+  if (!object) return new Response(null, { status: 404 });
+  if (method === "HEAD")
+    return new Response(null, {
+      status: 200,
+      headers: { "content-length": String(object.bytes.length), "content-type": object.type },
+    });
+  return new Response(object.bytes.slice(0, 16), { status: 206 });
+}
+/** What a browser does with the presigned PUT URL. */
+const put = (uploadUrl: string, bytes: Uint8Array, type: string) =>
+  bucket.set(keyOf(uploadUrl), { bytes, type });
 
 const png = (size = 2048) => {
-  const bytes = new Uint8Array(size);
-  bytes.set([137, 80, 78, 71, 13, 10, 26, 10]);
-  return bytes.buffer;
+  const b = new Uint8Array(size);
+  b.set([137, 80, 78, 71, 13, 10, 26, 10]);
+  return b;
 };
-const mp4 = (size = 4096, signature = "ftyp") => {
-  const bytes = new Uint8Array(size);
-  bytes.set([0, 0, 0, 24]);
-  bytes.set(new TextEncoder().encode(signature), 4);
-  return bytes.buffer;
+const mp4 = (size = 4096, sig = "ftyp") => {
+  const b = new Uint8Array(size);
+  b.set(new TextEncoder().encode(sig), 4);
+  return b;
 };
+
+beforeEach(() => {
+  bucket.clear();
+  vi.stubEnv("ENABLE_DEMO_ACCOUNTS", "true");
+  vi.stubEnv("CONVEX_SITE_URL", "https://diligent-bass-226.convex.site");
+  vi.stubEnv("R2_ENDPOINT", R2);
+  vi.stubEnv("R2_BUCKET", "wynburg");
+  vi.stubEnv("R2_ACCESS_KEY_ID", "test-access-key");
+  vi.stubEnv("R2_SECRET_ACCESS_KEY", "test-secret-key");
+  vi.stubEnv("AD_MEDIA_SIGNING_KEY", "x".repeat(48));
+  vi.stubGlobal("fetch", fakeFetch);
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 async function setup() {
   const t = convexTest(schema, modules);
@@ -49,7 +85,6 @@ async function setup() {
   const [admin, principal, teacher, parent, finance] = await Promise.all(
     ["admin", "principal", "teacher", "parent", "finance"].map((r) => login(`${r}@wgjs.example`)),
   );
-  // The teacher's own class, which also contains one of the parent's children.
   const classId = await t.run(async (ctx) => {
     const a = await ctx.db
       .query("teachingAssignments")
@@ -57,34 +92,10 @@ async function setup() {
       .first();
     return a!.classId;
   });
-  // A group nobody in the parent's family belongs to.
   const emptyGroup = await t.run((ctx) =>
     ctx.db.insert("groups", { name: "Empty test group", createdBy: admin!.user._id }),
   );
-  const upload = async (
-    client: typeof admin.client,
-    adId: string,
-    body: ArrayBuffer,
-    contentType: string,
-    fileName: string,
-  ) => {
-    const sha256 = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", body)), (b) =>
-      b.toString(16).padStart(2, "0"),
-    ).join("");
-    const spec: UploadSpec = { kind: "ad", targetId: adId, values: {} };
-    const lease = await client.mutation(api.files.beginUpload, {
-      spec,
-      fileName,
-      contentType,
-      size: body.byteLength,
-      sha256,
-    });
-    const staging = await t.run((ctx) =>
-      ctx.storage.store(new Blob([body], { type: contentType })),
-    );
-    await client.mutation(api.files.claimUpload, { uploadId: lease.uploadId, storageId: staging });
-    return client.action(api.files.finishUpload, { uploadId: lease.uploadId });
-  };
+  type Client = typeof admin.client;
   const now = Date.now();
   const adValues = (audience: unknown, extra: Record<string, string> = {}) => ({
     title: "Spring fair",
@@ -97,20 +108,40 @@ async function setup() {
     popup: "true",
     ...extra,
   });
-  const save = (client: typeof admin.client, values: Record<string, string>, itemId?: string) =>
+  const save = (client: Client, values: Record<string, string>, itemId?: string) =>
     client.mutation(api.workflows.submit, {
       action: "adSave",
       values,
       ...(itemId ? { itemId: itemId as Id<"ads"> } : {}),
     });
   const act = (
-    client: typeof admin.client,
+    client: Client,
     action: "adSubmit" | "adPublish" | "adReturn" | "adArchive",
     itemId: string,
     values: Record<string, string> = {},
   ) => client.mutation(api.workflows.submit, { action, itemId: itemId as Id<"ads">, values });
-  const active = (client: typeof admin.client, at = Date.now()) =>
+  /** Full composer flow: reserve → PUT to R2 → verify. */
+  const upload = async (
+    client: Client,
+    adId: string,
+    bytes: Uint8Array,
+    type: string,
+    fileName: string,
+    declaredSize = bytes.length,
+  ) => {
+    const { mediaId, uploadUrl } = await client.action(api.ads.prepareUpload, {
+      adId: adId as Id<"ads">,
+      fileName,
+      contentType: type,
+      size: declaredSize,
+    });
+    expect(uploadUrl).toContain("X-Amz-Signature=");
+    put(uploadUrl, bytes, type);
+    return client.action(api.ads.finishUpload, { mediaId });
+  };
+  const active = (client: Client, at = Date.now()) =>
     client.query(api.ads.active, { now: Math.floor(at / 60000) * 60000 });
+  const gateway = (url: string) => t.fetch(url.replace(/^https?:\/\/[^/]+/, ""));
   return {
     t,
     admin: admin!,
@@ -120,46 +151,66 @@ async function setup() {
     finance: finance!,
     classId,
     emptyGroup,
-    upload,
     adValues,
     save,
     act,
+    upload,
     active,
+    gateway,
     now,
   };
 }
 
-describe("Ad Center", () => {
-  it("requires approval for teacher ads and shows published ads to the class audience", async () => {
+describe("Ad Center with Cloudflare R2 media", () => {
+  it("runs the teacher approval flow and serves media through the signed gateway", async () => {
     const s = await setup();
     const classAudience = [{ kind: "Class", classId: s.classId }];
-    // Teachers may target only their own classes.
     await expect(s.save(s.teacher.client, s.adValues([{ kind: "School" }]))).rejects.toThrow();
     const adId = await s.save(s.teacher.client, s.adValues(classAudience));
-    // Submission and publication both need media; teachers cannot publish.
-    await expect(s.act(s.teacher.client, "adSubmit", adId)).rejects.toThrow(/image or video/);
-    await s.upload(s.teacher.client, adId, png(), "image/png", "fair.png");
+    await expect(s.act(s.teacher.client, "adSubmit", adId)).rejects.toThrow(/picture or video/);
+
+    await s.upload(s.teacher.client, adId, png(), "image/png", "poster.png");
+    await s.upload(s.teacher.client, adId, mp4(), "video/mp4", "clip.mp4");
+    const editorItems = await s.teacher.client.query(api.ads.media, { adId: adId as Id<"ads"> });
+    expect(editorItems.map((i) => i.kind)).toEqual(["image", "video"]);
+    expect(bucket.size).toBe(2);
+
+    // Editors can preview drafts; the parent-scope link refuses unpublished ads.
+    const preview = await s.gateway(editorItems[0]!.url);
+    expect(preview.status).toBe(302);
+    expect(preview.headers.get("location")).toMatch(
+      /^https:\/\/account\.r2\.cloudflarestorage\.com\/wynburg\/ads\//,
+    );
+    expect(preview.headers.get("location")).toContain("X-Amz-Signature=");
+    const parentScope = editorItems[0]!.url.replace("s=e", "s=p");
+    expect((await s.gateway(parentScope)).status).toBe(404);
+
     await expect(s.act(s.teacher.client, "adPublish", adId)).rejects.toThrow();
     await s.act(s.teacher.client, "adSubmit", adId);
     expect(await s.active(s.parent.client)).toEqual([]);
-
     await s.act(s.principal.client, "adPublish", adId);
-    const [ad] = await s.active(s.parent.client);
-    expect(ad).toMatchObject({
-      id: adId,
-      title: "Spring fair",
-      linkUrl: "https://example.org/fair",
-      popup: true,
-      media: { kind: "image", contentType: "image/png" },
-    });
-    expect(ad!.media!.url).toMatch(/^https?:\/\//);
-    expect(JSON.stringify(ad)).not.toMatch(/storageId/);
 
-    // Outside the schedule window, nothing shows.
+    const [ad] = await s.active(s.parent.client);
+    expect(ad!.items.map((i) => i.kind)).toEqual(["image", "video"]);
+    expect(JSON.stringify(ad)).not.toMatch(/ads\/|storage|X-Amz/);
+    const served = await s.gateway(ad!.items[1]!.url);
+    expect(served.status).toBe(302);
+    expect(served.headers.get("cache-control")).toBe("private, max-age=600");
+    // Tampered or malformed signatures are refused.
+    const tampered = ad!.items[0]!.url.replace(/sig=([a-f0-9])/, (_m, c: string) =>
+      c === "0" ? "sig=1" : "sig=0",
+    );
+    expect((await s.gateway(tampered)).status).toBe(404);
+    expect((await s.gateway(ad!.items[0]!.url.replace(/sig=[a-f0-9]+/, "sig=zz"))).status).toBe(
+      403,
+    );
+
+    // Outside the schedule nothing shows; archiving revokes existing links.
     expect(await s.active(s.parent.client, s.now - 2 * HOUR)).toEqual([]);
-    expect(await s.active(s.parent.client, s.now + 25 * HOUR)).toEqual([]);
-    // Finance has no linked learners in the class audience.
     expect(await s.active(s.finance.client)).toEqual([]);
+    await s.act(s.principal.client, "adArchive", adId);
+    expect(await s.active(s.parent.client)).toEqual([]);
+    expect((await s.gateway(ad!.items[0]!.url)).status).toBe(404);
 
     const actions = await s.t.run(async (ctx) =>
       (
@@ -168,20 +219,94 @@ describe("Ad Center", () => {
           .withIndex("by_targetTable_and_targetId", (q) =>
             q.eq("targetTable", "ads").eq("targetId", adId),
           )
-          .take(20)
+          .take(30)
       ).map((a) => a.action),
     );
     expect(actions).toEqual(
-      expect.arrayContaining(["ad.created", "file.attached", "ad.submitted", "ad.published"]),
+      expect.arrayContaining([
+        "ad.created",
+        "ad.mediaRequested",
+        "file.attached",
+        "ad.submitted",
+        "ad.published",
+        "ad.archived",
+      ]),
+    );
+  });
+
+  it("validates types, sizes, contents and the item limit, deleting rejected objects", async () => {
+    const s = await setup();
+    const adId = await s.save(s.principal.client, s.adValues([{ kind: "School" }]));
+    const prepare = (fileName: string, contentType: string, size: number) =>
+      s.principal.client.action(api.ads.prepareUpload, {
+        adId: adId as Id<"ads">,
+        fileName,
+        contentType,
+        size,
+      });
+    await expect(prepare("anim.gif", "image/gif", 2048)).rejects.toThrow(/PNG, JPEG or WebP/);
+    await expect(prepare("poster.png", "image/png", 11 * MB)).rejects.toThrow(/10 MB/);
+    await expect(prepare("long.mp4", "video/mp4", 51 * MB)).rejects.toThrow(/50 MB/);
+    await expect(prepare("clip.mp4", "image/png", 2048)).rejects.toThrow();
+    await prepare("tour.mov", "video/quicktime", 4096);
+
+    await expect(
+      s.upload(s.principal.client, adId, png(), "image/png", "a.png", 9999),
+    ).rejects.toThrow(/does not match/);
+    await expect(
+      s.upload(s.principal.client, adId, mp4(4096, "free"), "video/mp4", "fake.mp4"),
+    ).rejects.toThrow(/contents/);
+    expect([...bucket.keys()]).toEqual([]);
+    expect(await s.principal.client.query(api.ads.media, { adId: adId as Id<"ads"> })).toEqual(
+      [],
     );
 
-    // Returning or archiving removes it from the parent feed.
-    await s.act(s.principal.client, "adReturn", adId, { note: "Shorter caption please." });
-    expect(await s.active(s.parent.client)).toEqual([]);
-    await s.act(s.admin.client, "adPublish", adId);
-    expect(await s.active(s.parent.client)).toHaveLength(1);
-    await s.act(s.admin.client, "adArchive", adId);
-    expect(await s.active(s.parent.client)).toEqual([]);
+    // The pending MOV reservation counts toward the limit until it expires.
+    for (let i = 0; i < 9; i++)
+      await s.upload(s.principal.client, adId, png(), "image/png", `p${i}.png`);
+    await expect(prepare("p10.png", "image/png", 2048)).rejects.toThrow(/up to 10/);
+  });
+
+  it("denies other users and protects published media", async () => {
+    const s = await setup();
+    const adId = await s.save(s.principal.client, s.adValues([{ kind: "School" }]));
+    for (const user of [s.parent, s.finance, s.teacher])
+      await expect(
+        user.client.action(api.ads.prepareUpload, {
+          adId: adId as Id<"ads">,
+          fileName: "x.png",
+          contentType: "image/png",
+          size: 2048,
+        }),
+      ).rejects.toThrow();
+    await expect(
+      s.parent.client.query(api.ads.media, { adId: adId as Id<"ads"> }),
+    ).rejects.toThrow();
+
+    const first = await s.upload(s.principal.client, adId, png(), "image/png", "one.png");
+    const second = await s.upload(s.principal.client, adId, png(), "image/png", "two.png");
+    await s.principal.client.mutation(api.ads.moveMedia, { mediaId: second, direction: -1 });
+    const order = await s.principal.client.query(api.ads.media, { adId: adId as Id<"ads"> });
+    expect(order.map((i) => i.fileName)).toEqual(["two.png", "one.png"]);
+
+    await s.act(s.principal.client, "adPublish", adId);
+    await expect(
+      s.principal.client.mutation(api.ads.removeMedia, { mediaId: first }),
+    ).rejects.toThrow(/draft/);
+    await expect(
+      s.upload(s.principal.client, adId, png(), "image/png", "three.png"),
+    ).rejects.toThrow(/draft/);
+
+    // The legacy Convex-storage ad upload path is closed.
+    await expect(
+      s.principal.client.mutation(api.files.beginUpload, {
+        spec: { kind: "ad", targetId: adId, values: {} },
+        fileName: "x.png",
+        contentType: "image/png",
+        size: 2048,
+        sha256: "a".repeat(64),
+      }),
+    ).rejects.toThrow(/composer/);
   });
 
   it("filters by audience and the module switch", async () => {
@@ -195,42 +320,33 @@ describe("Ad Center", () => {
       await s.upload(s.principal.client, id, png(), "image/png", "poster.png");
       await s.act(s.principal.client, "adPublish", id);
     }
-    expect((await s.active(s.parent.client)).map((a) => a.id)).toEqual([school]);
+    const visible = await s.active(s.parent.client);
+    expect(visible.map((a) => a.id)).toEqual([school]);
     await s.t.run(async (ctx) => {
-      const school = (await ctx.db.query("schools").take(1))[0]!;
-      await ctx.db.patch("schools", school._id, {
-        featureFlags: { ...school.featureFlags, ads: false },
+      const row = (await ctx.db.query("schools").take(1))[0]!;
+      await ctx.db.patch("schools", row._id, {
+        featureFlags: { ...row.featureFlags, ads: false },
       });
     });
     expect(await s.active(s.parent.client)).toEqual([]);
+    expect((await s.gateway(visible[0]!.items[0]!.url)).status).toBe(404);
   });
 
-  it("denies parents and Finance every management path", async () => {
+  it("removes media from R2 after it has been detached for a day", async () => {
     const s = await setup();
     const adId = await s.save(s.principal.client, s.adValues([{ kind: "School" }]));
-    for (const user of [s.parent, s.finance]) {
-      await expect(s.save(user.client, s.adValues([{ kind: "School" }]))).rejects.toThrow();
-      await expect(s.act(user.client, "adPublish", adId)).rejects.toThrow();
-      await expect(
-        user.client.query(api.schoolRead.page, {
-          module: "ads",
-          paginationOpts: { numItems: 10, cursor: null },
-        }),
-      ).rejects.toThrow();
-      await expect(s.upload(user.client, adId, png(), "image/png", "poster.png")).rejects.toThrow();
-    }
-    // Another teacher's or a whole-school ad is not editable by a teacher.
-    await expect(
-      s.upload(s.teacher.client, adId, png(), "image/png", "poster.png"),
-    ).rejects.toThrow();
-    const page = await s.teacher.client.query(api.schoolRead.page, {
-      module: "ads",
-      paginationOpts: { numItems: 10, cursor: null },
-    });
-    expect(page.page).toEqual([]);
+    const mediaId = await s.upload(s.principal.client, adId, png(), "image/png", "old.png");
+    await s.principal.client.mutation(api.ads.removeMedia, { mediaId });
+    expect(bucket.size).toBe(1);
+    await s.t.run((ctx) =>
+      ctx.db.patch("adMedia", mediaId, { detachedAt: Date.now() - 2 * 86400000 }),
+    );
+    await s.t.action(internal.ads.cleanupMedia, {});
+    expect(bucket.size).toBe(0);
+    expect(await s.t.run((ctx) => ctx.db.get("adMedia", mediaId))).toBeNull();
   });
 
-  it("validates links, dates, media types, signatures and sizes", async () => {
+  it("validates links and dates", async () => {
     const s = await setup();
     const school = [{ kind: "School" }];
     for (const linkUrl of ["http://example.org", "javascript:alert(1)", "example.org"])
@@ -240,56 +356,6 @@ describe("Ad Center", () => {
     await expect(
       s.save(s.principal.client, s.adValues(school, { endsAt: localTime(s.now - 2 * HOUR) })),
     ).rejects.toThrow(/end after/);
-
-    const adId = await s.save(s.principal.client, s.adValues(school));
-    await s.upload(s.principal.client, adId, mp4(), "video/mp4", "promo.mp4");
-    expect(await s.active(s.parent.client)).toEqual([]); // still a draft
-    await s.act(s.principal.client, "adPublish", adId);
-    expect((await s.active(s.parent.client))[0]?.media).toMatchObject({
-      kind: "video",
-      contentType: "video/mp4",
-    });
-
-    await s.act(s.principal.client, "adReturn", adId);
-    await expect(
-      s.upload(s.principal.client, adId, mp4(4096, "free"), "video/mp4", "fake.mp4"),
-    ).rejects.toThrow(/do not match/);
-    await expect(
-      s.upload(s.principal.client, adId, mp4(16 * MIB), "video/mp4", "long.mp4"),
-    ).rejects.toThrow(/15 MiB/);
-    await expect(
-      s.upload(s.principal.client, adId, png(), "application/pdf", "doc.pdf"),
-    ).rejects.toThrow(/PNG or JPEG image/);
-
-    // Replacing media detaches the previous stored file for cleanup.
-    const before = await s.t.run(async (ctx) => (await ctx.db.get("ads", adId as Id<"ads">))!);
-    await s.upload(s.principal.client, adId, png(), "image/png", "replacement.png");
-    const detached = await s.t.run((ctx) =>
-      ctx.db
-        .query("managedFiles")
-        .withIndex("by_storageId", (q) => q.eq("storageId", before.media!.storageId))
-        .unique(),
-    );
-    expect(detached?.detachedAt).toBeGreaterThan(0);
-  });
-
-  it("keeps videos out of other upload kinds", async () => {
-    const s = await setup();
-    await expect(
-      s.principal.client.mutation(api.files.beginUpload, {
-        spec: {
-          kind: "resource",
-          values: {
-            title: "Clip",
-            category: "Newsletters",
-            audience: JSON.stringify([{ kind: "School" }]),
-          },
-        },
-        fileName: "clip.mp4",
-        contentType: "video/mp4",
-        size: 4096,
-        sha256: "a".repeat(64),
-      }),
-    ).rejects.toThrow(/PDF, PNG or JPEG/);
+    await s.save(s.principal.client, s.adValues(school, { linkUrl: "", linkLabel: "" }));
   });
 });

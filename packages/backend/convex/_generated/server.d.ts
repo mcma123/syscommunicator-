@@ -30,6 +30,7 @@ import type { DataModel } from "./dataModel.js";
 type Env = {
   readonly CONVEX_CLOUD_URL: string;
   readonly CONVEX_SITE_URL: string;
+  readonly AD_MEDIA_SIGNING_KEY: string | undefined;
   readonly AUTH_EMAIL_FROM: string | undefined;
   readonly DEV_AUTH_PASSWORD_ADMIN: string | undefined;
   readonly DEV_AUTH_PASSWORD_FINANCE: string | undefined;
@@ -40,6 +41,10 @@ type Env = {
   readonly EXPO_PROJECT_ID: string | undefined;
   readonly EXPO_PUSH_ACCESS_TOKEN: string | undefined;
   readonly NOTIFICATION_DELIVERY_ENABLED: string | undefined;
+  readonly R2_ACCESS_KEY_ID: string | undefined;
+  readonly R2_BUCKET: string | undefined;
+  readonly R2_ENDPOINT: string | undefined;
+  readonly R2_SECRET_ACCESS_KEY: string | undefined;
   readonly RESEND_API_KEY: string | undefined;
   readonly SITE_URL: string | undefined;
 };

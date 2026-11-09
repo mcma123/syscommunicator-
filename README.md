@@ -213,11 +213,10 @@ Phase 4 adds shared module permissions, session-derived server actors, scoped no
 Phase 10 implements phone registration, notice push/urgent email, consent reminders, quiet hours and truthful delivery history. See [notification setup](packages/backend/NOTIFICATIONS.md). Install a new native build for runtime 1.0.3; live delivery needs EAS push credentials and a verified Resend sender. Payment integration remains deferred until the other feature work is complete.
 
 ## Ad Center
+Teachers, Principals and Administrators open **Ad Center** (`/ads` on web, **More → Ad Center** in the app) and press **New ad**:
 
-Teachers, Principals and Administrators open **Ad Center** (`/ads` on web, **More → Ad Center** in the app) to publish a poster, picture or short video to parents:
-
-1. **Create ad**: headline, caption, optional `https://` link and button label, show-from/until times (Johannesburg), audience and an optional *popup* switch.
-2. **Add image or video**: PNG/JPEG up to 5 MiB, or MP4/WebM up to 15 MiB. Landscape (16:9) works best; videos play muted and loop.
+1. Write a headline and caption, choose when it shows and who sees it, and optionally tick *Also show as a popup*. A button link is optional and hidden behind **Add a button link**.
+2. **Drag and drop pictures or videos** onto the drop area (or browse; the phone app uses the file picker): up to 10 items per ad — PNG/JPEG/WebP pictures up to 10 MB and MP4/WebM/MOV videos up to 50 MB. Reorder or remove them, then **Save**; files upload straight to the school's Cloudflare R2 bucket with progress.
 3. Teachers **Submit for approval**; a Principal or Administrator **Approves and publishes** (or returns it with a note). Principals and Administrators can publish their own ads directly.
 
-Running ads appear on parents' home screens as a spotlight banner (web and Expo); popup ads open once per device until dismissed, and again after an edit. Administrators can switch the module off in School settings (`Enable ads`). Playing video in the installed phone app requires the new runtime **1.0.4** build (`expo-video`); Expo Go and Expo web work immediately.
+Running ads appear on parents' home screens as spotlight slides (web and Expo); popup ads open once per device until dismissed, and again after an edit. Administrators can switch the module off in School settings (`Enable ads`). Media setup, CORS and key rotation are in [OPERATIONS.md](OPERATIONS.md). Playing video in the installed phone app requires the runtime **1.0.4** build (`expo-video`).

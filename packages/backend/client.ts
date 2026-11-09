@@ -7,6 +7,7 @@ import type {
   ReadOptions,
   DashboardState,
   PublicAd,
+  AdMediaItem,
 } from "@school-connect/core/live";
 import type { SchoolModule } from "@school-connect/core/permissions";
 import {
@@ -244,6 +245,23 @@ export const api = {
   },
   ads: {
     active: makeFunctionReference<"query", { now: number }, PublicAd[]>("ads:active"),
+    media: makeFunctionReference<"query", { adId: Id<"ads"> }, AdMediaItem[]>("ads:media"),
+    prepareUpload: makeFunctionReference<
+      "action",
+      { adId: Id<"ads">; fileName: string; contentType: string; size: number },
+      { mediaId: Id<"adMedia">; uploadUrl: string }
+    >("ads:prepareUpload"),
+    finishUpload: makeFunctionReference<"action", { mediaId: Id<"adMedia"> }, Id<"adMedia">>(
+      "ads:finishUpload",
+    ),
+    removeMedia: makeFunctionReference<"mutation", { mediaId: Id<"adMedia"> }, null>(
+      "ads:removeMedia",
+    ),
+    moveMedia: makeFunctionReference<
+      "mutation",
+      { mediaId: Id<"adMedia">; direction: -1 | 1 },
+      null
+    >("ads:moveMedia"),
   },
   dashboard: {
     current: makeFunctionReference<

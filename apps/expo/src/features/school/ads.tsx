@@ -62,7 +62,7 @@ function AdMedia({ ad, fit = "cover" }: { ad: SlideAd; fit?: "cover" | "contain"
   );
 }
 
-function AdButton({ ad }: { ad: SlideAd }) {
+function AdButton({ ad }: { ad: Pick<SlideAd, "linkUrl" | "linkLabel"> }) {
   if (!ad.linkUrl) return null;
   const url = ad.linkUrl;
   return (
@@ -113,7 +113,14 @@ export function AdCarousel() {
   const { ads } = useAds();
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
-  if (!ads.length) return null;
+  const slides = useMemo(
+    () =>
+      ads.flatMap((ad) =>
+        ad.items.map((item, i) => ({ key: `${ad.id}:${i}`, ad: { ...ad, media: item } })),
+      ),
+    [ads],
+  );
+  if (!slides.length) return null;
   return (
     <View
       accessibilityLabel="School spotlight"
@@ -132,15 +139,15 @@ export function AdCarousel() {
           onScroll={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / Math.max(width, 1)))}
           scrollEventThrottle={64}
         >
-          {ads.map((ad) => (
-            <AdSlide key={ad.id} ad={ad} width={width} />
+          {slides.map((slide) => (
+            <AdSlide key={slide.key} ad={slide.ad} width={width} />
           ))}
         </ScrollView>
       )}
-      {ads.length > 1 && (
-        <View style={styles.dots} accessibilityLabel={`Ad ${index + 1} of ${ads.length}`}>
-          {ads.map((ad, i) => (
-            <View key={ad.id} style={[styles.dot, i === index && styles.dotActive]} />
+      {slides.length > 1 && (
+        <View style={styles.dots} accessibilityLabel={`Slide ${index + 1} of ${slides.length}`}>
+          {slides.map((slide, i) => (
+            <View key={slide.key} style={[styles.dot, i === index && styles.dotActive]} />
           ))}
         </View>
       )}
@@ -171,8 +178,11 @@ export function AdPopup() {
         : ads.find((a) => a.popup && !dismissed.includes(`${a.id}:${a.revision}`)),
     [ads, dismissed],
   );
+  const [itemIndex, setItemIndex] = useState(0);
   if (!ad) return null;
+  const item = ad.items[Math.min(itemIndex, ad.items.length - 1)] ?? null;
   const close = () => {
+    setItemIndex(0);
     const key = `${ad.id}:${ad.revision}`;
     const next = [key, ...(dismissed ?? []).filter((k) => k !== key)].slice(0, 50);
     setDismissed(next);
@@ -183,8 +193,25 @@ export function AdPopup() {
       <View style={styles.backdrop}>
         <View style={styles.popup} accessibilityViewIsModal>
           <View style={styles.popupMedia}>
-            <AdMedia ad={ad} fit="contain" />
+            <AdMedia key={item?.url} ad={{ ...ad, media: item }} fit="contain" />
           </View>
+          {ad.items.length > 1 && (
+            <View style={styles.popupSteps}>
+              <Button
+                secondary
+                title="Previous"
+                onPress={() => setItemIndex((i) => (i - 1 + ad.items.length) % ad.items.length)}
+              />
+              <Text style={{ color: colors.muted }}>
+                {itemIndex + 1} of {ad.items.length}
+              </Text>
+              <Button
+                secondary
+                title="Next"
+                onPress={() => setItemIndex((i) => (i + 1) % ad.items.length)}
+              />
+            </View>
+          )}
           <View style={{ padding: 20, gap: 8 }}>
             <Text weight="bold" style={{ color: colors.primary, fontSize: 11 }}>
               FROM YOUR SCHOOL
@@ -301,4 +328,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   popupMedia: { aspectRatio: 16 / 9, backgroundColor: "#1a1012" },
+  popupSteps: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
 });

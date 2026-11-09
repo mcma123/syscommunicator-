@@ -12,6 +12,7 @@ import type { Doc, Id, TableNames } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { literals } from "../validators";
 import { canManageNotice, canReadNotice, matchesAudience } from "./audiences";
+import { adItems } from "./adMedia";
 import {
   denied,
   missing,
@@ -391,7 +392,8 @@ export async function project(
         ad.createdBy === actor.user._id &&
         (await matchesAudience(ctx, actor, ad.audiences, "teacher")));
     if (!manager) return null;
-    const url = ad.media ? await ctx.storage.getUrl(ad.media.storageId) : null;
+    const items = await adItems(ctx, ad, "e");
+    const first = items[0];
     const author = await ctx.db.get("users", ad.createdBy);
     return record(
       ad._id,
@@ -404,22 +406,13 @@ export async function project(
         endsAt: ad.endsAt,
         category: ad.popup ? "Popup" : "Banner",
         pending: ad.status === "Review",
-        ...(url && ad.media
-          ? {
-              media: {
-                url,
-                kind: ad.media.contentType.startsWith("video/")
-                  ? ("video" as const)
-                  : ("image" as const),
-              },
-            }
-          : {}),
+        ...(first ? { media: { url: first.url, kind: first.kind } } : {}),
         fields: [
           field("Created by", author?.name),
           field("Link", ad.linkUrl),
           field("Button label", ad.linkLabel),
           field("Popup", ad.popup ? "Yes, once per device" : "No"),
-          field("Media", ad.media ? `${ad.media.fileName} (${ad.media.contentType})` : null),
+          field("Media items", String(items.length)),
           ...(ad.reviewNote ? [field("Review note", ad.reviewNote)] : []),
         ],
       },

@@ -45,12 +45,7 @@ export const beginUpload = authedMutation({
   returns: v.object({ uploadId: v.id("fileUploads"), uploadUrl: v.string() }),
   handler: async (ctx, args) => {
     await uploadPermission(ctx, ctx.actor, args.spec);
-    validateFile(
-      args.fileName,
-      args.contentType,
-      args.size,
-      args.spec.kind === "report" ? "report" : args.spec.kind === "ad" ? "ad" : "other",
-    );
+    validateFile(args.fileName, args.contentType, args.size, args.spec.kind === "report");
     if (!/^[a-f0-9]{64}$/.test(args.sha256)) invalid("Invalid file digest.");
     const sessionId = await getAuthSessionId(ctx);
     if (!sessionId) denied();

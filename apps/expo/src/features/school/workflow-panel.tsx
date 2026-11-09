@@ -5,7 +5,7 @@ import type { WorkflowForm, WorkflowFile } from "@school-connect/core/workflows"
 import { workflowError } from "@school-connect/backend/react";
 import { useWorkflows, useSchool } from "./store";
 import { Card, Button, Chips, Field, Feedback, Text } from "./ui";
-import { pickReport, pickMedia, openReport, openDownload } from "./report-files";
+import { pickReport, openReport, openDownload } from "./report-files";
 const supported = [
   "resources",
   "paymentHistory",
@@ -23,7 +23,13 @@ const supported = [
   "children",
   "ads",
 ];
-export function WorkflowPanel(props: { module: ReadModule; itemId?: string; learnerId?: string }) {
+export function WorkflowPanel(props: {
+  module: ReadModule;
+  itemId?: string;
+  learnerId?: string;
+  /** Actions rendered elsewhere (e.g. the Ad Center composer handles adSave). */
+  hide?: readonly string[];
+}) {
   return supported.includes(props.module) ? (
     <Panel key={`${props.module}:${props.itemId ?? ""}:${props.learnerId ?? ""}`} {...props} />
   ) : null;
@@ -32,10 +38,12 @@ function Panel({
   module,
   itemId,
   learnerId,
+  hide = [],
 }: {
   module: ReadModule;
   itemId?: string;
   learnerId?: string;
+  hide?: readonly string[];
 }) {
   const [created, setCreated] = useState<string>();
   const [success, setSuccess] = useState("");
@@ -49,9 +57,10 @@ function Panel({
         message="School actions are unavailable for this selection. Reload to try again."
       />
     );
-  if (!result.forms.length) return null;
+  const forms = result.forms.filter((f) => !hide.includes(f.action));
+  if (!forms.length) return null;
   const key = (f: WorkflowForm) => `${f.action}:${f.targetId ?? ""}`;
-  const current = result.forms.find((f) => key(f) === selected) ?? result.forms[0];
+  const current = forms.find((f) => key(f) === selected) ?? forms[0];
   return (
     <Card>
       <Button
@@ -61,11 +70,11 @@ function Panel({
       />
       {open && (
         <>
-          {result.forms.length > 1 && <Text weight="bold">Choose school action</Text>}
+          {forms.length > 1 && <Text weight="bold">Choose school action</Text>}
           <Chips
-            items={result.forms.map((f) => f.title)}
+            items={forms.map((f) => f.title)}
             value={current.title}
-            onChange={(title) => setSelected(key(result.forms.find((f) => f.title === title)!))}
+            onChange={(title) => setSelected(key(forms.find((f) => f.title === title)!))}
           />
           <Editor
             key={`${key(current)}:${itemId ?? created ?? ""}`}
@@ -162,24 +171,6 @@ function Editor({
                 }
               />
               {!field.options?.length && <Text>No available choices</Text>}
-            </>
-          ) : field.type === "file" && form.action === "adMedia" ? (
-            <>
-              <Button
-                secondary
-                title="Choose image or video"
-                onPress={() => {
-                  void pickMedia()
-                    .then(setFile)
-                    .catch((e: unknown) => {
-                      setFailed(true);
-                      setMessage(
-                        e instanceof Error ? e.message : "Could not open this file. Try again.",
-                      );
-                    });
-                }}
-              />
-              {file && <Text>{file.name}</Text>}
             </>
           ) : field.type === "file" ? (
             <>

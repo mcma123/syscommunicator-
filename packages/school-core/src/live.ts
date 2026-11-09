@@ -33,7 +33,17 @@ export interface PublicAd {
   revision: number;
   startsAt: number;
   endsAt: number;
-  media: { url: string; kind: "image" | "video"; contentType: string } | null;
+  /** Ordered slides (pictures and videos) for this ad. */
+  items: { url: string; kind: "image" | "video"; contentType: string }[];
+}
+/** One uploaded Ad Center item, as shown to the ad's editors. */
+export interface AdMediaItem {
+  id: string;
+  url: string;
+  kind: "image" | "video";
+  contentType: string;
+  fileName: string;
+  size: number;
 }
 export interface ModulePage {
   records: ModuleRecord[];

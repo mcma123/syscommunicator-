@@ -1,6 +1,7 @@
 import { NotificationPanel } from "./notification-panel";
 import { WorkflowPanel } from "./workflow-panel";
 import { AdCarousel, AdPopup, AdPreview } from "./ads";
+import { AdComposer, AdComposerLauncher } from "./ad-composer";
 import { SchoolDataBoundary } from "@school-connect/backend/react";
 import { NOTICE_CATEGORIES, RESOURCE_CATEGORIES } from "@school-connect/core/domain";
 import {
@@ -215,7 +216,7 @@ function ModuleContent({ module, detail }: { module: SchoolModule; detail?: stri
           }
         />
       )}
-      <WorkflowPanel module={module} />
+      {module === "ads" ? <AdComposerLauncher /> : <WorkflowPanel module={module} />}
       <RecordList key={source} module={source} detail={source === module ? detail : undefined} />
     </>
   );
@@ -434,8 +435,18 @@ function RecordDetails({
   const current = related.find((tab) => tab.module === section) ?? related[0];
   return (
     <>
-      {module === "ads" && <AdPreview record={item} />}
-      <WorkflowPanel module={module} itemId={id} learnerId={learnerId} />
+      {module === "ads" && (
+        <>
+          <AdPreview record={item} />
+          <AdComposer adId={id} />
+        </>
+      )}
+      <WorkflowPanel
+        module={module}
+        itemId={id}
+        learnerId={learnerId}
+        hide={module === "ads" ? ["adSave"] : []}
+      />
       {module === "messages" && related.some((r) => r.module === "noticeReceipts") && (
         <Boundary>
           <NotificationPanel noticeId={id} />

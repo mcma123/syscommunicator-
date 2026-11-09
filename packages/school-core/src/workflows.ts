@@ -37,7 +37,6 @@ export const WORKFLOW_ACTIONS = [
   "profileSave",
   "invite",
   "adSave",
-  "adMedia",
   "adSubmit",
   "adPublish",
   "adReturn",

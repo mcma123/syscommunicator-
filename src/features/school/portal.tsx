@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { SchoolShell, navigation, staffNavigation } from "./shell";
 import { Heading, ChildPicker, Empty, RecordCard, Placeholder } from "./components";
 import { AdList, AdPreview } from "./ads";
+import { AdComposer, AdComposerLauncher } from "./ad-composer";
 import {
   CalendarAgenda,
   CalendarMonth,
@@ -188,8 +189,18 @@ function DetailPanel({
       <DialogDescription>
         {r.subtitle} {r.status}
       </DialogDescription>
-      {module === "ads" && <AdPreview record={r} />}
-      <WorkflowPanel module={module} itemId={id} learnerId={learnerId} />
+      {module === "ads" && (
+        <>
+          <AdPreview record={r} />
+          <AdComposer adId={id} showPreview={false} />
+        </>
+      )}
+      <WorkflowPanel
+        module={module}
+        itemId={id}
+        learnerId={learnerId}
+        hide={module === "ads" ? ["adSave"] : []}
+      />
       {module === "messages" && related.some((r) => r.module === "noticeReceipts") && (
         <Boundary>
           <NotificationPanel noticeId={id} />
@@ -496,7 +507,9 @@ export function RecordBrowser({
           if (!v) setSelected(undefined);
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className={`max-h-[90vh] overflow-y-auto ${module === "ads" ? "sm:max-w-4xl" : ""}`}
+        >
           {selected && (
             <Boundary key={selected.id}>
               <DetailPanel
@@ -608,7 +621,7 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
               <SchoolOffice />
             </Boundary>
           )}
-          <WorkflowPanel module={module} />
+          {module === "ads" ? <AdComposerLauncher /> : <WorkflowPanel module={module} />}
           {module === "payments" && (
             <Boundary>
               <PaymentsSummary />

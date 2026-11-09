@@ -243,17 +243,10 @@ export const forms = authedQuery({
             toggle("popup", "Also show as a popup (once per device)", ad?.popup),
           ],
           global
-            ? "Ads start as drafts. Add an image or video, then publish."
-            : "Ads start as drafts for your classes. Add an image or video, then submit for approval.",
+            ? "Ads start as drafts. Add pictures or videos, then publish."
+            : "Ads start as drafts for your classes. Add pictures or videos, then submit for approval.",
         );
       }
-      if (ad && (ad.status === "Draft" || ad.status === "Review"))
-        add(
-          "adMedia",
-          ad.media ? "Replace image or video" : "Add image or video",
-          [field("file", "PNG or JPEG image (5 MiB) or MP4/WebM video (15 MiB)", "", "file")],
-          "Landscape (16:9) works best. Videos play muted and loop, so keep them short.",
-        );
       if (ad?.status === "Draft" && !global)
         add(
           "adSubmit",

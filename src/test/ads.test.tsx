@@ -1,13 +1,55 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicAd } from "@school-connect/core/live";
 import { AdBanner, AdPopup } from "../features/school/ads";
+import { AdComposer } from "../features/school/ad-composer";
 import { adStage } from "../features/school/format";
 
-const state = vi.hoisted(() => ({ ads: [] as PublicAd[] }));
-vi.mock("../features/school/store", () => ({
-  useAds: () => ({ ads: state.ads, status: "ready" }),
+const state = vi.hoisted(() => ({
+  ads: [] as PublicAd[],
+  submit: vi.fn(),
+  upload: vi.fn(),
 }));
+vi.mock("../features/school/store", async () => {
+  const backend = await vi.importActual<typeof import("@school-connect/backend/react")>(
+    "@school-connect/backend/react",
+  );
+  return {
+    adContentType: backend.adContentType,
+    useAds: () => ({ ads: state.ads, status: "ready" }),
+    useSchool: () => ({ offline: false, notify: vi.fn() }),
+    useAdMedia: () => ({ items: [], status: "ready" }),
+    useAdUploader: () => ({ upload: state.upload, remove: vi.fn(), move: vi.fn() }),
+    useWorkflows: () => ({
+      status: "ready",
+      submit: state.submit,
+      forms: [
+        {
+          action: "adSave",
+          title: "Create ad",
+          description: "Ads start as drafts.",
+          fields: [
+            { name: "title", label: "Headline", type: "text", value: "", required: true },
+            { name: "caption", label: "Caption", type: "multiline", value: "", required: false },
+            { name: "linkUrl", label: "Link", type: "text", value: "", required: false },
+            { name: "linkLabel", label: "Button", type: "text", value: "", required: false },
+            { name: "startsAt", label: "From", type: "datetime", value: "", required: true },
+            { name: "endsAt", label: "Until", type: "datetime", value: "", required: true },
+            {
+              name: "audience",
+              label: "Audience",
+              type: "select",
+              value: "",
+              required: true,
+              options: [{ value: '[{"kind":"School"}]', label: "Whole school" }],
+            },
+            { name: "popup", label: "Popup", type: "toggle", value: "false", required: true },
+          ],
+        },
+      ],
+    }),
+  };
+});
 
 const ad = (id: string, extra: Partial<PublicAd> = {}): PublicAd => ({
   id,
@@ -19,67 +61,85 @@ const ad = (id: string, extra: Partial<PublicAd> = {}): PublicAd => ({
   revision: 1,
   startsAt: 0,
   endsAt: Date.now() + 3600000,
-  media: { url: `https://files.example/${id}.png`, kind: "image", contentType: "image/png" },
+  items: [{ url: `https://media.example/${id}.png`, kind: "image", contentType: "image/png" }],
   ...extra,
 });
+const file = (name: string, size: number, type = "") => {
+  const f = new File(["x"], name, { type });
+  Object.defineProperty(f, "size", { value: size });
+  return f;
+};
 
 beforeEach(() => {
   window.localStorage.clear();
   state.ads = [];
+  state.submit.mockReset().mockResolvedValue({ id: "ad-new" });
+  state.upload.mockReset().mockResolvedValue("media-1");
+  URL.createObjectURL = vi.fn(() => "blob:preview");
+  URL.revokeObjectURL = vi.fn();
 });
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
 });
 
-describe("Ad Center presentation", () => {
+describe("Ad Center banner and popup", () => {
   it("renders nothing without running ads", () => {
     const { container } = render(<AdBanner />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows a slide with a safe external link and rotates between ads", () => {
+  it("shows every item of every ad as a slide and rotates", () => {
     vi.useFakeTimers();
-    state.ads = [ad("a"), ad("b", { media: null, linkUrl: null })];
-    render(<AdBanner />);
-    expect(screen.getByRole("heading", { name: "Ad a" })).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: /Book now/ });
-    expect(link).toHaveAttribute("href", "https://example.org/info");
-    expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    act(() => vi.advanceTimersByTime(8000));
-    expect(screen.getByRole("heading", { name: "Ad b" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Previous ad" }));
-    expect(screen.getByRole("heading", { name: "Ad a" })).toBeInTheDocument();
-  });
-
-  it("plays video ads muted and inline", () => {
     state.ads = [
-      ad("v", {
-        media: { url: "https://files.example/v.mp4", kind: "video", contentType: "video/mp4" },
+      ad("a", {
+        items: [
+          { url: "https://media.example/a1.png", kind: "image", contentType: "image/png" },
+          { url: "https://media.example/a2.mp4", kind: "video", contentType: "video/mp4" },
+        ],
       }),
+      ad("b", { linkUrl: null }),
     ];
     const { container } = render(<AdBanner />);
+    expect(screen.getAllByRole("tab")).toHaveLength(3);
+    expect(screen.getByRole("tab", { name: "Ad a (1 of 2)" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    const link = screen.getByRole("link", { name: /Book now/ });
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    act(() => vi.advanceTimersByTime(8000));
     const video = container.querySelector("video")!;
-    expect(video).toHaveAttribute("src", "https://files.example/v.mp4");
+    expect(video).toHaveAttribute("src", "https://media.example/a2.mp4");
     expect(video.muted).toBe(true);
-    expect(video).toHaveAttribute("playsinline");
+    fireEvent.click(screen.getByRole("button", { name: "Next ad" }));
+    expect(screen.getByRole("heading", { name: "Ad b" })).toBeInTheDocument();
   });
 
-  it("pops up once per ad revision and remembers dismissal", () => {
-    state.ads = [ad("p", { popup: true })];
+  it("pops up once per ad revision and steps through its items", () => {
+    state.ads = [
+      ad("p", {
+        popup: true,
+        items: [
+          { url: "https://media.example/p1.png", kind: "image", contentType: "image/png" },
+          { url: "https://media.example/p2.png", kind: "image", contentType: "image/png" },
+        ],
+      }),
+    ];
     const first = render(<AdPopup />);
-    expect(screen.getByRole("dialog")).toHaveTextContent("Ad p");
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.querySelector("img")).toHaveAttribute("src", "https://media.example/p1.png");
+    fireEvent.click(screen.getByRole("button", { name: "Next picture or video" }));
+    expect(dialog.querySelector("img")).toHaveAttribute("src", "https://media.example/p2.png");
     fireEvent.click(screen.getByRole("button", { name: "Got it" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     first.unmount();
-
     render(<AdPopup />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     cleanup();
-
-    state.ads = [ad("p", { popup: true, revision: 2 })];
+    state.ads = [{ ...state.ads[0]!, revision: 2 }];
     render(<AdPopup />);
-    expect(screen.getByRole("dialog")).toHaveTextContent("Ad p");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("labels the staff stage from status and schedule", () => {
@@ -102,5 +162,63 @@ describe("Ad Center presentation", () => {
     );
     expect(adStage({ ...base, status: "Published", at: 0, endsAt: now - 1 }, now)).toBe("Ended");
     expect(adStage({ ...base, status: "Published", at: 0, endsAt: now * 2 }, now)).toBe("Live");
+  });
+});
+
+describe("Ad composer", () => {
+  it("keeps the button link hidden until requested", () => {
+    render(<AdComposer />);
+    expect(screen.queryByPlaceholderText("https://")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText(/Add a button link/));
+    expect(screen.getByPlaceholderText("https://")).toBeInTheDocument();
+  });
+
+  it("checks dropped files, then saves the ad and uploads the accepted files", async () => {
+    render(<AdComposer />);
+    fireEvent.change(screen.getByPlaceholderText(/Spring Concert/), {
+      target: { value: "Open Day" },
+    });
+    const zone = screen.getByRole("button", { name: /Add pictures or videos/ });
+    fireEvent.drop(zone, {
+      dataTransfer: {
+        files: [
+          file("poster.jpg", 2 * 1024 * 1024),
+          file("huge.mp4", 60 * 1024 * 1024),
+          file("anim.gif", 1000),
+          file("tour.mov", 30 * 1024 * 1024),
+        ],
+      },
+    });
+    const rejected = screen.getByRole("alert");
+    expect(rejected).toHaveTextContent("huge.mp4: Videos may be up to 50 MB.");
+    expect(rejected).toHaveTextContent("anim.gif: Use a PNG, JPEG or WebP picture");
+    expect(screen.getByText(/poster\.jpg · 2\.0 MB/)).toBeInTheDocument();
+    expect(screen.getByText(/tour\.mov · 30\.0 MB/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Save and upload 2 files" }));
+    await waitFor(() => expect(state.upload).toHaveBeenCalledTimes(2));
+    expect(state.submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "adSave",
+        values: expect.objectContaining({ title: "Open Day", linkUrl: "", linkLabel: "" }),
+      }),
+    );
+    expect(state.upload).toHaveBeenCalledWith(
+      "ad-new",
+      expect.objectContaining({ name: "tour.mov", type: "video/quicktime" }),
+      expect.any(Function),
+    );
+    expect(await screen.findByText(/Ad saved as a draft/)).toBeInTheDocument();
+  });
+
+  it("reports uploads that fail and keeps them for another try", async () => {
+    state.upload.mockRejectedValueOnce(new Error("Upload to storage failed."));
+    render(<AdComposer />);
+    fireEvent.drop(screen.getByRole("button", { name: /Add pictures or videos/ }), {
+      dataTransfer: { files: [file("poster.png", 1000)] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save and upload 1 file" }));
+    expect(await screen.findByText(/1 file could not upload/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save and upload 1 file" })).toBeEnabled();
   });
 });

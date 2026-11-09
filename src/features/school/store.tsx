@@ -7,8 +7,11 @@ import {
   useSchoolDetail,
   useSchoolDashboard,
   useSchoolAds,
+  useAdMedia as useSchoolAdMedia,
+  useAdMediaUploader,
   useNoticeReceipt,
 } from "@school-connect/backend/react";
+export { adContentType, type AdUploadFile } from "@school-connect/backend/react";
 import { canAccessModule, type SchoolModule } from "@school-connect/core/permissions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -188,6 +191,14 @@ export function useAds() {
       canAccessModule(accessRoles, "home", account.disabledModules) &&
       !account.disabledModules?.includes("ads"),
   );
+}
+/** Ad Center: an ad's uploaded pictures/videos (editors only). */
+export function useAdMedia(adId: string | undefined) {
+  return useSchoolAdMedia(adId);
+}
+/** Ad Center: direct-to-R2 uploads with progress, remove and reorder. */
+export function useAdUploader() {
+  return useAdMediaUploader();
 }
 export function useDashboard() {
   const { account, child } = useSchool();
