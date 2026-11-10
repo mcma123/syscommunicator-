@@ -35,3 +35,8 @@ Verified development evidence: 34 frontend + 59 backend + 3 CLI tests pass; all 
 ## Ad Center
 - Server forms: `adSave` (headline ≤80, caption ≤500, optional https link and ≤40-character button label, Johannesburg start/end within one year, audience, popup) plus `adSubmit` (Teacher Draft → Review; needs at least one picture/video), `adPublish` (Principal/Administrator; Draft/Review → Published; needs media and a future end), `adReturn` (Review/Published → Draft with optional note) and `adArchive`. Both clients render `adSave` inside the Ad Center composer and hide it from the generic action panel.
 - Media is not a workflow form: the composer uploads through `ads.prepareUpload`/`finishUpload` and manages items with `ads.removeMedia`/`moveMedia` (FILES.md). Links must be `https:` URLs without credentials. Teacher edits are allowed only on Draft; whole-school staff may also edit an ad in Review.
+
+## Advertising
+- Parent clients call `adStats.track` (banner, popup, click) fire-and-forget; the client also skips repeats within a page session.
+- Public enquiries create or update one `advertisers` row per email. With email consent the sequence starts at once (welcome, +3 days, +7 days; copy in `advertiserEmail.sequenceEmail`, offer text in `@school-connect/core/advertising`). Sends run from `advertiserEmail.sendDue` (scheduled after an enquiry and every 30 minutes); without `RESEND_API_KEY`/`AUTH_EMAIL_FROM` an attempt is logged as Skipped and retried hourly.
+- `advertiserEmail.monthlyReports` (1st of the month) emails each Active advertiser with consent last month's views, popup views, clicks and parent visits for its linked ads.

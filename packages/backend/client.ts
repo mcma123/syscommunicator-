@@ -8,6 +8,8 @@ import type {
   DashboardState,
   PublicAd,
   AdMediaItem,
+  AdEvent,
+  AdStats,
 } from "@school-connect/core/live";
 import type { SchoolModule } from "@school-connect/core/permissions";
 import {
@@ -71,6 +73,50 @@ export type RecordId =
   | Id<"auditLog">
   | Id<"ads">
   | Id<"schools">;
+export type AdvertiserStatus = import("@school-connect/core/domain").AdvertiserStatus;
+/** Rounded public reach figures for the "Advertise with us" page. */
+export type PublicReach = {
+  school: string;
+  families: number;
+  learners: number;
+  weeklyFamilies: number;
+  adViews30: number;
+  updatedAt: number | null;
+};
+export type AdvertiserEnquiry = {
+  businessName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  category: string;
+  message: string;
+  consentEmail: boolean;
+  consentWhatsApp: boolean;
+  /** Honeypot: always send an empty string. */
+  website: string;
+  turnstileToken: string;
+};
+export type AdvertiserView = {
+  id: Id<"advertisers">;
+  businessName: string;
+  contactName: string;
+  email: string;
+  phone: string | null;
+  category: string | null;
+  message: string | null;
+  source: string;
+  status: AdvertiserStatus;
+  consentEmail: boolean;
+  consentWhatsApp: boolean;
+  consentAt: number | null;
+  notes: string | null;
+  isNew: boolean;
+  emailsSent: number;
+  nextEmailAt: number | null;
+  adIds: Id<"ads">[];
+  createdAt: number;
+  updatedAt: number;
+};
 export type PublicFile = { fileName: string; contentType: string; size: number };
 export type PublicNotice = Omit<Doc<"notices">, "attachments"> & { attachments: PublicFile[] };
 export type PublicResource = Omit<Doc<"resources">, "file"> & { file: PublicFile };
@@ -263,6 +309,57 @@ export const api = {
       { mediaId: Id<"adMedia">; direction: -1 | 1 },
       null
     >("ads:moveMedia"),
+  },
+  advertise: {
+    reach: makeFunctionReference<"query", Record<string, never>, PublicReach>("advertise:reach"),
+    enquire: makeFunctionReference<"action", AdvertiserEnquiry, { ok: boolean }>(
+      "advertise:enquire",
+    ),
+    unsubscribe: makeFunctionReference<
+      "mutation",
+      { advertiserId: string; token: string },
+      { ok: boolean }
+    >("advertise:unsubscribe"),
+  },
+  advertisers: {
+    list: makeFunctionReference<"query", Record<string, never>, AdvertiserView[]>(
+      "advertisers:list",
+    ),
+    unseen: makeFunctionReference<"query", Record<string, never>, number>("advertisers:unseen"),
+    create: makeFunctionReference<
+      "mutation",
+      {
+        businessName: string;
+        contactName: string;
+        email: string;
+        phone: string;
+        category: string;
+        notes: string;
+        consentEmail: boolean;
+      },
+      Id<"advertisers">
+    >("advertisers:create"),
+    update: makeFunctionReference<
+      "mutation",
+      {
+        advertiserId: Id<"advertisers">;
+        status?: AdvertiserStatus;
+        notes?: string;
+        seen?: boolean;
+      },
+      null
+    >("advertisers:update"),
+    linkAd: makeFunctionReference<
+      "mutation",
+      { adId: Id<"ads">; advertiserId: Id<"advertisers"> | null },
+      null
+    >("advertisers:linkAd"),
+  },
+  adStats: {
+    track: makeFunctionReference<"action", { adId: Id<"ads">; event: AdEvent }, null>(
+      "adStats:track",
+    ),
+    forAd: makeFunctionReference<"query", { adId: Id<"ads"> }, AdStats>("adStats:forAd"),
   },
   dashboard: {
     current: makeFunctionReference<

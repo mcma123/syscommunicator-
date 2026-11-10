@@ -9,7 +9,11 @@
  */
 
 import type * as access from "../access.js";
+import type * as adStats from "../adStats.js";
 import type * as ads from "../ads.js";
+import type * as advertise from "../advertise.js";
+import type * as advertiserEmail from "../advertiserEmail.js";
+import type * as advertisers from "../advertisers.js";
 import type * as auth from "../auth.js";
 import type * as authEmail from "../authEmail.js";
 import type * as authPolicy from "../authPolicy.js";
@@ -22,6 +26,7 @@ import type * as http from "../http.js";
 import type * as imports from "../imports.js";
 import type * as learners from "../learners.js";
 import type * as lib_adMedia from "../lib/adMedia.js";
+import type * as lib_advertiserToken from "../lib/advertiserToken.js";
 import type * as lib_audiences from "../lib/audiences.js";
 import type * as lib_audit from "../lib/audit.js";
 import type * as lib_auth from "../lib/auth.js";
@@ -62,7 +67,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
+  adStats: typeof adStats;
   ads: typeof ads;
+  advertise: typeof advertise;
+  advertiserEmail: typeof advertiserEmail;
+  advertisers: typeof advertisers;
   auth: typeof auth;
   authEmail: typeof authEmail;
   authPolicy: typeof authPolicy;
@@ -75,6 +84,7 @@ declare const fullApi: ApiFromModules<{
   imports: typeof imports;
   learners: typeof learners;
   "lib/adMedia": typeof lib_adMedia;
+  "lib/advertiserToken": typeof lib_advertiserToken;
   "lib/audiences": typeof lib_audiences;
   "lib/audit": typeof lib_audit;
   "lib/auth": typeof lib_auth;

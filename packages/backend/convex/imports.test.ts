@@ -67,8 +67,11 @@ const staffCsv = [
   "finance2@example.org,Fay,Nel,,Finance,5A,2026",
 ].join("\n");
 
-it("allows only Administrators to preview, commit or list imports", async () => {
+it("allows only Administrators to preview or commit classes, and parents nothing", async () => {
   const { principal, parent } = await setup();
+  // Principals may import learners/guardians (classImports.test.ts) and list their own batches.
+  expect(await principal.query(api.imports.batches, {})).toEqual([]);
+  await expect(parent.query(api.imports.batches, {})).rejects.toThrow(/cannot access/);
   const rows = chunk("classes", classesCsv);
   for (const client of [principal, parent]) {
     await expect(client.query(api.imports.preview, { kind: "classes", rows })).rejects.toThrow(
@@ -82,7 +85,6 @@ it("allows only Administrators to preview, commit or list imports", async () => 
         rows,
       }),
     ).rejects.toThrow(/cannot access/);
-    await expect(client.query(api.imports.batches, {})).rejects.toThrow(/cannot access/);
   }
 });
 

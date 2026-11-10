@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   submit: vi.fn(),
   upload: vi.fn(),
 }));
+const track = vi.fn();
 vi.mock("../features/school/store", async () => {
   const backend = await vi.importActual<typeof import("@school-connect/backend/react")>(
     "@school-connect/backend/react",
@@ -18,6 +19,7 @@ vi.mock("../features/school/store", async () => {
   return {
     adContentType: backend.adContentType,
     useAds: () => ({ ads: state.ads, status: "ready", sessionStartedAt: state.session }),
+    useTrackAd: () => track,
     useSchool: () => ({ offline: false, notify: vi.fn() }),
     useAdMedia: () => ({ items: [], status: "ready" }),
     useAdUploader: () => ({ upload: state.upload, remove: vi.fn(), move: vi.fn() }),
@@ -110,6 +112,9 @@ describe("Ad Center banner and popup", () => {
     );
     const link = screen.getByRole("link", { name: /Book now/ });
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(track).toHaveBeenCalledWith("a", "banner");
+    fireEvent.click(link);
+    expect(track).toHaveBeenCalledWith("a", "click");
     act(() => vi.advanceTimersByTime(8000));
     const video = container.querySelector("video")!;
     expect(video).toHaveAttribute("src", "https://media.example/a2.mp4");
@@ -135,6 +140,7 @@ describe("Ad Center banner and popup", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveTextContent("Ad p");
     expect(dialog).toHaveTextContent("1 OF 2");
+    expect(track).toHaveBeenCalledWith("p", "popup");
     expect(dialog.querySelector("img")).toHaveAttribute("src", "https://media.example/p1.png");
     fireEvent.click(screen.getAllByRole("button", { name: /^Next$/ })[0]!);
     expect(dialog.querySelector("img")).toHaveAttribute("src", "https://media.example/p2.png");

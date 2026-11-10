@@ -7,6 +7,8 @@ import {
   useSchoolDetail,
   useSchoolDashboard,
   useSchoolAds,
+  useAdTracker,
+  useAdStats as useSchoolAdStats,
   useAdMedia as useSchoolAdMedia,
   useAdMediaUploader,
   useNoticeReceipt,
@@ -126,6 +128,49 @@ export function useRosterImport() {
     batches,
   };
 }
+/** Principal/Administrator advertiser pipeline in the Ad Center. */
+export function useAdvertisers() {
+  const { account } = useSchool();
+  const leader =
+    account?.status === "Active" &&
+    account.roles.some((r) => r === "Principal" || r === "Administrator") &&
+    !account.disabledModules?.includes("ads");
+  const list = useQuery(api.advertisers.list, leader ? {} : "skip");
+  const unseen = useQuery(api.advertisers.unseen, leader ? {} : "skip");
+  return {
+    leader,
+    list,
+    unseen: unseen ?? 0,
+    create: useMutation(api.advertisers.create),
+    update: useMutation(api.advertisers.update),
+    linkAd: useMutation(api.advertisers.linkAd),
+  };
+}
+/** Public "Advertise with us" page (no sign-in needed). */
+export function useAdvertisePage() {
+  return {
+    reach: useQuery(api.advertise.reach, {}),
+    enquire: useAction(api.advertise.enquire),
+    unsubscribe: useMutation(api.advertise.unsubscribe),
+  };
+}
+/** Class imports (learners + parent contacts) for Principals and Teachers from a class folder. */
+export function useClassImport() {
+  const { account } = useSchool();
+  const enabled =
+    account?.status === "Active" &&
+    account.roles.some((r) => r === "Administrator" || r === "Principal" || r === "Teacher");
+  const convex = useConvex();
+  const commit = useMutation(api.imports.commit);
+  const complete = useMutation(api.imports.complete);
+  return {
+    enabled,
+    preview: (args: FunctionArgs<typeof api.imports.preview>) =>
+      convex.query(api.imports.preview, args),
+    commit,
+    complete,
+  };
+}
 export function useSchool() {
   const store = useContext(Context);
   if (!store) throw new Error("SchoolProvider is required");
@@ -191,6 +236,15 @@ export function useAds() {
       canAccessModule(accessRoles, "home", account.disabledModules) &&
       !account.disabledModules?.includes("ads"),
   );
+}
+/** Reports ad impressions/popup views/clicks for parent accounts (fire-and-forget). */
+export function useTrackAd() {
+  const { account } = useSchool();
+  return useAdTracker(account?.status === "Active" && account.learners.length > 0);
+}
+/** Ad Center: one ad's views, popup views, clicks and parents reached (editors only). */
+export function useAdStats(adId: string | undefined) {
+  return useSchoolAdStats(adId);
 }
 /** Ad Center: an ad's uploaded pictures/videos (editors only). */
 export function useAdMedia(adId: string | undefined) {

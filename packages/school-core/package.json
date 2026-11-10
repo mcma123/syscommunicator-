@@ -10,6 +10,7 @@
     "./live": "./src/live.ts",
     "./calendar": "./src/calendar.ts",
     "./workflows": "./src/workflows.ts",
-    "./imports": "./src/imports.ts"
+    "./imports": "./src/imports.ts",
+    "./advertising": "./src/advertising.ts"
   }
 }

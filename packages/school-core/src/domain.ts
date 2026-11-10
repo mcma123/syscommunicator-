@@ -45,6 +45,17 @@ export type PublishStatus = (typeof PUBLISH_STATUSES)[number];
 export const AD_STATUSES = ["Draft", "Review", "Published", "Archived"] as const;
 export type AdStatus = (typeof AD_STATUSES)[number];
 export const AD_MEDIA_KINDS = ["image", "video"] as const;
+/** Advertiser pipeline: enquiry → in conversation → paying → ended; Unsubscribed stops all marketing. */
+export const ADVERTISER_STATUSES = [
+  "Lead",
+  "Contacted",
+  "Active",
+  "Lapsed",
+  "Unsubscribed",
+] as const;
+export type AdvertiserStatus = (typeof ADVERTISER_STATUSES)[number];
+export const ADVERTISER_SOURCES = ["Website", "Staff"] as const;
+export type AdvertiserSource = (typeof ADVERTISER_SOURCES)[number];
 export const AD_MEDIA_STATUSES = ["Pending", "Ready"] as const;
 export type AdMediaStatus = (typeof AD_MEDIA_STATUSES)[number];
 export type AdMediaKind = (typeof AD_MEDIA_KINDS)[number];

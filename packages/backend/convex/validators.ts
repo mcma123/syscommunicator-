@@ -3,6 +3,8 @@ import {
   AD_MEDIA_KINDS,
   AD_MEDIA_STATUSES,
   AD_STATUSES,
+  ADVERTISER_SOURCES,
+  ADVERTISER_STATUSES,
   ATTENDANCE_STATUSES,
   CHARGE_STATUSES,
   CONDUCT_TYPES,
@@ -55,6 +57,8 @@ export const eventStatus = literals(EVENT_STATUSES);
 export const resourceCategory = literals(RESOURCE_CATEGORIES);
 export const publishStatus = literals(PUBLISH_STATUSES);
 export const adStatus = literals(AD_STATUSES);
+export const advertiserStatus = literals(ADVERTISER_STATUSES);
+export const advertiserSource = literals(ADVERTISER_SOURCES);
 export const adMediaStatus = literals(AD_MEDIA_STATUSES);
 export const adMediaKind = literals(AD_MEDIA_KINDS);
 export const reportStatus = literals(REPORT_STATUSES);

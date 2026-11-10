@@ -1,4 +1,6 @@
-// Phase 11 roster import: Administrator-only preview and chunked, audited commit.
+// Phase 11 roster import: Administrator preview and chunked, audited commit.
+// Teachers (their own classes) and Principals (any class) may import learners and
+// guardian contacts only; see "Class imports" in IMPORTS.md.
 // Every row is re-validated here with the shared school-core rules; the client
 // preview is a convenience, never the authority. Guardians and staff are only
 // staged as rosterContacts: importing never creates accounts, roles or links.
@@ -44,10 +46,33 @@ const rowResult = v.object({
   messages: v.array(v.string()),
 });
 
+/** Classes a class-scoped importer may write to; `null` means every class. */
+type Scope = { admin: boolean; classes: Set<Id<"classes">> | null };
+const CLASS_KINDS: readonly ImportKind[] = ["learners", "guardians"];
+
 function administrator(actor: Actor) {
   if (!hasRole(actor, "Administrator")) denied();
   requireModule(actor, "people");
 }
+/**
+ * Administrators import every kind (People module). Principals and Teachers import
+ * learners and guardian contacts from the Learners module: Teachers only into the
+ * classes they teach, Principals into any class.
+ */
+function importer(actor: Actor, kind?: ImportKind): Scope {
+  if (hasRole(actor, "Administrator")) {
+    administrator(actor);
+    return { admin: true, classes: null };
+  }
+  if (!hasRole(actor, "Principal", "Teacher")) denied();
+  requireModule(actor, "children");
+  if (kind && !CLASS_KINDS.includes(kind)) denied();
+  return hasRole(actor, "Principal")
+    ? { admin: false, classes: null }
+    : { admin: false, classes: new Set(actor.teachingClasses.map((c) => c._id)) };
+}
+const outside = (scope: Scope, classId: Id<"classes">) =>
+  scope.classes !== null && !scope.classes.has(classId);
 function invalid(message: string): never {
   throw new ConvexError({ code: "INVALID", message });
 }
@@ -155,10 +180,12 @@ async function planClass(ctx: QueryCtx, row: ClassRow): Promise<Plan> {
   };
 }
 
-async function planLearner(ctx: QueryCtx, row: LearnerRow): Promise<Plan> {
+async function planLearner(ctx: QueryCtx, row: LearnerRow, scope: Scope): Promise<Plan> {
   const classroom = await findClass(ctx, row.year, row.className);
   if (!classroom)
     return rejected(`Class ${row.className} (${row.year}) does not exist. Import classes first.`);
+  if (outside(scope, classroom._id))
+    return rejected(`You can only import learners into classes you teach.`);
   const grade = await ctx.db.get("grades", classroom.gradeId);
   if (!grade || grade.name.toLowerCase() !== row.grade.toLowerCase())
     return rejected(
@@ -173,6 +200,10 @@ async function planLearner(ctx: QueryCtx, row: LearnerRow): Promise<Plan> {
     classId: classroom._id,
   };
   const existing = await learnerByNumber(ctx, row.learnerNumber);
+  if (existing && outside(scope, existing.classId))
+    return rejected(
+      `Learner ${row.learnerNumber} is already in a class you do not teach. Ask the school office to move them.`,
+    );
   if (!existing)
     return {
       outcome: "create",
@@ -198,10 +229,12 @@ async function planLearner(ctx: QueryCtx, row: LearnerRow): Promise<Plan> {
   };
 }
 
-async function planGuardian(ctx: QueryCtx, row: GuardianRow): Promise<Plan> {
+async function planGuardian(ctx: QueryCtx, row: GuardianRow, scope: Scope): Promise<Plan> {
   const learner = await learnerByNumber(ctx, row.learnerNumber);
   if (!learner)
     return rejected(`Learner ${row.learnerNumber} does not exist. Import learners first.`);
+  if (outside(scope, learner.classId))
+    return rejected(`Learner ${row.learnerNumber} is not in a class you teach.`);
   const user = await findUser(ctx, row.email);
   if (user) {
     const link = await ctx.db
@@ -336,6 +369,7 @@ async function planRow(
   ctx: QueryCtx,
   kind: ImportKind,
   input: { row: number; cells: Record<string, string> },
+  scope: Scope,
 ): Promise<Plan> {
   const result = validateImportRow(kind, input.cells, input.row);
   if (!result.data)
@@ -346,9 +380,9 @@ async function planRow(
     case "classes":
       return planClass(ctx, result.data as ClassRow);
     case "learners":
-      return planLearner(ctx, result.data as LearnerRow);
+      return planLearner(ctx, result.data as LearnerRow, scope);
     case "guardians":
-      return planGuardian(ctx, result.data as GuardianRow);
+      return planGuardian(ctx, result.data as GuardianRow, scope);
     default:
       return planStaff(ctx, result.data as StaffRow);
   }
@@ -359,11 +393,11 @@ export const preview = authedQuery({
   args: { kind: importKind, rows: v.array(rowInput) },
   returns: v.array(rowResult),
   handler: async (ctx, args) => {
-    administrator(ctx.actor);
+    const scope = importer(ctx.actor, args.kind);
     checkChunk(args.rows);
     const results = [];
     for (const input of args.rows) {
-      const plan = await planRow(ctx, args.kind, input);
+      const plan = await planRow(ctx, args.kind, input, scope);
       results.push({ row: input.row, outcome: plan.outcome, messages: plan.messages });
     }
     return results;
@@ -373,10 +407,12 @@ export const preview = authedQuery({
 async function openBatch(
   ctx: AuthedMutationCtx,
   args: { kind: ImportKind; fileName: string; totalRows: number; batchId?: Id<"importBatches"> },
+  scope: Scope,
 ) {
   if (args.batchId) {
     const batch = await ctx.db.get("importBatches", args.batchId);
     if (!batch) invalid("Import batch not found.");
+    if (!scope.admin && batch.createdBy !== ctx.actor.user._id) denied();
     if (batch.kind !== args.kind || batch.status !== "Open")
       invalid("This import batch is closed.");
     return batch;
@@ -416,9 +452,9 @@ export const commit = authedMutation({
   },
   returns: v.object({ batchId: v.id("importBatches"), results: v.array(rowResult) }),
   handler: async (ctx, args) => {
-    administrator(ctx.actor);
+    const scope = importer(ctx.actor, args.kind);
     checkChunk(args.rows);
-    const batch = await openBatch(ctx, args);
+    const batch = await openBatch(ctx, args, scope);
     const counts = { create: 0, update: 0, unchanged: 0, rejected: 0 };
     const results = [];
     for (const input of args.rows) {
@@ -438,7 +474,7 @@ export const commit = authedMutation({
         });
         continue;
       }
-      const plan = await planRow(ctx, args.kind, input);
+      const plan = await planRow(ctx, args.kind, input, scope);
       counts[plan.outcome]++;
       await ctx.db.insert("importBatchRows", {
         batchId: batch._id,
@@ -478,9 +514,10 @@ export const complete = authedMutation({
   args: { batchId: v.id("importBatches") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    administrator(ctx.actor);
+    const scope = importer(ctx.actor);
     const batch = await ctx.db.get("importBatches", args.batchId);
     if (!batch) invalid("Import batch not found.");
+    if (!scope.admin && batch.createdBy !== ctx.actor.user._id) denied();
     if (batch.status !== "Open") invalid("This import batch is already complete.");
     const processed = batch.created + batch.updated + batch.unchanged + batch.rejected;
     if (processed !== batch.totalRows)
@@ -513,8 +550,15 @@ export const batches = authedQuery({
     }),
   ),
   handler: async (ctx) => {
-    administrator(ctx.actor);
-    const rows = await ctx.db.query("importBatches").order("desc").take(20);
+    // Administrators see every recent import; class importers see only their own.
+    const scope = importer(ctx.actor);
+    const rows = scope.admin
+      ? await ctx.db.query("importBatches").order("desc").take(20)
+      : await ctx.db
+          .query("importBatches")
+          .withIndex("by_createdBy", (q) => q.eq("createdBy", ctx.actor.user._id))
+          .order("desc")
+          .take(20);
     return rows.map(({ createdBy: _c, updatedAt: _u, ...row }) => row);
   },
 });

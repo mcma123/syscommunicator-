@@ -161,12 +161,28 @@ Upload reservations store server-derived user/session, validated upload specific
 | Existing account / guardian link | `users.email`, `guardianLinks.by_guardianId_and_learnerId`, `staffRoles.by_userId` |
 | Staged guardian contact | `rosterContacts.by_kind_and_email_and_learnerId`; per-learner bound via `rosterContacts.by_learnerId` |
 | Staged staff contact | `rosterContacts.by_kind_and_email` |
-| Recent uploads | `importBatches` creation-time order; `importBatches.by_status` for open batches |
+| Recent uploads | `importBatches` creation-time order (Administrators); `importBatches.by_createdBy` for a Teacher/Principal's own class imports; `importBatches.by_status` for open batches |
 | Replay-safe row accounting per batch | `importBatchRows.by_batchId_and_row` (row number → content digest, outcome) |
 
-`importBatches`, `importBatchRows`, `rosterContacts` and the `grades.by_name` index are additive, with no backfill. Staged contacts are not identity, role or guardian data and grant no access; see [IMPORTS.md](IMPORTS.md). Reset clears both with the other application tables.
+`importBatches`, `importBatchRows`, `rosterContacts`, the `grades.by_name` and `importBatches.by_createdBy` indexes are additive, with no backfill. Staged contacts are not identity, role or guardian data and grant no access; see [IMPORTS.md](IMPORTS.md). Reset clears both with the other application tables.
 
 ## Ad Center
 - `ads`: headline, optional caption/link/button label, status (`AD_STATUSES`: Draft, Review, Published, Archived), `startsAt`/`endsAt`, `popup`, bounded `audiences`, `createdBy`, optional `approvedBy`/`reviewNote`, `updatedAt`, `revision` (bumped on every change, including media, so links and popups refresh) and an optional legacy `media` attachment for early dev test ads.
 - `adMedia`: one row per picture/video in R2 — `adId`, object `key` (`ads/<adId>/<random>.<ext>`), `kind`, `contentType`, `size`, `fileName`, `order`, `status` (`AD_MEDIA_STATUSES`: Pending, Ready), `uploadedBy`, `sessionId`, `expiresAt`, optional `detachedAt`.
 - Indexes: `ads.by_status_and_endsAt` (parent feed, bounded to 50 then filtered by start and audience), `ads.by_updatedAt` and `ads.by_createdBy_and_updatedAt` (Ad Center lists); `adMedia.by_adId_and_order` (ordered items, bounded to 30), `by_key`, `by_status_and_expiresAt` and `by_detachedAt` (cleanup).
+
+## Advertising and ad measurement
+
+| Read / write | Index |
+| --- | --- |
+| Count an ad event once per parent per day; lifetime reach | `adViewers.by_adId_and_userId` (one row per ad × parent with last day per event) |
+| Ad performance (day 0 = lifetime totals) | `adStats.by_adId_and_day` |
+| Ad views in the last 30 days (public reach) | `adStats.by_day` |
+| Advertiser by email (dedupe enquiries) | `advertisers.by_email` |
+| Advertiser list / new-enquiry badge | `advertisers.by_updatedAt`, `advertisers.by_seenByStaff` |
+| Due follow-up emails | `advertisers.by_nextSendAt` |
+| Monthly report recipients | `advertisers.by_status` → `ads.by_advertiserId` |
+| Email history | `advertiserEmails.by_advertiserId` |
+| Public reach figures | `siteStats.by_key` (single `reach` row, refreshed daily by `advertisers.refreshReach`; bounded scans of 5,000 rows) |
+
+All are additive with no backfill; `ads.advertiserId` is optional.

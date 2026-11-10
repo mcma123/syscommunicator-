@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ChevronRight, Folder, FolderOpen, Search, Users } from "lucide-react";
 import { Empty, Placeholder } from "./components";
 import { useRecords } from "./store";
-import { countLabel, groupClasses } from "@school-connect/core/live";
+import { countLabel, groupClasses, type ClassFolder } from "@school-connect/core/live";
 
 /**
  * Staff Learners browser: grade folders → class folders → that class's learners.
@@ -11,9 +11,12 @@ import { countLabel, groupClasses } from "@school-connect/core/live";
 export function LearnerFolders({
   renderClass,
   renderSearch,
+  renderClassTools,
 }: {
   renderClass: (classId: string) => ReactNode;
   renderSearch: () => ReactNode;
+  /** Optional class actions (e.g. CSV import) shown above the class's learners. */
+  renderClassTools?: (folder: ClassFolder) => ReactNode;
 }) {
   const [mode, setMode] = useState<"browse" | "search">("browse");
   const [grade, setGrade] = useState<string>();
@@ -94,6 +97,7 @@ export function LearnerFolders({
                   </p>
                 </div>
               </div>
+              {renderClassTools?.(currentClass)}
               {renderClass(currentClass.id)}
             </div>
           ) : currentGrade ? (

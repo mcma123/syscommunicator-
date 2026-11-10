@@ -18,6 +18,7 @@ import {
   useSchoolDetail,
   useSchoolDashboard,
   useSchoolAds,
+  useAdTracker,
   useAdMedia as useSchoolAdMedia,
   useAdMediaUploader,
   useNoticeReceipt,
@@ -178,6 +179,11 @@ export function useAds() {
       canAccessModule(grants, "home", account.disabledModules) &&
       !account.disabledModules?.includes("ads"),
   );
+}
+/** Reports ad impressions/popup views/clicks for parent accounts (fire-and-forget). */
+export function useTrackAd() {
+  const { account } = useSchool();
+  return useAdTracker(account?.status === "Active" && (account.learners.length ?? 0) > 0);
 }
 /** Ad Center: an ad's uploaded pictures/videos (editors only). */
 export function useAdMedia(adId: string | undefined) {

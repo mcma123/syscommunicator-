@@ -8,6 +8,8 @@ import { useSchool } from "./store";
 export function DemoSessionGate({ children }: { children: ReactNode }) {
   const { account, sessionReady, accessRoles } = useSchool();
   const pathname = useLocation({ select: (location) => location.pathname });
+  // Public business pages: no sign-in, no school data.
+  if (pathname === "/advertise" || pathname.startsWith("/advertise/")) return children;
   if (!sessionReady)
     return (
       <div className="demo-session-loading" role="status">

@@ -15,7 +15,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import type { ModuleRecord, PublicAd } from "@school-connect/core/live";
 import { colors } from "@/theme/school";
 import { Badge, Button, Card, Icon, Text } from "./ui";
-import { useAds } from "./store";
+import { useAds, useTrackAd } from "./store";
 import { localStore } from "./local-store";
 
 type SlideAd = Pick<PublicAd, "title" | "caption" | "linkUrl" | "linkLabel"> & {
@@ -111,14 +111,23 @@ function LoadingMedia({
   );
 }
 
-function AdButton({ ad }: { ad: Pick<SlideAd, "linkUrl" | "linkLabel"> }) {
+function AdButton({
+  ad,
+  onOpen,
+}: {
+  ad: Pick<SlideAd, "linkUrl" | "linkLabel">;
+  onOpen?: (() => void) | undefined;
+}) {
   if (!ad.linkUrl) return null;
   const url = ad.linkUrl;
   return (
     <Pressable
       accessibilityRole="link"
       accessibilityLabel={ad.linkLabel || "Learn more"}
-      onPress={() => void Linking.openURL(url).catch(() => undefined)}
+      onPress={() => {
+        onOpen?.();
+        void Linking.openURL(url).catch(() => undefined);
+      }}
       style={styles.cta}
     >
       <Text weight="bold" style={styles.ctaText}>
@@ -129,7 +138,15 @@ function AdButton({ ad }: { ad: Pick<SlideAd, "linkUrl" | "linkLabel"> }) {
   );
 }
 
-export function AdSlide({ ad, width }: { ad: SlideAd; width?: number }) {
+export function AdSlide({
+  ad,
+  width,
+  onOpen,
+}: {
+  ad: SlideAd;
+  width?: number;
+  onOpen?: (() => void) | undefined;
+}) {
   return (
     <View style={[styles.slide, width ? { width } : null]}>
       <AdMedia ad={ad} />
@@ -151,7 +168,7 @@ export function AdSlide({ ad, width }: { ad: SlideAd; width?: number }) {
             {ad.caption}
           </Text>
         ) : null}
-        <AdButton ad={ad} />
+        <AdButton ad={ad} onOpen={onOpen} />
       </LinearGradient>
     </View>
   );
@@ -160,6 +177,7 @@ export function AdSlide({ ad, width }: { ad: SlideAd; width?: number }) {
 /** Swipeable home spotlight; manual paging only (no automatic motion). */
 export function AdCarousel() {
   const { ads } = useAds();
+  const track = useTrackAd();
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
   const slides = useMemo(
@@ -169,6 +187,10 @@ export function AdCarousel() {
       ),
     [ads],
   );
+  const shownId = slides[Math.min(index, slides.length - 1)]?.ad.id;
+  useEffect(() => {
+    if (shownId) track(shownId, "banner");
+  }, [shownId, track]);
   if (!slides.length) return null;
   return (
     <View
@@ -189,7 +211,12 @@ export function AdCarousel() {
           scrollEventThrottle={64}
         >
           {slides.map((slide) => (
-            <AdSlide key={slide.key} ad={slide.ad} width={width} />
+            <AdSlide
+              key={slide.key}
+              ad={slide.ad}
+              width={width}
+              onOpen={() => track(slide.ad.id, "click")}
+            />
           ))}
         </ScrollView>
       )}
@@ -214,6 +241,7 @@ const keyOf = (a: { id: string; revision: number }) => `${a.id}:${a.revision}`;
  */
 export function AdPopup() {
   const { ads, sessionStartedAt } = useAds();
+  const track = useTrackAd();
   const [seen, setSeen] = useState<{ session: number; keys: string[] } | null>(null);
   useEffect(() => {
     if (sessionStartedAt === undefined) return;
@@ -245,6 +273,10 @@ export function AdPopup() {
   );
   const [index, setIndex] = useState(0);
   const slide = slides[Math.min(index, slides.length - 1)];
+  const popupId = sessionStartedAt === undefined ? undefined : slide?.ad.id;
+  useEffect(() => {
+    if (popupId) track(popupId, "popup");
+  }, [popupId, track]);
   if (!slide || sessionStartedAt === undefined) return null;
   const { ad, adIndex, item } = slide;
   const last = index >= slides.length - 1;
@@ -281,7 +313,7 @@ export function AdPopup() {
               </View>
             )}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 6 }}>
-              <AdButton ad={ad} />
+              <AdButton ad={ad} onOpen={() => track(ad.id, "click")} />
               {!last && <Button title="Next" onPress={() => setIndex((i) => i + 1)} />}
               <Button secondary title={last ? "Got it" : "Skip all"} onPress={close} />
             </View>

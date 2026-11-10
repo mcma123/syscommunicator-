@@ -37,6 +37,19 @@ export interface PublicAd {
   items: { url: string; kind: "image" | "video"; contentType: string }[];
 }
 /** One uploaded Ad Center item, as shown to the ad's editors. */
+/** Ad engagement counters; `viewers` is distinct parents (per day, or lifetime in totals). */
+export interface AdCounters {
+  impressions: number;
+  popupViews: number;
+  clicks: number;
+  viewers: number;
+}
+/** Ad Center performance for editors: lifetime totals and recent days (days since epoch, SAST). */
+export interface AdStats {
+  totals: AdCounters;
+  days: (AdCounters & { day: number })[];
+}
+export type AdEvent = "banner" | "popup" | "click";
 export interface AdMediaItem {
   id: string;
   url: string;
@@ -100,6 +113,8 @@ export type ClassFolder = {
   gradeOrder: number;
   teacher: string | null;
   learners: string;
+  /** Academic year (class records carry it as their status), or null when unknown. */
+  year: number | null;
 };
 export type GradeFolder = { name: string; order: number; classes: ClassFolder[]; learners: number };
 
@@ -125,6 +140,7 @@ export function groupClasses(records: ModuleRecord[]): GradeFolder[] {
       gradeOrder: Number(recordField(r, "Grade order") ?? 999),
       teacher: recordField(r, "Class teacher"),
       learners: recordField(r, "Learners") ?? "0",
+      year: /^\d{4}$/.test(r.status) ? Number(r.status) : null,
     };
     const g = grades.get(grade) ?? {
       name: grade,

@@ -420,3 +420,153 @@ export function parseImportCsv<K extends ImportKind>(kind: K, text: string): Imp
   });
   return { kind, rows, errors, totalRows: body.length };
 }
+
+// ── Class imports (Teachers and Principals, from a class folder) ─────────────
+// One simpler file per class: the class, grade and year come from the folder
+// the teacher opened, and an optional parent per learner sits on the same row.
+// The rows are turned into ordinary `learners` and `guardians` import cells, so
+// the server applies exactly the same validation and the same commit path.
+
+/** Header row of the class import template, in column order. */
+export const CLASS_IMPORT_TEMPLATE = [
+  "learner_number",
+  "first_name",
+  "last_name",
+  "preferred_name",
+  "date_of_birth",
+  "parent_email",
+  "parent_first_name",
+  "parent_last_name",
+  "parent_phone",
+  "parent_relationship",
+] as const;
+const CLASS_IMPORT_REQUIRED = ["learner_number", "first_name", "last_name"] as const;
+const PARENT_FIELDS: Record<string, string> = {
+  email: "parent_email",
+  first_name: "parent_first_name",
+  last_name: "parent_last_name",
+  phone: "parent_phone",
+  relationship: "parent_relationship",
+};
+
+export interface ClassImportTarget {
+  grade: string;
+  className: string;
+  year: number;
+}
+export interface ClassImportRow {
+  row: number;
+  learnerNumber: string;
+  name: string;
+  /** Cells for a `learners` import row. */
+  learner: Record<string, string>;
+  /** Cells for a `guardians` import row when the parent columns are filled in. */
+  guardian?: Record<string, string>;
+}
+export interface ClassImportResult {
+  rows: ClassImportRow[];
+  errors: ImportRowError[];
+  totalRows: number;
+}
+
+export function classImportTemplateCsv(): string {
+  return `${CLASS_IMPORT_TEMPLATE.join(",")}\r\n`;
+}
+
+/**
+ * Parses a class import file. Only learner_number, first_name and last_name
+ * columns are required; the parent columns are optional, but a row that fills
+ * any of them must give the parent's email, names and relationship.
+ */
+export function parseClassImportCsv(text: string, target: ClassImportTarget): ClassImportResult {
+  const fail = (message: string, totalRows = 0): ClassImportResult => ({
+    rows: [],
+    errors: [{ row: 1, message }],
+    totalRows,
+  });
+  let records: { row: number; cells: string[] }[];
+  try {
+    records = parseCsvRecords(text);
+  } catch (error) {
+    return fail((error as Error).message);
+  }
+  if (records.length === 0) return fail("The file is empty.");
+  const header = records[0]!.cells.map((h) => clean(h).toLowerCase());
+  const known: readonly string[] = CLASS_IMPORT_TEMPLATE;
+  const missing = CLASS_IMPORT_REQUIRED.filter((name) => !header.includes(name));
+  const unknown = header.filter((name) => !known.includes(name));
+  if (missing.length > 0 || unknown.length > 0)
+    return fail(
+      `The header does not match the class template (${[
+        missing.length > 0 ? `missing columns: ${missing.join(", ")}` : "",
+        unknown.length > 0 ? `unknown columns: ${unknown.join(", ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("; ")}).`,
+      records.length - 1,
+    );
+  const body = records.slice(1);
+  if (body.length > IMPORT_MAX_ROWS)
+    return fail(`Import at most ${IMPORT_MAX_ROWS} rows per file.`, body.length);
+
+  const rows: ClassImportRow[] = [];
+  const errors: ImportRowError[] = [];
+  const seen = new Map<string, number>();
+  for (const { row, cells: record } of body) {
+    if (record.length > header.length) {
+      errors.push({ row, message: "This row has more cells than the header." });
+      continue;
+    }
+    const cells = Object.fromEntries(header.map((name, i) => [name, clean(record[i])]));
+    const cell = (name: string) => cells[name] ?? "";
+    const learner = {
+      learner_number: cell("learner_number"),
+      first_name: cell("first_name"),
+      last_name: cell("last_name"),
+      preferred_name: cell("preferred_name"),
+      date_of_birth: cell("date_of_birth"),
+      grade: target.grade,
+      class_name: target.className,
+      year: String(target.year),
+    };
+    const learnerCheck = validateImportRow("learners", learner, row);
+    const rowErrors = [...learnerCheck.errors];
+    let guardian: Record<string, string> | undefined;
+    if (Object.values(PARENT_FIELDS).some((name) => cell(name) !== "")) {
+      guardian = {
+        learner_number: learner.learner_number,
+        email: cell("parent_email"),
+        first_name: cell("parent_first_name"),
+        last_name: cell("parent_last_name"),
+        phone: cell("parent_phone"),
+        relationship: cell("parent_relationship"),
+        primary_contact: "",
+      };
+      const guardianCheck = validateImportRow("guardians", guardian, row);
+      rowErrors.push(
+        ...guardianCheck.errors
+          .filter((e) => e.field !== "learner_number")
+          .map((e) => (e.field ? { ...e, field: PARENT_FIELDS[e.field] ?? e.field } : e)),
+      );
+    }
+    if (rowErrors.length > 0 || !learnerCheck.data) {
+      errors.push(...rowErrors);
+      continue;
+    }
+    const data = learnerCheck.data;
+    const first = seen.get(data.learnerNumber);
+    if (first !== undefined) {
+      errors.push({ row, message: `Duplicate of row ${first}.` });
+      continue;
+    }
+    seen.set(data.learnerNumber, row);
+    rows.push({
+      row,
+      learnerNumber: data.learnerNumber,
+      name: `${data.preferredName ?? data.firstName} ${data.lastName}`,
+      learner,
+      ...(guardian ? { guardian } : {}),
+    });
+  }
+  return { rows, errors, totalRows: body.length };
+}

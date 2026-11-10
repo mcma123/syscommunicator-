@@ -47,6 +47,7 @@ type Env = {
   readonly R2_SECRET_ACCESS_KEY: string | undefined;
   readonly RESEND_API_KEY: string | undefined;
   readonly SITE_URL: string | undefined;
+  readonly TURNSTILE_SECRET_KEY: string | undefined;
 };
 
 /**

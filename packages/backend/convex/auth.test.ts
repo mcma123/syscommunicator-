@@ -48,6 +48,19 @@ const clientContract: typeof publicApi = {
   },
   schoolRead: { page: api.schoolRead.page, detail: api.schoolRead.detail },
   dashboard: { current: api.dashboard.current, advance: api.dashboard.advance },
+  adStats: { track: api.adStats.track, forAd: api.adStats.forAd },
+  advertise: {
+    reach: api.advertise.reach,
+    enquire: api.advertise.enquire,
+    unsubscribe: api.advertise.unsubscribe,
+  },
+  advertisers: {
+    list: api.advertisers.list,
+    unseen: api.advertisers.unseen,
+    create: api.advertisers.create,
+    update: api.advertisers.update,
+    linkAd: api.advertisers.linkAd,
+  },
   ads: {
     active: api.ads.active,
     session: api.ads.session,

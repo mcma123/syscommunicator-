@@ -24,6 +24,8 @@ const app = defineApp({
     R2_ACCESS_KEY_ID: v.optional(v.string()),
     R2_SECRET_ACCESS_KEY: v.optional(v.string()),
     AD_MEDIA_SIGNING_KEY: v.optional(v.string()),
+    // Cloudflare Turnstile secret for the public advertiser enquiry form (optional).
+    TURNSTILE_SECRET_KEY: v.optional(v.string()),
   },
 });
 

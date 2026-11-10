@@ -14,6 +14,7 @@ import {
   Component,
   createElement,
   Fragment,
+  useCallback,
   useState,
   useEffect,
   useMemo,
@@ -262,6 +263,47 @@ export function useSchoolAds(enabled: boolean) {
     ads,
     /** Start of the current sign-in session: a per-login marker for popup dismissal. */
     sessionStartedAt: typeof session === "number" ? session : undefined,
+    status:
+      value instanceof Error
+        ? ("error" as const)
+        : value === undefined
+          ? ("loading" as const)
+          : ("ready" as const),
+  };
+}
+
+/** Events already reported in this page session (the server also counts once per parent per day). */
+const trackedAdEvents = new Set<string>();
+/**
+ * Reports ad impressions, popup views and button clicks. Fire-and-forget: tracking failures
+ * never affect what the parent sees. Disabled for accounts that are not parents.
+ */
+export function useAdTracker(enabled: boolean) {
+  const track = useAction(api.adStats.track);
+  return useCallback(
+    (adId: string, event: import("@school-connect/core/live").AdEvent) => {
+      if (!enabled) return;
+      const key = `${adId}:${event}:${new Date().toDateString()}`;
+      if (trackedAdEvents.has(key)) return;
+      trackedAdEvents.add(key);
+      track({ adId: adId as Id<"ads">, event }).catch(() => trackedAdEvents.delete(key));
+    },
+    [enabled, track],
+  );
+}
+/** Ad performance for one ad (editors only). */
+export function useAdStats(adId: string | undefined) {
+  const requests = useMemo<RequestForQueries>(() => {
+    const q: RequestForQueries = {};
+    if (adId) q["stats"] = { query: api.adStats.forAd, args: { adId: adId as Id<"ads"> } };
+    return q;
+  }, [adId]);
+  const value = useQueries(requests)["stats"];
+  return {
+    stats:
+      value instanceof Error || value === undefined
+        ? null
+        : (value as import("@school-connect/core/live").AdStats),
     status:
       value instanceof Error
         ? ("error" as const)

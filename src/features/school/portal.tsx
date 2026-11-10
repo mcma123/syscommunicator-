@@ -26,8 +26,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SchoolShell, navigation, staffNavigation } from "./shell";
 import { Heading, ChildPicker, Empty, RecordCard, Placeholder } from "./components";
-import { AdList, AdPreview } from "./ads";
+import { AdList, AdPerformance, AdPreview } from "./ads";
 import { LearnerFolders } from "./learner-folders";
+import { ClassImport } from "./class-import";
+import { AdAdvertiserLink, AdvertisersPanel } from "./advertisers";
 import { AdComposer, AdComposerLauncher } from "./ad-composer";
 import {
   CalendarAgenda,
@@ -42,7 +44,7 @@ import {
   EnquiryList,
   SchoolOffice,
 } from "./module-views";
-import { useRecords, useDetail, useReceipt, useSchool } from "./store";
+import { useAdvertisers, useRecords, useDetail, useReceipt, useSchool } from "./store";
 import { HomeDashboard } from "./home";
 import { CalendarDays, Search } from "lucide-react";
 import { AccountManagement, PeopleInvitations } from "./account-management";
@@ -193,6 +195,8 @@ function DetailPanel({
       {module === "ads" && (
         <>
           <AdPreview record={r} />
+          <AdPerformance adId={id} />
+          <AdAdvertiserLink adId={id} />
           <AdComposer adId={id} showPreview={false} />
         </>
       )}
@@ -533,6 +537,8 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
   const { account, accessRoles } = useSchool();
   const [source, setSource] = useState<ReadModule>(module);
   const [importing, setImporting] = useState(false);
+  const [advertisersTab, setAdvertisersTab] = useState(false);
+  const advertisers = useAdvertisers();
   const [opened, setOpened] = useState<{ module: ReadModule; id: string }>();
   const staff = (account?.roles.length ?? 0) > 0;
   const directory = [...navigation, ...staffNavigation].filter(
@@ -624,7 +630,38 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
               <SchoolOffice />
             </Boundary>
           )}
-          {module === "ads" ? <AdComposerLauncher /> : <WorkflowPanel module={module} />}
+          {module === "ads" && advertisers.leader && (
+            <div className="source-tabs" role="tablist" aria-label="Ad Center">
+              <Button
+                role="tab"
+                size="sm"
+                aria-selected={!advertisersTab}
+                variant={!advertisersTab ? "secondary" : "ghost"}
+                onClick={() => setAdvertisersTab(false)}
+              >
+                Ads
+              </Button>
+              <Button
+                role="tab"
+                size="sm"
+                aria-selected={advertisersTab}
+                variant={advertisersTab ? "secondary" : "ghost"}
+                onClick={() => setAdvertisersTab(true)}
+              >
+                Advertisers
+                {advertisers.unseen > 0 && (
+                  <span className="nav-count" aria-label={`${advertisers.unseen} new`}>
+                    {advertisers.unseen}
+                  </span>
+                )}
+              </Button>
+            </div>
+          )}
+          {module === "ads" ? (
+            !advertisersTab && <AdComposerLauncher />
+          ) : (
+            <WorkflowPanel module={module} />
+          )}
           {module === "payments" && (
             <Boundary>
               <PaymentsSummary />
@@ -675,7 +712,11 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
               )}
             </div>
           )}
-          {module === "people" && importing ? (
+          {module === "ads" && advertisersTab ? (
+            <Boundary key="ads:advertisers">
+              <AdvertisersPanel />
+            </Boundary>
+          ) : module === "people" && importing ? (
             <Boundary key="people:import">
               <RosterImport />
             </Boundary>
@@ -684,6 +725,11 @@ export function SchoolPortal({ module }: { module: SchoolModule }) {
               renderClass={(classId) => (
                 <Boundary key={`class:${classId}`}>
                   <RecordBrowser module="classLearners" options={{ parentId: classId }} />
+                </Boundary>
+              )}
+              renderClassTools={(folder) => (
+                <Boundary key={`import:${folder.id}`}>
+                  <ClassImport folder={folder} />
                 </Boundary>
               )}
               renderSearch={() => (

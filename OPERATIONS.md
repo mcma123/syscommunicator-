@@ -87,6 +87,12 @@ back with explicit approval.
 - **Rotation:** create a new R2 API token, set the new `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`, confirm an upload works, then delete the old token. Rotating `AD_MEDIA_SIGNING_KEY` only invalidates cached media links (clients receive fresh ones automatically).
 - Production launch (Phase 13) needs the same variables on the production Convex deployment and its domain in the CORS list.
 
+## Advertising (public page, emails, POPIA)
+- The public page is `/advertise` (no sign-in); unsubscribe links land on `/advertise/unsubscribe`. Edit prices, packages, incentives, consent wording and the optional explainer `videoUrl` in `packages/school-core/src/advertising.ts`.
+- Follow-up and report emails need `RESEND_API_KEY`, `AUTH_EMAIL_FROM` (verified sending domain) and `SITE_URL` on the Convex deployment; unsubscribe tokens use `AD_MEDIA_SIGNING_KEY` (rotating it invalidates old unsubscribe links). Without email configuration, enquiries still arrive in Ad Center → Advertisers.
+- Bot protection (recommended for production): create a Cloudflare Turnstile widget for the web domain, set `TURNSTILE_SECRET_KEY` on Convex (`npx convex env set`) and the public site key as the Dokploy build arg `VITE_TURNSTILE_SITE_KEY`. Without them, the honeypot and rate limits still apply.
+- POPIA: never import scraped or bought contact lists. Email only businesses that ticked consent on the form or agreed in person (staff tick that box only then); every email carries an unsubscribe link. Contact other businesses personally, once, to ask whether they want to hear more.
+
 ## Launch exit check
 
 Both clients run against production Convex; a restore drill has passed; monitoring is in place; the school

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdsRouteImport } from './routes/ads'
+import { Route as AdvertiseRouteImport } from './routes/advertise'
 import { Route as AttendanceRouteImport } from './routes/attendance'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as CalendarRouteImport } from './routes/calendar'
@@ -28,6 +29,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SigninRouteImport } from './routes/signin'
+import { Route as AdvertiseUnsubscribeRouteImport } from './routes/advertise_.unsubscribe'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -37,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdsRoute = AdsRouteImport.update({
   id: '/ads',
   path: '/ads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvertiseRoute = AdvertiseRouteImport.update({
+  id: '/advertise',
+  path: '/advertise',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AttendanceRoute = AttendanceRouteImport.update({
@@ -124,10 +131,16 @@ const SigninRoute = SigninRouteImport.update({
   path: '/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdvertiseUnsubscribeRoute = AdvertiseUnsubscribeRouteImport.update({
+  id: '/advertise_/unsubscribe',
+  path: '/advertise/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ads': typeof AdsRoute
+  '/advertise': typeof AdvertiseRoute
   '/attendance': typeof AttendanceRoute
   '/audit': typeof AuditRoute
   '/calendar': typeof CalendarRoute
@@ -145,10 +158,12 @@ export interface FileRoutesByFullPath {
   '/resources': typeof ResourcesRoute
   '/settings': typeof SettingsRoute
   '/signin': typeof SigninRoute
+  '/advertise/unsubscribe': typeof AdvertiseUnsubscribeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ads': typeof AdsRoute
+  '/advertise': typeof AdvertiseRoute
   '/attendance': typeof AttendanceRoute
   '/audit': typeof AuditRoute
   '/calendar': typeof CalendarRoute
@@ -166,11 +181,13 @@ export interface FileRoutesByTo {
   '/resources': typeof ResourcesRoute
   '/settings': typeof SettingsRoute
   '/signin': typeof SigninRoute
+  '/advertise/unsubscribe': typeof AdvertiseUnsubscribeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ads': typeof AdsRoute
+  '/advertise': typeof AdvertiseRoute
   '/attendance': typeof AttendanceRoute
   '/audit': typeof AuditRoute
   '/calendar': typeof CalendarRoute
@@ -188,12 +205,14 @@ export interface FileRoutesById {
   '/resources': typeof ResourcesRoute
   '/settings': typeof SettingsRoute
   '/signin': typeof SigninRoute
+  '/advertise_/unsubscribe': typeof AdvertiseUnsubscribeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/ads'
+    | '/advertise'
     | '/attendance'
     | '/audit'
     | '/calendar'
@@ -211,10 +230,12 @@ export interface FileRouteTypes {
     | '/resources'
     | '/settings'
     | '/signin'
+    | '/advertise/unsubscribe'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/ads'
+    | '/advertise'
     | '/attendance'
     | '/audit'
     | '/calendar'
@@ -232,10 +253,12 @@ export interface FileRouteTypes {
     | '/resources'
     | '/settings'
     | '/signin'
+    | '/advertise/unsubscribe'
   id:
     | '__root__'
     | '/'
     | '/ads'
+    | '/advertise'
     | '/attendance'
     | '/audit'
     | '/calendar'
@@ -253,11 +276,13 @@ export interface FileRouteTypes {
     | '/resources'
     | '/settings'
     | '/signin'
+    | '/advertise_/unsubscribe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdsRoute: typeof AdsRoute
+  AdvertiseRoute: typeof AdvertiseRoute
   AttendanceRoute: typeof AttendanceRoute
   AuditRoute: typeof AuditRoute
   CalendarRoute: typeof CalendarRoute
@@ -275,6 +300,7 @@ export interface RootRouteChildren {
   ResourcesRoute: typeof ResourcesRoute
   SettingsRoute: typeof SettingsRoute
   SigninRoute: typeof SigninRoute
+  AdvertiseUnsubscribeRoute: typeof AdvertiseUnsubscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -291,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/ads'
       fullPath: '/ads'
       preLoaderRoute: typeof AdsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advertise': {
+      id: '/advertise'
+      path: '/advertise'
+      fullPath: '/advertise'
+      preLoaderRoute: typeof AdvertiseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/attendance': {
@@ -412,12 +445,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SigninRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/advertise_/unsubscribe': {
+      id: '/advertise_/unsubscribe'
+      path: '/advertise/unsubscribe'
+      fullPath: '/advertise/unsubscribe'
+      preLoaderRoute: typeof AdvertiseUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdsRoute: AdsRoute,
+  AdvertiseRoute: AdvertiseRoute,
   AttendanceRoute: AttendanceRoute,
   AuditRoute: AuditRoute,
   CalendarRoute: CalendarRoute,
@@ -435,6 +476,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesRoute: ResourcesRoute,
   SettingsRoute: SettingsRoute,
   SigninRoute: SigninRoute,
+  AdvertiseUnsubscribeRoute: AdvertiseUnsubscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

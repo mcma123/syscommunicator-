@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { StatusTag } from "./components";
 import { adStage, formatDate } from "./format";
-import { useAds } from "./store";
+import { useAdStats, useAds, useTrackAd } from "./store";
 
 type SlideAd = Pick<PublicAd, "title" | "caption" | "linkUrl" | "linkLabel"> & {
   media: { url: string; kind: "image" | "video" } | null;
@@ -131,20 +131,36 @@ function LoadingMedia({
 function AdLink({
   ad,
   className,
+  onOpen,
 }: {
   ad: Pick<SlideAd, "linkUrl" | "linkLabel">;
   className?: string;
+  onOpen?: (() => void) | undefined;
 }) {
   if (!ad.linkUrl) return null;
   return (
-    <a className={className} href={ad.linkUrl} target="_blank" rel="noopener noreferrer">
+    <a
+      className={className}
+      href={ad.linkUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onOpen}
+    >
       {ad.linkLabel || "Learn more"}
       <ArrowRight size={13} />
     </a>
   );
 }
 
-export function AdSlide({ ad, active = true }: { ad: SlideAd; active?: boolean }) {
+export function AdSlide({
+  ad,
+  active = true,
+  onOpen,
+}: {
+  ad: SlideAd;
+  active?: boolean;
+  onOpen?: (() => void) | undefined;
+}) {
   return (
     <div className="ad-slide">
       <AdMedia media={ad.media} title={ad.title} autoPlay={active} />
@@ -154,7 +170,7 @@ export function AdSlide({ ad, active = true }: { ad: SlideAd; active?: boolean }
         </span>
         <h2>{ad.title}</h2>
         {ad.caption && <p>{ad.caption}</p>}
-        <AdLink ad={ad} className="ad-cta" />
+        <AdLink ad={ad} className="ad-cta" onOpen={onOpen} />
       </div>
     </div>
   );
@@ -174,6 +190,7 @@ function slidesOf(ads: PublicAd[]) {
 /** Home carousel of running ads; renders nothing when there are none. */
 export function AdBanner() {
   const { ads } = useAds();
+  const track = useTrackAd();
   const slides = useMemo(() => slidesOf(ads), [ads]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -188,6 +205,10 @@ export function AdBanner() {
     const timer = setTimeout(() => setIndex((i) => (i + 1) % count), delay);
     return () => clearTimeout(timer);
   }, [count, paused, index, current?.ad.media?.kind]);
+  const shownId = current?.ad.id;
+  useEffect(() => {
+    if (shownId) track(shownId, "banner");
+  }, [shownId, track]);
   if (!current) return null;
   const go = (step: number) => setIndex((i) => (i + step + count) % count);
   return (
@@ -205,7 +226,7 @@ export function AdBanner() {
         aria-roledescription="slide"
         aria-label={`${index + 1} of ${count}`}
       >
-        <AdSlide key={current.key} ad={current.ad} />
+        <AdSlide key={current.key} ad={current.ad} onOpen={() => track(current.ad.id, "click")} />
       </div>
       {count > 1 && (
         <div className="ad-controls">
@@ -242,6 +263,7 @@ const keyOf = (a: Pick<PublicAd, "id" | "revision">) => `${a.id}:${a.revision}`;
  */
 export function AdPopup() {
   const { ads, sessionStartedAt } = useAds();
+  const track = useTrackAd();
   const [seen, setSeen] = useState<{ session: number; keys: string[] } | null>(null);
   const known = sessionStartedAt !== undefined && seen?.session === sessionStartedAt;
   if (sessionStartedAt !== undefined && !known)
@@ -257,6 +279,10 @@ export function AdPopup() {
   );
   const [index, setIndex] = useState(0);
   const slide = slides[Math.min(index, slides.length - 1)];
+  const popupId = sessionStartedAt === undefined ? undefined : slide?.ad.id;
+  useEffect(() => {
+    if (popupId) track(popupId, "popup");
+  }, [popupId, track]);
   if (!slide || sessionStartedAt === undefined) return null;
   const { ad, adIndex, item } = slide;
   const close = () => {
@@ -301,7 +327,7 @@ export function AdPopup() {
           <DialogTitle>{ad.title}</DialogTitle>
           <DialogDescription>{ad.caption || "A message from your school."}</DialogDescription>
           <div className="ad-popup-actions">
-            <AdLink ad={ad} className="ad-cta" />
+            <AdLink ad={ad} className="ad-cta" onOpen={() => track(ad.id, "click")} />
             {slides.length > 1 && index < slides.length - 1 ? (
               <Button variant="outline" onClick={() => go(1)}>
                 Next
@@ -432,5 +458,63 @@ export function AdList({
         );
       })}
     </div>
+  );
+}
+
+const DAY_MS = 86400000;
+/** Converts a stats day (days since epoch, SAST) to a short date label. */
+const dayLabel = (day: number) =>
+  formatDate(day * DAY_MS, { day: "numeric", month: "short", timeZone: "UTC" });
+
+/** Staff ad detail: how many parents saw and clicked the ad (counted once per parent per day). */
+export function AdPerformance({ adId }: { adId: string }) {
+  const { stats, status } = useAdStats(adId);
+  if (status === "error") return null;
+  const t = stats?.totals;
+  const shown = (t?.impressions ?? 0) + (t?.popupViews ?? 0);
+  const rate = shown && t ? `${Math.round((t.clicks / shown) * 1000) / 10}%` : "—";
+  const days = [...(stats?.days ?? [])].reverse().slice(-14);
+  const peak = Math.max(1, ...days.map((d) => d.viewers));
+  const tiles = [
+    { label: "Parents reached", value: t?.viewers },
+    { label: "Banner views", value: t?.impressions },
+    { label: "Popup views", value: t?.popupViews },
+    { label: "Button clicks", value: t?.clicks, hint: `Click rate ${rate}` },
+  ];
+  return (
+    <section className="ad-stats" aria-label="Ad performance">
+      <div className="ad-stats-head">
+        <strong>Performance</strong>
+        <span>Each parent is counted once per day</span>
+      </div>
+      <div className="ad-stats-tiles">
+        {tiles.map((tile) => (
+          <div key={tile.label} className="ad-stat">
+            <span>{tile.label}</span>
+            <strong>{status === "loading" ? "…" : (tile.value ?? 0).toLocaleString()}</strong>
+            {tile.hint && <small>{tile.hint}</small>}
+          </div>
+        ))}
+      </div>
+      {days.length > 0 ? (
+        <div className="ad-stats-days" role="list" aria-label="Parents reached per day">
+          {days.map((d) => (
+            <div
+              key={d.day}
+              role="listitem"
+              className="ad-stats-day"
+              title={`${dayLabel(d.day)}: ${d.viewers} parents, ${d.clicks} clicks`}
+            >
+              <i style={{ height: `${Math.max(6, (d.viewers / peak) * 100)}%` }} />
+              <span>{dayLabel(d.day)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        status === "ready" && (
+          <p className="ad-stats-empty">No views yet. Numbers appear once the ad is live.</p>
+        )
+      )}
+    </section>
   );
 }

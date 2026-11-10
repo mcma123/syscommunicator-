@@ -14,6 +14,8 @@
 - `live-data.test.tsx` checks live subscription states/retry, disabled-session data clearing, socket-derived offline behavior and scoped optimistic receipts.
 - `permissions.test.ts` checks shared module grants, Finance/Teacher restrictions, unknown modules and explicit guardian/staff combinations.
 - `ads.test.tsx` checks the ad banner (empty state, safe external link, rotation, muted inline video), once-per-revision popup dismissal and staff stage labels.
+- `advertise.test.tsx` checks the public page (rounded reach, hidden zero tiles, packages, consent defaults, enquiry payload), unsubscribe confirmation and the ad performance panel.
+- `class-import.test.tsx` checks the class CSV import: template link, local row/field errors, folder class/grade/year cells, preview, learners-then-parents commits and non-CSV refusal.
 - `learner-folders.test.tsx` checks grade/class grouping, readable class labels, plural counts and grade → class → learners navigation with breadcrumb and search view.
 - `theme.test.tsx` checks dark-mode toggling, persistence, the pre-paint init script and subscriber updates.
 - `setup.ts` provides jest-dom matchers and the matchMedia mock.

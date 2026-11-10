@@ -12,6 +12,8 @@ import {
   adMediaKind,
   adMediaStatus,
   adStatus,
+  advertiserSource,
+  advertiserStatus,
   attachment,
   attendanceStatus,
   audience,
@@ -320,8 +322,11 @@ export default defineSchema({
     reviewNote: v.optional(v.string()),
     updatedAt: v.number(),
     revision: v.number(),
+    /** Business paying for the ad (monthly performance reports). */
+    advertiserId: v.optional(v.id("advertisers")),
   })
     .index("by_status_and_endsAt", ["status", "endsAt"])
+    .index("by_advertiserId", ["advertiserId"])
     .index("by_updatedAt", ["updatedAt"])
     .index("by_createdBy_and_updatedAt", ["createdBy", "updatedAt"]),
 
@@ -344,6 +349,76 @@ export default defineSchema({
     .index("by_key", ["key"])
     .index("by_status_and_expiresAt", ["status", "expiresAt"])
     .index("by_detachedAt", ["detachedAt"]),
+
+  // Ad Center measurement. One row per (ad, parent account): last day each event was
+  // counted, so impressions/popups/clicks count once per parent per day and the row's
+  // existence counts the parent once in lifetime reach.
+  adViewers: defineTable({
+    adId: v.id("ads"),
+    userId: v.id("users"),
+    lastSeenDay: v.number(),
+    bannerDay: v.optional(v.number()),
+    popupDay: v.optional(v.number()),
+    clickDay: v.optional(v.number()),
+  }).index("by_adId_and_userId", ["adId", "userId"]),
+  // Daily counters per ad (day = days since epoch, South African time). Day 0 holds
+  // lifetime totals, where `viewers` is the number of distinct parents reached.
+  adStats: defineTable({
+    adId: v.id("ads"),
+    day: v.number(),
+    impressions: v.number(),
+    popupViews: v.number(),
+    clicks: v.number(),
+    viewers: v.number(),
+  })
+    .index("by_adId_and_day", ["adId", "day"])
+    .index("by_day", ["day"]),
+
+  // Businesses interested in advertising. Leads come from the public "Advertise with us"
+  // form (consent recorded there) or are added by school leaders. Marketing email is only
+  // sent while consentEmail is true; unsubscribing clears it permanently for that lead.
+  advertisers: defineTable({
+    businessName: v.string(),
+    contactName: v.string(),
+    email: v.string(),
+    phone: v.optional(v.string()),
+    category: v.optional(v.string()),
+    message: v.optional(v.string()),
+    source: advertiserSource,
+    status: advertiserStatus,
+    consentEmail: v.boolean(),
+    consentWhatsApp: v.boolean(),
+    consentAt: v.optional(v.number()),
+    consentText: v.optional(v.string()),
+    /** Next follow-up email (0 = welcome); absent when the sequence is finished or stopped. */
+    sequenceStep: v.number(),
+    nextSendAt: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    seenByStaff: v.boolean(),
+    createdBy: v.optional(v.id("users")),
+    updatedAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_updatedAt", ["updatedAt"])
+    .index("by_nextSendAt", ["nextSendAt"])
+    .index("by_status", ["status"])
+    .index("by_seenByStaff", ["seenByStaff"]),
+  // One row per marketing email attempt (sequence step or monthly report).
+  advertiserEmails: defineTable({
+    advertiserId: v.id("advertisers"),
+    kind: v.string(),
+    status: v.union(v.literal("Sent"), v.literal("Failed"), v.literal("Skipped")),
+    detail: v.optional(v.string()),
+  }).index("by_advertiserId", ["advertiserId"]),
+  // Rounded public reach figures for the "Advertise with us" page, refreshed daily.
+  siteStats: defineTable({
+    key: v.literal("reach"),
+    families: v.number(),
+    learners: v.number(),
+    weeklyFamilies: v.number(),
+    adViews30: v.number(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 
   enquiries: defineTable({
     subject: v.string(),
@@ -516,7 +591,7 @@ export default defineSchema({
     .index("by_status_and_expiresAt", ["status", "expiresAt"]),
 
   // ── Phase 11 roster import ──────────────────────────────────────────────
-  // One Administrator upload of one CSV kind, committed in bounded chunks.
+  // One upload (Administrator, or a Principal/Teacher class import) of one CSV kind, committed in bounded chunks.
   importBatches: defineTable({
     kind: importKind,
     fileName: v.string(),
@@ -528,7 +603,9 @@ export default defineSchema({
     unchanged: v.number(),
     rejected: v.number(),
     updatedAt: v.number(),
-  }).index("by_status", ["status"]),
+  })
+    .index("by_status", ["status"])
+    .index("by_createdBy", ["createdBy"]),
   // One row per processed spreadsheet row of a batch: makes counters replay-safe.
   // digest = SHA-256 of kind + canonical cells; a changed replay is refused.
   importBatchRows: defineTable({
