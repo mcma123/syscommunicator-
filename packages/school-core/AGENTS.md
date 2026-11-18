@@ -26,7 +26,7 @@
 - Fixtures must remain JSON-compatible: repositories deep-copy them via JSON serialization for Hermes compatibility without requiring structuredClone. Repository instances isolate state between running clients.
 - `visibleNotices` implements mock display filtering only. Live access is enforced by backend audience/ownership checks; the shared matrix supplies module grants, never database authorization on its own.
 - Keep Johannesburg timezone and ZAR formatting consistent with schoolConfig and the `money` helper.
-- `schoolConfig` owns `name` (Wynberg Girls Junior School), `appName` (Wynberg Girls Junior Connect), `shortName` (WGJS Connect), `subtitle` (Honor Before Honours), `logoUrl` (/logo.png), and the school website URL. These are display contracts for web and future clients.
+- `schoolConfig` owns `name` (Wynberg Girls Junior School), `appName` and `shortName` (Syscommunicator), `subtitle` (Honor Before Honours), `logoUrl` (/logo.png), and the school website URL. These are display contracts for web and future clients.
 
 ## Work Guidance
 

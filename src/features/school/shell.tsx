@@ -90,7 +90,7 @@ export function SchoolShell({ module, children }: { module: string; children: Re
           <div>
             <strong>{schoolConfig.shortName}</strong>
             <div className="text-[9px] text-muted-foreground mt-1">
-              School community · WGJS Connect
+              School community · Syscommunicator
             </div>
           </div>
           <ChevronDown size={13} className="ml-auto text-muted-foreground" />
@@ -249,7 +249,7 @@ export function SchoolShell({ module, children }: { module: string; children: Re
             <span>
               © 2026 {schoolConfig.name} · {schoolConfig.subtitle}
             </span>
-            <span>WGJS Connect · Africa/Johannesburg</span>
+            <span>Syscommunicator · Africa/Johannesburg</span>
           </footer>
         </main>
       </div>

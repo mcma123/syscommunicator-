@@ -82,7 +82,7 @@ When the user requests a durable behavior change, record it here or in the relev
 - After QA review of every candidate, hand the candidate, changed paths, scope, findings, and test evidence to `dev-security@starter` through the durable queue. Security review is required before reporting work ready; findings return to the builder for fixes and re-review.
 - Defer Phase 9 payment integration until the other feature work is complete. Continue with Phase 10 notifications next; leave payment-dependent reminders, receipt emails and payment journey checks pending until payments are implemented. Final launch still requires the applicable payment checks.
 - Keep the project independent of the original scaffold provider: no editor integration, telemetry, branding, project metadata, or Git synchronization. Shared links must use school names, descriptions, and the supplied crest.
-- Preserve the current Open Sans font and TanStack module design; use a light, premium banking-inspired layout for the Expo parent frontend while applying Wynberg Girls Junior School website colours and the user-supplied crest. Naming: Wynberg Girls Junior Connect (store/app name), WGJS Connect (phone label), Wynberg Girls Junior School (inside the app), Honor Before Honours (tagline).
+- Preserve the current Open Sans font and TanStack module design; use a light, premium banking-inspired layout for the Expo parent frontend while applying Wynberg Girls Junior School website colours and the user-supplied crest. Naming: Syscommunicator (store/app and phone label), Wynberg Girls Junior School (inside the app), Honor Before Honours (tagline).
 
 
 ## School Connect architecture

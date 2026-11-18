@@ -65,7 +65,7 @@ export function eventIcs(record: ModuleRecord, generatedAt: number) {
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//WGJS Connect//School Calendar//EN",
+    "PRODID:-//Syscommunicator//School Calendar//EN",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
     `UID:${escape(record.id)}@wgjsconnect`,

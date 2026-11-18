@@ -61,8 +61,8 @@ export interface SchoolRepository {
 }
 export const schoolConfig = {
   name: "Wynberg Girls Junior School",
-  appName: "Wynberg Girls Junior Connect",
-  shortName: "WGJS Connect",
+  appName: "Syscommunicator",
+  shortName: "Syscommunicator",
   subtitle: "Honor Before Honours",
   logoUrl: "/logo.png",
   websiteUrl: "https://wynberggirlsjunior.co.za/",

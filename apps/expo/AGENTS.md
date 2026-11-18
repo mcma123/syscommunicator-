@@ -11,7 +11,7 @@
 
 ## Local Contracts
 
-- Launcher name is WGJS Connect; full product name is Wynberg Girls Junior Connect. The slug is `wynberg-girls-junior-connect`.
+- Launcher and product name are Syscommunicator. The slug is `syscommunicator`.
 - Retain Open Sans, website red/gold colours, and the supplied crest. `assets/logo.png` is a copy of the original; square native icons are padded derivatives without cropping.
 - Use Metro's automatic workspace support; do not add manual watchFolders or dependency resolution overrides.
 - Expo uses its SDK-compatible React/React Native versions. Keep React/React DOM aligned across clients to avoid duplicate React in a bundle.

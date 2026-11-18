@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "WGJS Connect",
-    "slug": "wynberg-girls-junior-connect",
+    "name": "Syscommunicator",
+    "slug": "syscommunicator",
     "version": "1.0.4",
     "runtimeVersion": {
       "policy": "appVersion"
@@ -26,8 +26,8 @@
     "web": {
       "output": "single",
       "favicon": "./assets/logo.png",
-      "name": "Wynberg Girls Junior Connect",
-      "shortName": "WGJS Connect",
+      "name": "Syscommunicator",
+      "shortName": "Syscommunicator",
       "themeColor": "#c6252b",
       "backgroundColor": "#faf8f7"
     },

@@ -1,8 +1,8 @@
-# Wynberg Girls Junior Connect
+# Syscommunicator
 
 A school communication monorepo for Wynberg Girls Junior School, inspired by d6 module workflows. The existing TanStack web app stays at the root; `apps/expo` provides an Android, iOS, and Expo web school frontend; `packages/backend` is the single Convex backend and database for both clients (dev deployment linked, schema and internal fixture functions deployed; fictional seed data and dev authentication available); `packages/school-core` shares domain contracts, pure rules and test-only mock data. The apps use the school's red and gold colours, supplied crest, and the tagline **Honor Before Honours**, while retaining Open Sans.
 
-The full app/store name is **Wynberg Girls Junior Connect**, the phone icon label is **WGJS Connect**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. Live development reads and authenticated sessions are connected. Native store submissions and production backend provisioning remain future work.
+The app/store name and phone icon label are **Syscommunicator**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. Live development reads and authenticated sessions are connected. Native store submissions and production backend provisioning remain future work.
 
 ## Development
 
@@ -141,7 +141,7 @@ This repository uses the [DOX framework](https://github.com/agent0ai/dox). Start
 From PowerShell, open the repository root:
 
 ```powershell
-cd C:\Users\HP22\Desktop\school-connect-hub
+cd C:\Users\HP22\Desktop\syscommunicator\syscommunicator
 ```
 
 Run `npm run dev` for the existing TanStack web app at http://localhost:8080.

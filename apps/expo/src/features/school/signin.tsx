@@ -42,7 +42,7 @@ export function SchoolNavigator({
       <Stack screenOptions={screenOptions}>
         <Stack.Screen name="signin" options={{ title: "Sign in" }} />
         <Stack.Protected guard={!sessionReady || allowed}>
-          <Stack.Screen name="(tabs)" options={{ title: "WGJS Connect" }} />
+          <Stack.Screen name="(tabs)" options={{ title: "Syscommunicator" }} />
           {protectedRoutes.map((name) => (
             <Stack.Screen key={name} name={name} />
           ))}
@@ -162,7 +162,7 @@ export function SignInScreen() {
       </Screen>
     );
   return (
-    <Screen title="Welcome to WGJS Connect" subtitle="Use the email registered with your school.">
+    <Screen title="Welcome to Syscommunicator" subtitle="Use the email registered with your school.">
       {account ? (
         <Card>
           <Text>

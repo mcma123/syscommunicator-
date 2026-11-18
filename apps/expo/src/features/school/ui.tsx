@@ -110,7 +110,7 @@ export function Screen({
             )}
             {content}
             <Text style={[s.small, { textAlign: "center", marginTop: 12 }]}>
-              WGJS Connect · Your school, connected
+              Syscommunicator · Your school, connected
             </Text>
           </View>
         </ScrollView>

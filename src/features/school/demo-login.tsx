@@ -64,7 +64,7 @@ export function SchoolLogin() {
     }
   }
   const labels: Record<Mode, string> = {
-    signIn: "Sign in to WGJS Connect",
+    signIn: "Sign in to Syscommunicator",
     signUp: "Create your password",
     verify: "Verify email",
     reset: "Send reset code",
