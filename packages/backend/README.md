@@ -4,10 +4,9 @@ This workspace is the single Convex backend and database shared by the TanStack
 web app and the Expo app. The phased plan lives in
 [Backend and Database Integration](../../Backend-and-Database-Integration.md).
 
-Current state: linked to a Convex **dev** deployment with the full schema
-and internal fixture functions (see [DATA-MODEL.md](DATA-MODEL.md)). The development
-database can be seeded with fictional records. Convex Auth and public identity/onboarding functions are connected in dev. Both
-clients use real identity while school-module data remains mocked.
+The Syscommunicator clone targets a separate self-hosted Convex instance. Its schema, functions and components have been deployed there. Local web, Expo and backend URLs are kept in ignored `.env.local` files; the self-hosted admin key belongs only in the backend file. The new database has no school records or accounts yet. Convex Auth signing variables are configured on that instance; `SITE_URL` currently points to `http://localhost:8080` for local development. Email delivery still requires its provider settings.
+
+The original cloud dev deployment and its fictional fixtures remain documented below for reference. The legacy `seed:backend`, `reset:backend`, `verify:backend`, `setup:auth:dev` and `verify:auth:dev` helpers are pinned to that original deployment and reject the self-hosted instance. Do not use them to initialize this clone.
 
 ## Commands
 
@@ -23,9 +22,7 @@ npm run verify:backend              # read-only dev verification
 npm run reset:backend               # clear development data, then reseed and verify
 ```
 
-The ignored `.env.local` here holds `CONVEX_DEPLOYMENT`, `CONVEX_URL` and
-`CONVEX_SITE_URL`. Copy `.env.example` and run `npx convex dev` to link your own
-deployment. The Expo access token does not authenticate to Convex.
+The ignored `.env.local` here holds `CONVEX_SELF_HOSTED_URL`, `CONVEX_SELF_HOSTED_ADMIN_KEY`, and the `CONVEX_URL`/`CONVEX_SITE_URL` values saved by the CLI. Run `npx convex dev --once` from this folder to push to the self-hosted instance. The Expo access token does not authenticate to Convex.
 
 ## Development fixtures
 

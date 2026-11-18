@@ -13,12 +13,12 @@
 ## Local Contracts
 
 - This is the only Convex functions directory. Run every Convex CLI command from `packages/backend` (root `npm run dev:backend` does this). Never create or run Convex from the repository root.
-- The dev deployment is linked through the ignored `packages/backend/.env.local` (`CONVEX_DEPLOYMENT`, `CONVEX_URL`, `CONVEX_SITE_URL`). No production deployment exists yet.
+- The Syscommunicator clone uses its separate self-hosted Convex instance through ignored `packages/backend/.env.local` (`CONVEX_SELF_HOSTED_URL`, `CONVEX_SELF_HOSTED_ADMIN_KEY`, generated `CONVEX_URL`, `CONVEX_SITE_URL`). The local web and Expo clients use their own ignored `.env.local` files. Do not put the admin key in tracked files or either client environment.
 - `convex/schema.ts` defines the full data model and is deployed to dev. `DATA-MODEL.md` owns the mapping from mock state, the design decisions, and the access-path → index map; update it with every schema change.
 - Enum validators in `convex/validators.ts` are built from the `as const` tuples in `@school-connect/core/domain`. Add or change enum values there, never as local literals.
 - `users` keeps Convex Auth's field/index names (`email`, `phone`) with app fields optional. Internal fixtures populate dev; Convex Auth and public identity/onboarding functions are deployed. Both clients use live identity, native cursor pagination, independent detail reads and exact scoped dashboard counts through shared hooks.
 - `seed.ts` owns internal seed, reset, file registration and verification; `seedFiles.ts` stores labelled text samples before calling the seed mutation. `seedSupport.ts` owns shared guard, bounded inventory and indexed fixture identity helpers.
-- Seed/reset/file registration fail closed unless the server's generated `env.CONVEX_CLOUD_URL` matches `https://diligent-bass-226.convex.cloud`. Never weaken this to a caller-supplied deployment or production opt-in.
+- Legacy seed/reset/file registration fail closed unless the server's generated `env.CONVEX_CLOUD_URL` matches `https://diligent-bass-226.convex.cloud`; the clone's self-hosted instance is deliberately excluded. Never weaken this to a caller-supplied deployment or production opt-in.
 - `seedFixtures.by_key` maps stable logical fixture keys to documents or owned files, preserving edits across seed runs. Natural-key matches must be unique; never overwrite existing user values. Missing referenced parent documents require reset if verification finds stale links.
 - Reset clears all schema application tables, including auth tables/sessions, only after a 500-row total preflight. It deletes only registry-owned files; other storage is preserved. Interrupted file preparation leaves registered, reusable samples; rerun seed to resume.
 - Dates use fixed October 2026 Johannesburg fixture times. Seeding does not create credentials; guarded auth setup provisions separate private dev credentials; sample text documents have real storage IDs and byte sizes, with no claim of PDF rendering or delivery.
@@ -61,7 +61,7 @@
 - `npm run test:backend` checks CLI guards, isolated fixture workflows and real auth-library verification/reset/magic-link flows with mocked email, invitation isolation/replay/expiry, deactivation and session revocation. `npm run verify:auth:dev` checks real dev password sessions and identity from independent HTTP clients; this is not device or live email coverage.
 - `npm run setup:auth:dev` installs missing signing keys without rotating existing keys, configures a local dev SITE_URL when absent, enables dev accounts, pushes and provisions private passwords. It must run only through the guarded root helper. After `reset:backend`, rerun setup to restore dev logins.
 - `npm run seed:backend` pushes functions, prepares files, seeds and verifies the identified dev deployment; `verify:backend` only checks it. `reset:backend` explicitly clears dev then reseeds. All commands run through the root guard helper.
-- `npx convex dev --once` from this folder pushes and regenerates `_generated/` against the dev deployment.
+- `npx convex dev --once` from this folder pushes and regenerates `_generated/` against the deployment selected by this workspace's ignored environment; verify the reported target before proceeding.
 
 ## Child DOX Index
 

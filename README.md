@@ -2,7 +2,9 @@
 
 A school communication monorepo for Wynberg Girls Junior School, inspired by d6 module workflows. The existing TanStack web app stays at the root; `apps/expo` provides an Android, iOS, and Expo web school frontend; `packages/backend` is the single Convex backend and database for both clients (dev deployment linked, schema and internal fixture functions deployed; fictional seed data and dev authentication available); `packages/school-core` shares domain contracts, pure rules and test-only mock data. The apps use the school's red and gold colours, supplied crest, and the tagline **Honor Before Honours**, while retaining Open Sans.
 
-The app/store name and phone icon label are **Syscommunicator**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. Live development reads and authenticated sessions are connected. Native store submissions and production backend provisioning remain future work.
+The app/store name and phone icon label are **Syscommunicator**, and the in-app school name is **Wynberg Girls Junior School**. Both clients include the school branding. The cloned backend is connected to its separate self-hosted instance. Native store submissions and production launch checks remain future work.
+
+The Syscommunicator clone now points locally to its separate self-hosted Convex instance. Schema and functions are deployed, and Convex Auth signing variables are configured there. This new database has no school records or accounts yet. The ignored root, Expo and backend `.env.local` files hold the client URLs and backend admin key. The original dev fixture/account helpers remain restricted to the original cloud deployment; do not run them to populate this instance. Before hosting the web app over HTTPS, give both Convex API and HTTP actions domains trusted HTTPS certificates and update the Convex origins and client URLs. Set the backend `SITE_URL` to the new web domain when available.
 
 ## Development
 
@@ -54,7 +56,7 @@ In the Dokploy application, select:
 
 Remove any Caddy/static-site start command override, then deploy. The Dockerfile installs from the monorepo root using Node 24/npm 11, builds the web app and starts `node .output/server/index.mjs` as an unprivileged user. It does not start Expo, Convex or a separate database. Do not set `NODE_ENV=production` during dependency installation: the web build needs devDependencies.
 
-`HOST=0.0.0.0`, `PORT=3000` and runtime `NODE_ENV=production` are set in the image. Set the public Docker build argument `VITE_CONVEX_URL` to the intended deployment URL for sign-in (`https://diligent-bass-226.convex.cloud` for the current dev preview). Rebuild after changing it. No Expo token or backend secrets belong in this image. Private `.env` files are excluded from Docker's build context. Optional public build argument `VITE_SITE_URL` can pin the canonical web origin; otherwise share metadata uses the incoming request origin.
+`HOST=0.0.0.0`, `PORT=3000` and runtime `NODE_ENV=production` are set in the image. Set the public Docker build argument `VITE_CONVEX_URL` to the new self-hosted API URL once its HTTPS certificate is trusted. Rebuild after changing it. No Expo token or backend secrets belong in this image. Private `.env` files are excluded from Docker's build context. Optional public build argument `VITE_SITE_URL` can pin the canonical web origin; otherwise share metadata uses the incoming request origin.
 
 For local container testing with Docker installed:
 
