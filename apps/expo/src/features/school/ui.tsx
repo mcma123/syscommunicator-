@@ -65,16 +65,16 @@ export function Screen({
               ) : (
                 <Image
                   source={require("../../../assets/logo.png")}
-                  style={{ width: 36, height: 40 }}
+                  style={{ width: 40, height: 49 }}
                   resizeMode="contain"
-                  accessibilityLabel="Wynberg Girls Junior School crest"
+                  accessibilityLabel="SYS logo"
                 />
               )}
               <View style={{ flex: 1 }}>
-                <Text weight="bold" style={{ fontSize: 11, lineHeight: 16 }}>
-                  Wynberg Girls Junior School
+                <Text weight="bold" style={{ fontSize: 14, lineHeight: 20, color: colors.text }}>
+                  Syscommunicator
                 </Text>
-                <Text style={s.small}>Honor Before Honours</Text>
+                <Text style={s.small}>Support Your School</Text>
               </View>
               <Pressable
                 accessibilityRole="button"
@@ -86,7 +86,7 @@ export function Screen({
                   {account?.name
                     .split(" ")
                     .map((part) => part[0])
-                    .join("") ?? "WG"}
+                    .join("") ?? "SY"}
                 </Text>
               </Pressable>
             </View>
@@ -339,9 +339,19 @@ export function Empty({ title, body }: { title: string; body: string }) {
 }
 export const s = StyleSheet.create({
   scroll: { flexGrow: 1, alignItems: "center" },
-  body: { width: "100%", maxWidth: 680, padding: 20, paddingBottom: 36, gap: 20 },
-  row: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { fontSize: 29, lineHeight: 40, letterSpacing: -0.7 },
+  body: { width: "100%", maxWidth: 680, padding: 20, paddingBottom: 36, gap: 22 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  title: { fontSize: 30, lineHeight: 40, letterSpacing: -0.8, color: colors.text },
   muted: { color: colors.muted },
   small: { color: colors.muted, fontSize: 11, lineHeight: 18 },
   card: {
@@ -350,8 +360,8 @@ export const s = StyleSheet.create({
     padding: 20,
     gap: 14,
     borderWidth: 1,
-    borderColor: "#f0e9e6",
-    boxShadow: "0px 5px 18px rgba(65,29,25,0.035)",
+    borderColor: colors.border,
+    boxShadow: "0px 8px 24px rgba(11,27,66,0.06)",
   },
   iconButton: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
   avatar: {
@@ -398,7 +408,7 @@ export const s = StyleSheet.create({
     backgroundColor: "white",
   },
   input: {
-    backgroundColor: "#faf8f7",
+    backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 14,

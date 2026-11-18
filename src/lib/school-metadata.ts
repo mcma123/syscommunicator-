@@ -19,11 +19,11 @@ export function getSchoolShareMeta() {
     { property: "og:locale", content: "en_ZA" },
     { property: "og:image", content: imageUrl },
     { property: "og:image:type", content: "image/png" },
-    { property: "og:image:alt", content: `${schoolConfig.name} crest` },
+    { property: "og:image:alt", content: "SYS logo" },
     { name: "twitter:card", content: "summary" },
     { name: "twitter:title", content: schoolConfig.appName },
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: imageUrl },
-    { name: "twitter:image:alt", content: `${schoolConfig.name} crest` },
+    { name: "twitter:image:alt", content: "SYS logo" },
   ];
 }

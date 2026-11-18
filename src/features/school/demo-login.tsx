@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { schoolConfig } from "../../../packages/school-core/src";
-import campus from "@/assets/school-campus.jpg";
 import { useSchool } from "./store";
 import { AccountAccess } from "./account-management";
 
@@ -73,43 +72,41 @@ export function SchoolLogin() {
   };
   return (
     <main className="demo-login">
-      <section className="demo-login-story" aria-label="Welcome to your school community">
-        <img className="demo-login-campus" src={campus} alt="" />
+      <section className="demo-login-story" aria-label="Welcome to Syscommunicator">
         <div className="demo-login-story-inner">
           <a href="/signin" className="demo-login-brand">
             <span className="demo-login-crest">
-              <img src={schoolConfig.logoUrl} alt="School crest" />
+              <img src={schoolConfig.logoUrl} alt="SYS logo" />
             </span>
             <span>
-              {schoolConfig.name}
-              <small>{schoolConfig.subtitle}</small>
+              {schoolConfig.appName}
+              <small>Support Your School</small>
             </span>
           </a>
           <div className="demo-login-story-copy">
-            <span className="demo-login-eyebrow">A LITTLE CLOSER. EVERY DAY.</span>
+            <span className="demo-login-eyebrow">YOUR SCHOOL COMMUNITY, CONNECTED</span>
             <h1>
-              Big school moments.
+              Every school moment.
               <br />
-              Little everyday wins.
+              One connected place.
               <br />
-              <em>All connected.</em>
+              <em>Better together.</em>
             </h1>
             <p>
-              From the first bell to the next big milestone, feel part of every moment in your
-              school community.
+              Stay close to the updates, events and people that matter to your school community.
             </p>
           </div>
           <div className="demo-login-story-footer">
-            <span>{schoolConfig.shortName}</span>
-            <span>{schoolConfig.subtitle}</span>
+            <span>Syscommunicator</span>
+            <span>Support Your School</span>
           </div>
         </div>
       </section>
       <section className="demo-login-panel" aria-labelledby="login-heading">
         <div className="demo-login-form-wrap">
           <div className="demo-login-mobile-brand">
-            <img src={schoolConfig.logoUrl} alt="School crest" />
-            <strong>{schoolConfig.shortName}</strong>
+            <img src={schoolConfig.logoUrl} alt="SYS logo" />
+            <strong>{schoolConfig.appName}</strong>
           </div>
           <h2 id="login-heading">
             Welcome back<span>.</span>

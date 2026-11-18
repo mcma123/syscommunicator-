@@ -85,14 +85,14 @@ export const Route = createRootRouteWithContext<{
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: `${schoolConfig.name} | ${schoolConfig.subtitle}` },
+      { title: `${schoolConfig.appName} | Support Your School` },
       {
         name: "description",
         content: `${schoolConfig.appName}: ${schoolConfig.subtitle}. School notices, events and learner information in one place.`,
       },
       { name: "application-name", content: schoolConfig.appName },
-      { name: "apple-mobile-web-app-title", content: schoolConfig.shortName },
-      { name: "theme-color", content: "#c6252b" },
+      { name: "apple-mobile-web-app-title", content: schoolConfig.appName },
+      { name: "theme-color", content: "#f4024d" },
       ...getSchoolShareMeta(),
     ],
     links: [

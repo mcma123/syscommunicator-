@@ -3,7 +3,7 @@ import { useCallback, useSyncExternalStore } from "react";
 export type Theme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "wgjs-theme";
-const THEME_COLORS: Record<Theme, string> = { light: "#c6252b", dark: "#16111a" };
+const THEME_COLORS: Record<Theme, string> = { light: "#f4024d", dark: "#09132c" };
 const THEME_EVENT = "wgjs-theme-change";
 
 /**

@@ -33,7 +33,7 @@ export default function RootLayout() {
       >
         <Image
           source={require("../../assets/logo.png")}
-          accessibilityLabel="Wynberg Girls Junior School crest"
+          accessibilityLabel="SYS logo"
           style={{ width: 112, height: 112, marginBottom: 24 }}
           resizeMode="contain"
         />

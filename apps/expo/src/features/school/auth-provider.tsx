@@ -44,12 +44,12 @@ export function SessionLoading() {
     >
       <Image
         source={require("../../../assets/logo.png")}
-        accessibilityLabel="Wynberg Girls Junior School crest"
+        accessibilityLabel="SYS logo"
         resizeMode="contain"
         style={{ width: 112, height: 112, marginBottom: 24 }}
       />
-      <Text>Wynberg Girls Junior School</Text>
-      <Text>Honor Before Honours</Text>
+      <Text>Syscommunicator</Text>
+      <Text>Support Your School</Text>
       <ActivityIndicator color={colors.primary} />
       <Text>Restoring your school session...</Text>
     </View>

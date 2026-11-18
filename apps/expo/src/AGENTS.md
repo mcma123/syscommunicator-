@@ -14,7 +14,7 @@
 - Use React Native primitives, not DOM elements or the existing web-only Radix components.
 - `app/+html.tsx` is a web-only document for static/server output, not a native screen. Current SPA output uses ../public/index.html for metadata and scrolling reset instead.
 - `_layout.tsx` loads local Open Sans fonts and mounts SchoolAuthProvider, one SchoolProvider, the native notification bridge and SchoolNavigator above all routes. `/signin` is public; other routes require an active live identity with a staff role or linked learner. Screens and navigation apply the shared module matrix; the backend rechecks all record access.
-- Show the supplied crest above the loading indicator while native fonts load; retain the crest in the configured native splash screen.
+- Show the supplied SYS logo above the loading indicator while native fonts load; retain it in the configured native splash screen.
 - Five parent tabs live in `app/(tabs)/`: Home, Updates, Calendar, Children, More; their public URLs remain unchanged. Other parent modules and dynamic details use the root stack with animation disabled. Detail routes use live database IDs at runtime; SPA export removes fixture-ID pre-rendering. Route files delegate presentation to the school feature.
 - `+not-found.tsx` handles unknown module URLs. Native and web links use Expo Router.
 - Use the `@/` source alias and `@school-connect/core` workspace import.

@@ -30,7 +30,7 @@ installed SDK version; use an SDK-compatible Expo Go or a development build.
 - `@school-connect/core` shares school names, domain types, mock fixtures,
   repository contracts, and filtering with the root web app.
 
-The parent frontend retains its premium light design, school colours, crest and five tabs. It accepts active linked guardians and explicit staff roles, reading normalized development database records through shared hooks. Audited school actions persist and synchronize with web; Phase 8 file uploads and protected downloads are connected; payment processing remains Phase 9. Loading, empty, error/retry and actual connection feedback replace mock success/offline controls.
+The parent frontend retains its premium light design, SYS colours, logo and five tabs. It accepts active linked guardians and explicit staff roles, reading normalized development database records through shared hooks. Audited school actions persist and synchronize with web; Phase 8 file uploads and protected downloads are connected; payment processing remains Phase 9. Loading, empty, error/retry and actual connection feedback replace mock success/offline controls.
 
 `parent-screens.tsx` owns presentation; `ui.tsx` owns shared native UI; `store.tsx` owns auth/onboarding and selected learner, adapting `@school-connect/backend/react`. Legacy parent-model selectors remain test-only. No runtime mock repository is mounted. See [the shared client contract](../../packages/backend/CLIENT-DATA.md).
 
@@ -38,11 +38,9 @@ Expo web exports a SPA, using real database IDs in detail routes. Configure host
 
 ## Branding and account project
 
-The full product/store name is Wynberg Girls Junior Connect, launcher name is
-WGJS Connect, school name is Wynberg Girls Junior School, and tagline is Honor
-Before Honours. Original crest source is `public/logo.png`; this workspace uses
-an unchanged copy plus padded square icons. On Windows, regenerate icon assets
-with `powershell -File scripts/prepare-expo-assets.ps1` from the repository root.
+The product and launcher name is Syscommunicator. The supplied SYS logo is
+copied unchanged into assets/logo.png. Square derivatives serve the native launcher icons.
+The app uses SYS pink and navy. The connected school name remains school content.
 
 The ignored root `.env` contains the CLI-only EXPO_TOKEN. Use `npm run
 expo:whoami`, `npm run expo:init`, and `npm run expo:info` from the root. Do not

@@ -8,8 +8,8 @@
 
 - `utils.ts` owns class merging; `error-page.ts` owns the standalone fallback HTML.
 - `error-capture.ts` captures original server errors locally; no external telemetry hooks are installed.
-- `school-metadata.ts` owns school-only Open Graph/Twitter identity and crest references. Use the request origin on the server and location origin in the browser for absolute crest URLs; optional public `VITE_SITE_URL` overrides the origin and is never a private token.
-- `theme.ts` owns light/dark theme state: the `wgjs-theme` localStorage choice (falls back to the OS preference), the `dark` class and `color-scheme` on `<html>`, theme-color meta, the pre-paint `themeInitScript`, and the `useTheme` hook with an optional circular view-transition reveal that respects reduced motion.
+- `school-metadata.ts` owns school-only Open Graph/Twitter identity and logo references. Use the request origin on the server and location origin in the browser for absolute logo URLs; optional public `VITE_SITE_URL` overrides the origin and is never a private token.
+- `theme.ts` owns light/dark theme state: the existing `wgjs-theme` localStorage choice (falls back to the OS preference), the `dark` class and `color-scheme` on `<html>`, SYS theme-color meta, the pre-paint `themeInitScript`, and the `useTheme` hook with an optional circular view-transition reveal that respects reduced motion.
 - `../server.ts`, `../start.ts`, and the root route consume these helpers and have their own owners.
 
 ## Local Contracts

@@ -78,15 +78,15 @@ export function SchoolShell({ module, children }: { module: string; children: Re
       <aside className={`app-sidebar ${mobile ? "mobile-open" : ""}`}>
         <div className="brand">
           <div className="brand-icon">
-            <img src={schoolConfig.logoUrl} alt={`${schoolConfig.name} crest`} />
+            <img src={schoolConfig.logoUrl} alt="SYS logo" />
           </div>
           <div className="brand-copy">
-            <h2>{schoolConfig.name}</h2>
-            <p>{schoolConfig.subtitle}</p>
+            <h2>{schoolConfig.appName}</h2>
+            <p>Support Your School</p>
           </div>
         </div>
         <div className="school-select">
-          <div className="school-initial">W</div>
+          <div className="school-initial">{schoolConfig.name.charAt(0)}</div>
           <div>
             <strong>{schoolConfig.shortName}</strong>
             <div className="text-[9px] text-muted-foreground mt-1">

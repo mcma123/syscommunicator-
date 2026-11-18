@@ -16,15 +16,15 @@ export function DemoSessionGate({ children }: { children: ReactNode }) {
         <div className="school-loading-crest">
           <img
             src={schoolConfig.logoUrl}
-            alt={`${schoolConfig.name} crest`}
+            alt="SYS logo"
             width={112}
             height={112}
             fetchPriority="high"
           />
         </div>
         <div className="school-loading-brand">
-          <strong>{schoolConfig.name}</strong>
-          <p>{schoolConfig.subtitle}</p>
+          <strong>{schoolConfig.appName}</strong>
+          <p>Support Your School</p>
         </div>
         <span className="school-loading-message">Opening {schoolConfig.shortName}…</span>
       </div>

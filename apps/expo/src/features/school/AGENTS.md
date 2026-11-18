@@ -30,7 +30,7 @@
 - Expo web is a SPA; no private database records or fixture IDs are enumerated at export time. Sign-out everywhere invalidates real sessions.
 
 ## Work Guidance
-- Preserve Open Sans, supplied WGJS crest, red/gold palette, warm white surfaces, rounded cards and existing five parent tabs.
+- Preserve Open Sans, the supplied SYS logo, pink/navy palette, pale surfaces, rounded cards and existing five parent tabs.
 - Use native primitives, accessible controls, safe areas, keyboard-aware forms and visible feedback. No motion on press/navigation.
 
 ## Verification

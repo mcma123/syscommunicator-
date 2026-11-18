@@ -1,18 +1,18 @@
 {
   "id": "/",
-  "name": "Wynberg Girls Junior Connect",
-  "short_name": "WGJS Connect",
-  "description": "Honor Before Honours — Wynberg Girls Junior School community, notices and learner information.",
+  "name": "Syscommunicator",
+  "short_name": "Syscommunicator",
+  "description": "Support Your School community, notices and learner information.",
   "lang": "en-ZA",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "theme_color": "#c6252b",
-  "background_color": "#faf8f7",
+  "theme_color": "#f4024d",
+  "background_color": "#f2f3f9",
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "1272x1236",
+      "src": "/icon.png",
+      "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "any"
     }

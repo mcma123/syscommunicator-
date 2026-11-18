@@ -2,7 +2,7 @@
 
 ## Purpose
 
-- Own the WGJS school frontend for Android, iOS, and Expo web using Expo SDK 57 and Expo Router.
+- Own the Syscommunicator school frontend for Android, iOS, and Expo web using Expo SDK 57 and Expo Router.
 
 ## Ownership
 
@@ -12,7 +12,7 @@
 ## Local Contracts
 
 - Launcher and product name are Syscommunicator. The slug is `syscommunicator`.
-- Retain Open Sans, website red/gold colours, and the supplied crest. `assets/logo.png` is a copy of the original; square native icons are padded derivatives without cropping.
+- Retain Open Sans, SYS pink/navy colours, and the supplied SYS logo. `assets/logo.png` contains the original supplied image; `assets/icon.png` and `assets/adaptive-icon.png` are square derivatives for launchers.
 - Use Metro's automatic workspace support; do not add manual watchFolders or dependency resolution overrides.
 - Expo uses its SDK-compatible React/React Native versions. Keep React/React DOM aligned across clients to avoid duplicate React in a bundle.
 - Declare expo-secure-store at the SDK-bundled version and keep its config plugin. Native dependency/config changes require a new compatible build; appVersion runtime policy isolates old builds.

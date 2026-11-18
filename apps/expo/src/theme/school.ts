@@ -1,14 +1,14 @@
 export const colors = {
-  primary: "#c6252b",
-  gold: "#fab513",
-  deepRed: "#861d23",
-  background: "#faf8f7",
+  primary: "#f4024d",
+  gold: "#f6c445",
+  deepRed: "#0b1b42",
+  background: "#f2f3f9",
   surface: "#ffffff",
-  text: "#3c3c3c",
-  muted: "#6e6262",
-  border: "#e8dede",
-  primarySoft: "#fbecee",
-  goldSoft: "#fff5d9",
+  text: "#0b1b42",
+  muted: "#5c6480",
+  border: "#e7e9f2",
+  primarySoft: "#fff0f5",
+  goldSoft: "#fff8e5",
 } as const;
 
 export const fonts = {
